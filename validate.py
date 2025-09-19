@@ -46,17 +46,18 @@ def validate_SHACL(graph, shacl, ont_graph=None):
     return conforms, results_text
 
 def diagnose_ODRL(data: str) -> str:
-    graph, format = parse_string_to_graph(data);
+    graph, format = parse_string_to_graph(data)
     errors = []
     warnings = []
     parsed_info = []
     format_report = ""
-    if format is None or len(graph) == 0:
+    if graph is None or len(graph) == 0:
         try:
             json.loads(data)
             errors.append("FORMAT ERROR: The provided string is plain JSON. An ODRL file should be in a graph format, like JSON-LD.")
         except (ValueError, TypeError):
             errors.append("FORMAT ERROR: The provided string is not recognised as any ODRL graph formats, such as JSON-LD, Turtle or RDF/XML. It does not appear to be plain JSON either.")
+            return errors, warnings, parsed_info
     parsed_info.append("INFO: The file contains an RDF graph in the following format: "+str(format))
 
     # validate SHACL using this file: https://github.com/woutslabbinck/ODRL-shape
