@@ -1,16 +1,12 @@
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix odrl: <http://www.w3.org/ns/odrl/2/> .
-@prefix ex: <http://example.com/ns#> .
+@prefix pe: <https://github.com/paolo7/ODRL-Engine/ns#> .
 
-ex:odrlPolicy a sh:NodeShape ;
+pe:odrlPolicy a sh:NodeShape ;
   sh:targetClass odrl:Policy, odrl:Set, odrl:Agreement, odrl:Offer ;
+  sh:nodeKind sh:IRI ;
   sh:property [
-    sh:path odrl:uid ;
-    sh:nodeKind sh:IRI ;
-    sh:minCount 1 ;
-    sh:maxCount 1
-  ], [
     sh:path [
       sh:alternativePath (odrl:permission odrl:prohibition odrl:duty)
     ] ;
@@ -33,7 +29,7 @@ ex:odrlPolicy a sh:NodeShape ;
     sh:nodeKind sh:IRI
   ] .
 
-ex:odrlRule a sh:NodeShape ;
+pe:odrlRule a sh:NodeShape ;
   sh:targetClass odrl:Permission, odrl:Prohibition, odrl:Duty ;
   sh:property [
     sh:path odrl:action ;
@@ -41,12 +37,7 @@ ex:odrlRule a sh:NodeShape ;
     sh:maxCount 1 ;
     sh:class odrl:Action
   ], [
-    sh:path odrl:assigner ;
-    sh:nodeKind sh:IRI ;
-    sh:maxCount 1
-  ], [
-    sh:path odrl:assignee ;
-    sh:nodeKind sh:IRI ;
+    sh:path odrl:target ;
     sh:maxCount 1
   ], [
     sh:path odrl:constraint ;
@@ -57,42 +48,7 @@ ex:odrlRule a sh:NodeShape ;
     ])
   ] .
 
-ex:odrlPermission a sh:NodeShape ;
-  sh:targetClass odrl:Permission ;
-  sh:property [
-    sh:path odrl:target ;
-    sh:nodeKind sh:IRI ;
-    sh:minCount 1 ;
-    sh:maxCount 1
-  ], [
-    sh:path odrl:duty ;
-    sh:class odrl:Duty
-  ] .
-
-ex:odrlProhibition a sh:NodeShape ;
-  sh:targetClass odrl:Prohibition ;
-  sh:property [
-    sh:path odrl:target ;
-    sh:nodeKind sh:IRI ;
-    sh:minCount 1 ;
-    sh:maxCount 1
-  ], [
-    sh:path odrl:remedy ;
-    sh:class odrl:Duty
-  ] .
-
-ex:odrlDuty a sh:NodeShape ;
-  sh:targetClass odrl:Duty ;
-  sh:property [
-    sh:path odrl:target ;
-    sh:nodeKind sh:IRI ;
-    sh:maxCount 1
-  ], [
-    sh:path odrl:consequence ;
-    sh:class odrl:Duty
-  ] .
-
-ex:Constraint a sh:NodeShape ;
+pe:Constraint a sh:NodeShape ;
   sh:targetClass odrl:Constraint ;
   sh:property [
     sh:path odrl:leftOperand ;
@@ -109,7 +65,20 @@ ex:Constraint a sh:NodeShape ;
       sh:nodeKind sh:Literal
     ] [
       sh:nodeKind sh:IRI
-    ])
+    ] [
+        sh:nodeKind sh:BlankNodeOrIRI ;
+        sh:shape [
+          a sh:NodeShape ;
+          sh:property [
+            sh:path rdf:first ;
+            sh:minCount 1
+          ] ;
+          sh:property [
+            sh:path rdf:rest ;
+            sh:minCount 1
+          ]
+        ]
+      ])
   ], [
     sh:path odrl:operator ;
     sh:minCount 1 ;
@@ -117,7 +86,7 @@ ex:Constraint a sh:NodeShape ;
     sh:class odrl:Operator
   ] .
 
-ex:LogicalConstraint a sh:NodeShape ;
+pe:LogicalConstraint a sh:NodeShape ;
   sh:targetClass odrl:LogicalConstraint ;
   sh:property [
     sh:path [
@@ -129,5 +98,18 @@ ex:LogicalConstraint a sh:NodeShape ;
       sh:class odrl:LogicalConstraint
     ])
   ] .
+
+pe:odrlActionShape a sh:NodeShape ;
+  sh:targetClass odrl:Action ;
+  sh:or (
+    [ sh:nodeKind sh:IRI ]
+    [ sh:property [
+        sh:path rdf:value ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:maxCount 1
+      ]
+    ]
+  ) .
 
 <urn:x-base:default> a <http://www.w3.org/2002/07/owl#Ontology> .

@@ -27,7 +27,7 @@ odrl_example_1 = """{
         "foaf": "http://xmlns.com/foaf/0.1/"
       },
     "@type": "odrl:Policy",
-    "odrl:uid": { "@id": "http://example.com/policy:1010" },
+    "@id": "http://example.com/policy:1010",
     "odrl:permission": [{
         "odrl:target": { "@id": "http://example.com/asset:9898.movie" },
         "odrl:action": { "@id": "odrl:use" }

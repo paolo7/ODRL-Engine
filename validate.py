@@ -60,8 +60,10 @@ def diagnose_ODRL(data: str) -> str:
             return errors, warnings, parsed_info
     parsed_info.append("INFO: The file contains an RDF graph in the following format: "+str(format))
 
-    # validate SHACL using this file: https://github.com/woutslabbinck/ODRL-shape
+    # validate ODRL using SHACL
+    # The SHACL shapes are based on https://github.com/woutslabbinck/ODRL-shape
     # https://github.com/woutslabbinck/ODRL-shape/blob/main/odrl-shacl.ttl
+    # They are extended to allow for lists of IRIs in the right operands
 
     shacl_file = os.path.join("SHACL", "odrl-shacl.ttl")
     ont_file = os.path.join("ODRL", "ODRL22.ttl")
@@ -72,7 +74,7 @@ def diagnose_ODRL(data: str) -> str:
         parsed_info.append("SHACL validation check passed")
     else :
         parsed_info.append("\nSHACL validation failed")
-        parsed_info.append("SHACL validation report : " + str(report)+"\n")
+        parsed_info.append("SHACL validation report : \n" + str(report)+"\n")
     return errors, warnings, parsed_info
 
 def generate_ODRL_diagnostic_report(data: str) -> str:
