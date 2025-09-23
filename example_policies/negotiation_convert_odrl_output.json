@@ -1,0 +1,144 @@
+[
+  {
+    "rule": "http://www.w3.org/ns/odrl/2/Duty",
+    "actor": "https://w3id.org/dpv/owl#LegalEntity",
+    "action": "http://www.w3.org/ns/odrl/2/annotate",
+    "target": "http://example.org/datasets/socialMediaAnalytics",
+    "purpose": "https://w3id.org/dpv/owl#CommercialResearch",
+    "query": "",
+    "constraints": [
+      {
+        "type": "http://www.w3.org/ns/odrl/2/absolutePosition",
+        "operator": "http://www.w3.org/ns/odrl/2/eq",
+        "value": ""
+      }
+    ],
+    "actorrefinements": [
+      {
+        "type": "https://w3id.org/dpv/owl#actorEnhancedProperty2",
+        "operator": "http://www.w3.org/ns/odrl/2/gteq",
+        "value": "GGG"
+      }
+    ],
+    "actionrefinements": [],
+    "purposerefinements": [],
+    "targetrefinements": [
+      {
+        "type": "QUERY",
+        "operator": null,
+        "value": ""
+      }
+    ]
+  },
+  {
+    "rule": "http://www.w3.org/ns/odrl/2/Duty",
+    "actor": "https://www.cactusweb.gr/vocab/Cactus_Account_Manager",
+    "action": "https://w3id.org/dpv/owl#Analyse",
+    "target": "http://example.org/datasets/socialMediaAnalytics",
+    "purpose": "https://w3id.org/dpv/owl#Advertising",
+    "query": "",
+    "constraints": [
+      {
+        "type": "http://www.w3.org/ns/odrl/2/absolutePosition",
+        "operator": "http://www.w3.org/ns/odrl/2/eq",
+        "value": ""
+      }
+    ],
+    "actorrefinements": [],
+    "actionrefinements": [],
+    "purposerefinements": [],
+    "targetrefinements": [
+      {
+        "type": "QUERY",
+        "operator": null,
+        "value": ""
+      }
+    ]
+  },
+  {
+    "rule": "http://www.w3.org/ns/odrl/2/Obligation",
+    "actor": "https://w3id.org/dpv/owl#CharityOrganisation",
+    "action": "https://w3id.org/dpv/owl#Analyse",
+    "target": "http://example.org/datasets/socialMediaAnalytics",
+    "purpose": "https://w3id.org/dpv/owl#Advertising",
+    "query": "",
+    "constraints": [
+      {
+        "type": "http://www.w3.org/ns/odrl/2/absolutePosition",
+        "operator": "http://www.w3.org/ns/odrl/2/eq",
+        "value": ""
+      }
+    ],
+    "actorrefinements": [
+      {
+        "type": "https://w3id.org/dpv/owl#actorEnhancedProperty2",
+        "operator": "http://www.w3.org/ns/odrl/2/hasPart",
+        "value": "House"
+      }
+    ],
+    "actionrefinements": [
+      {
+        "type": "https://eu-upcast.github.io/vocabulary/index-en.html#hasFinishTime",
+        "operator": "http://www.w3.org/ns/odrl/2/lt",
+        "value": "2026"
+      }
+    ],
+    "purposerefinements": [
+      {
+        "type": "https://w3id.org/dpv/owl#purposeEnhancedProperty",
+        "operator": "http://www.w3.org/ns/odrl/2/isA",
+        "value": "Advertising"
+      }
+    ],
+    "targetrefinements": [
+      {
+        "type": "QUERY",
+        "operator": null,
+        "value": ""
+      }
+    ]
+  },
+  {
+    "rule": "http://www.w3.org/ns/odrl/2/Obligation",
+    "actor": "https://w3id.org/dpv/owl#JointDataControllers",
+    "action": "http://www.w3.org/ns/odrl/2/display",
+    "target": "http://example.org/datasets/socialMediaAnalytics",
+    "purpose": "https://w3id.org/dpv/owl#DataGovernance",
+    "query": "",
+    "constraints": [
+      {
+        "type": "http://www.w3.org/ns/odrl/2/absolutePosition",
+        "operator": "http://www.w3.org/ns/odrl/2/eq",
+        "value": ""
+      }
+    ],
+    "actorrefinements": [
+      {
+        "type": "https://w3id.org/dpv/owl#actorEnhancedProperty2",
+        "operator": null,
+        "value": ""
+      }
+    ],
+    "actionrefinements": [
+      {
+        "type": "https://w3id.org/dpv/owl#actionEnhancedProperty",
+        "operator": null,
+        "value": ""
+      }
+    ],
+    "purposerefinements": [
+      {
+        "type": "https://w3id.org/dpv/owl#purposeEnhancedProperty",
+        "operator": null,
+        "value": ""
+      }
+    ],
+    "targetrefinements": [
+      {
+        "type": null,
+        "operator": "http://www.w3.org/ns/odrl/2/eq",
+        "value": ""
+      }
+    ]
+  }
+]

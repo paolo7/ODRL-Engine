@@ -1,0 +1,606 @@
+{
+  "@context": {
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "odrl": "http://www.w3.org/ns/odrl/2/",
+    "dpv": "https://w3id.org/dpv/owl#",
+    "foaf": "http://xmlns.com/foaf/0.1/",
+    "cactus": "https://www.cactusweb.gr/vocab/",
+    "id": "https://www.cactusweb.gr/vocab/id/"
+  },
+  "@id": "id:POLICY_4_1757407779",
+  "@type": "odrl:Policy",
+  "odrl:permission": [
+    {
+      "odrl:action": {
+        "rdf:value": {
+          "@id": "cactus:Financial_Analysis"
+        }
+      },
+      "odrl:target": {
+        "odrl:source": {
+          "@id": "id:DATASET_ASTOR_HELLAS_28B022EE"
+        },
+        "odrl:refinement": {
+          "odrl:leftOperand": {
+            "@id": "cactus:part"
+          },
+          "odrl:operator": {
+            "@id": "odrl:eq"
+          },
+          "odrl:rightOperand": ["Analytics Data"]
+        }
+      },
+      "odrl:assignee": {
+        "odrl:source": {
+          "@id": "cactus:Cactus_Account_Manager"
+        },
+        "odrl:refinement": {
+          "odrl:leftOperand": {
+            "@id": "foaf:name"
+          },
+          "odrl:operator": {
+            "@id": "odrl:isAnyOf"
+          },
+          "odrl:rightOperand": [
+            "\u0392\u03af\u03ba\u03b7 \u03a4\u03c3\u03b1\u03ba\u03b9\u03c1\u03af\u03b4\u03bf\u03c5"
+          ]
+        }
+      },
+      "odrl:assigner": {
+        "odrl:source": {
+          "@id": "id:CUSTOMER_4"
+        }
+      },
+      "odrl:constraint": [
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:purpose"
+          },
+          "odrl:operator": {
+            "@id": "odrl:isAnyOf"
+          },
+          "odrl:rightOperand": [
+            {
+              "@id": "cactus:Audit_Provision"
+            }
+          ]
+        },
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:purpose"
+          },
+          "odrl:operator": {
+            "@id": "odrl:neq"
+          },
+          "odrl:rightOperand": {
+            "@id": "cactus:Personal_Info_Identification"
+          }
+        },
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:dateTime"
+          },
+          "odrl:operator": {
+            "@id": "odrl:lteq"
+          },
+          "odrl:rightOperand": {
+            "@value": "2025-12-09",
+            "@type": "xsd:date"
+          }
+        }
+      ]
+    },
+    {
+      "odrl:action": {
+        "rdf:value": {
+          "@id": "cactus:Customer_Analysis"
+        }
+      },
+      "odrl:target": {
+        "odrl:source": {
+          "@id": "id:DATASET_ASTOR_HELLAS_28B022EE"
+        },
+        "odrl:refinement": {
+          "odrl:leftOperand": {
+            "@id": "cactus:part"
+          },
+          "odrl:operator": {
+            "@id": "odrl:eq"
+          },
+          "odrl:rightOperand": ["Analytics Data"]
+        }
+      },
+      "odrl:assignee": {
+        "odrl:source": {
+          "@id": "cactus:Cactus_Account_Manager"
+        },
+        "odrl:refinement": {
+          "odrl:leftOperand": {
+            "@id": "foaf:name"
+          },
+          "odrl:operator": {
+            "@id": "odrl:isAnyOf"
+          },
+          "odrl:rightOperand": [
+            "\u0392\u03af\u03ba\u03b7 \u03a4\u03c3\u03b1\u03ba\u03b9\u03c1\u03af\u03b4\u03bf\u03c5"
+          ]
+        }
+      },
+      "odrl:assigner": {
+        "odrl:source": {
+          "@id": "id:CUSTOMER_4"
+        }
+      },
+      "odrl:constraint": [
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:purpose"
+          },
+          "odrl:operator": {
+            "@id": "odrl:isAnyOf"
+          },
+          "odrl:rightOperand": [
+            {
+              "@id": "cactus:Audit_Provision"
+            }
+          ]
+        },
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:purpose"
+          },
+          "odrl:operator": {
+            "@id": "odrl:neq"
+          },
+          "odrl:rightOperand": {
+            "@id": "cactus:Personal_Info_Identification"
+          }
+        },
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:dateTime"
+          },
+          "odrl:operator": {
+            "@id": "odrl:lteq"
+          },
+          "odrl:rightOperand": {
+            "@value": "2025-12-09",
+            "@type": "xsd:date"
+          }
+        }
+      ]
+    },
+    {
+      "odrl:action": {
+        "rdf:value": {
+          "@id": "cactus:Marketing_Analysis"
+        }
+      },
+      "odrl:target": {
+        "odrl:source": {
+          "@id": "id:DATASET_ASTOR_HELLAS_28B022EE"
+        },
+        "odrl:refinement": {
+          "odrl:leftOperand": {
+            "@id": "cactus:part"
+          },
+          "odrl:operator": {
+            "@id": "odrl:eq"
+          },
+          "odrl:rightOperand": ["Analytics Data"]
+        }
+      },
+      "odrl:assignee": {
+        "odrl:source": {
+          "@id": "cactus:Cactus_Account_Manager"
+        },
+        "odrl:refinement": {
+          "odrl:leftOperand": {
+            "@id": "foaf:name"
+          },
+          "odrl:operator": {
+            "@id": "odrl:isAnyOf"
+          },
+          "odrl:rightOperand": [
+            "\u0392\u03af\u03ba\u03b7 \u03a4\u03c3\u03b1\u03ba\u03b9\u03c1\u03af\u03b4\u03bf\u03c5"
+          ]
+        }
+      },
+      "odrl:assigner": {
+        "odrl:source": {
+          "@id": "id:CUSTOMER_4"
+        }
+      },
+      "odrl:constraint": [
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:purpose"
+          },
+          "odrl:operator": {
+            "@id": "odrl:isAnyOf"
+          },
+          "odrl:rightOperand": [
+            {
+              "@id": "cactus:Audit_Provision"
+            }
+          ]
+        },
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:purpose"
+          },
+          "odrl:operator": {
+            "@id": "odrl:neq"
+          },
+          "odrl:rightOperand": {
+            "@id": "cactus:Personal_Info_Identification"
+          }
+        },
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:dateTime"
+          },
+          "odrl:operator": {
+            "@id": "odrl:lteq"
+          },
+          "odrl:rightOperand": {
+            "@value": "2025-12-09",
+            "@type": "xsd:date"
+          }
+        }
+      ]
+    },
+    {
+      "odrl:action": {
+        "rdf:value": {
+          "@id": "cactus:Report_Creation"
+        }
+      },
+      "odrl:target": {
+        "odrl:source": {
+          "@id": "id:DATASET_ASTOR_HELLAS_28B022EE"
+        },
+        "odrl:refinement": {
+          "odrl:leftOperand": {
+            "@id": "cactus:part"
+          },
+          "odrl:operator": {
+            "@id": "odrl:eq"
+          },
+          "odrl:rightOperand": ["Analytics Data"]
+        }
+      },
+      "odrl:assignee": {
+        "odrl:source": {
+          "@id": "cactus:Cactus_Account_Manager"
+        },
+        "odrl:refinement": {
+          "odrl:leftOperand": {
+            "@id": "foaf:name"
+          },
+          "odrl:operator": {
+            "@id": "odrl:isAnyOf"
+          },
+          "odrl:rightOperand": [
+            "\u0392\u03af\u03ba\u03b7 \u03a4\u03c3\u03b1\u03ba\u03b9\u03c1\u03af\u03b4\u03bf\u03c5"
+          ]
+        }
+      },
+      "odrl:assigner": {
+        "odrl:source": {
+          "@id": "id:CUSTOMER_4"
+        }
+      },
+      "odrl:constraint": [
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:purpose"
+          },
+          "odrl:operator": {
+            "@id": "odrl:isAnyOf"
+          },
+          "odrl:rightOperand": [
+            {
+              "@id": "cactus:Audit_Provision"
+            }
+          ]
+        },
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:purpose"
+          },
+          "odrl:operator": {
+            "@id": "odrl:neq"
+          },
+          "odrl:rightOperand": {
+            "@id": "cactus:Personal_Info_Identification"
+          }
+        },
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:dateTime"
+          },
+          "odrl:operator": {
+            "@id": "odrl:lteq"
+          },
+          "odrl:rightOperand": {
+            "@value": "2025-12-09",
+            "@type": "xsd:date"
+          }
+        }
+      ]
+    },
+    {
+      "odrl:action": {
+        "rdf:value": {
+          "@id": "odrl:use"
+        }
+      },
+      "odrl:target": {
+        "odrl:source": {
+          "@id": "id:DATASET_ASTOR_HELLAS_28B022EE"
+        },
+        "odrl:refinement": {
+          "odrl:leftOperand": {
+            "@id": "cactus:part"
+          },
+          "odrl:operator": {
+            "@id": "odrl:eq"
+          },
+          "odrl:rightOperand": ["Report"]
+        }
+      },
+      "odrl:assignee": {
+        "odrl:source": {
+          "@id": "cactus:Cactus_Account_Manager"
+        },
+        "odrl:refinement": {
+          "odrl:leftOperand": {
+            "@id": "foaf:name"
+          },
+          "odrl:operator": {
+            "@id": "odrl:isAnyOf"
+          },
+          "odrl:rightOperand": [
+            "\u0392\u03af\u03ba\u03b7 \u03a4\u03c3\u03b1\u03ba\u03b9\u03c1\u03af\u03b4\u03bf\u03c5"
+          ]
+        }
+      },
+      "odrl:assigner": {
+        "odrl:source": {
+          "@id": "id:CUSTOMER_4"
+        }
+      },
+      "odrl:constraint": [
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:purpose"
+          },
+          "odrl:operator": {
+            "@id": "odrl:isAnyOf"
+          },
+          "odrl:rightOperand": {		  
+			  "@list": [
+				{
+				  "@id": "cactus:Audit_Provision"
+				},
+				{
+				  "@id": "cactus:Benchmarking"
+				}
+		  ]}
+        },
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:purpose"
+          },
+          "odrl:operator": {
+            "@id": "odrl:neq"
+          },
+          "odrl:rightOperand": {
+            "@id": "cactus:Personal_Info_Identification"
+          }
+        },
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:dateTime"
+          },
+          "odrl:operator": {
+            "@id": "odrl:lteq"
+          },
+          "odrl:rightOperand": {
+            "@value": "2026-03-09",
+            "@type": "xsd:date"
+          }
+        }
+      ]
+    },
+    {
+      "odrl:action": {
+        "rdf:value": {
+          "@id": "dpv:Store"
+        }
+      },
+      "odrl:target": {
+        "odrl:source": {
+          "@id": "id:DATASET_ASTOR_HELLAS_28B022EE"
+        },
+        "odrl:refinement": {
+          "odrl:leftOperand": {
+            "@id": "cactus:part"
+          },
+          "odrl:operator": {
+            "@id": "odrl:eq"
+          },
+          "odrl:rightOperand": ["Analytics Data"]
+        }
+      },
+      "odrl:assignee": {
+        "odrl:source": {
+          "@id": "cactus:Cactus"
+        }
+      },
+      "odrl:assigner": {
+        "odrl:source": {
+          "@id": "id:CUSTOMER_4"
+        }
+      },
+      "odrl:constraint": [
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:purpose"
+          },
+          "odrl:operator": {
+            "@id": "odrl:neq"
+          },
+          "odrl:rightOperand": {
+            "@id": "cactus:Personal_Info_Identification"
+          }
+        },
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:dateTime"
+          },
+          "odrl:operator": {
+            "@id": "odrl:lteq"
+          },
+          "odrl:rightOperand": {
+            "@value": "2025-12-09",
+            "@type": "xsd:date"
+          }
+        }
+      ]
+    },
+    {
+      "odrl:action": {
+        "rdf:value": {
+          "@id": "dpv:Store"
+        }
+      },
+      "odrl:target": {
+        "odrl:source": {
+          "@id": "id:DATASET_ASTOR_HELLAS_28B022EE"
+        },
+        "odrl:refinement": {
+          "odrl:leftOperand": {
+            "@id": "cactus:part"
+          },
+          "odrl:operator": {
+            "@id": "odrl:eq"
+          },
+          "odrl:rightOperand": ["Report"]
+        }
+      },
+      "odrl:assignee": {
+        "odrl:source": {
+          "@id": "cactus:Cactus"
+        }
+      },
+      "odrl:assigner": {
+        "odrl:source": {
+          "@id": "id:CUSTOMER_4"
+        }
+      },
+      "odrl:constraint": [
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:purpose"
+          },
+          "odrl:operator": {
+            "@id": "odrl:neq"
+          },
+          "odrl:rightOperand": {
+            "@id": "cactus:Personal_Info_Identification"
+          }
+        },
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:dateTime"
+          },
+          "odrl:operator": {
+            "@id": "odrl:lteq"
+          },
+          "odrl:rightOperand": {
+            "@value": "2026-03-09",
+            "@type": "xsd:date"
+          }
+        }
+      ]
+    },
+    {
+      "odrl:action": {
+        "rdf:value": {
+          "@id": "cactus:LLM_Processing"
+        }
+      },
+      "odrl:target": {
+        "odrl:source": {
+          "@id": "id:DATASET_ASTOR_HELLAS_28B022EE"
+        },
+        "odrl:refinement": {
+          "odrl:leftOperand": {
+            "@id": "cactus:part"
+          },
+          "odrl:operator": {
+            "@id": "odrl:eq"
+          },
+          "odrl:rightOperand": ["Analytics Data"]
+        }
+      },
+      "odrl:assignee": {
+        "odrl:source": {
+          "@id": "cactus:Cactus"
+        }
+      },
+      "odrl:assigner": {
+        "odrl:source": {
+          "@id": "id:CUSTOMER_4"
+        }
+      },
+      "odrl:constraint": [
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:purpose"
+          },
+          "odrl:operator": {
+            "@id": "odrl:isAnyOf"
+          },
+          "odrl:rightOperand": {		  
+			  "@list": [
+				{
+				  "@id": "cactus:Audit_Provision"
+				},
+				{
+				  "@id": "cactus:Benchmarking"
+				}
+		  ]}
+        },
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:purpose"
+          },
+          "odrl:operator": {
+            "@id": "odrl:neq"
+          },
+          "odrl:rightOperand": {
+            "@id": "cactus:Personal_Info_Identification"
+          }
+        },
+        {
+          "odrl:leftOperand": {
+            "@id": "odrl:dateTime"
+          },
+          "odrl:operator": {
+            "@id": "odrl:lteq"
+          },
+          "odrl:rightOperand": {
+            "@value": "2025-12-09",
+            "@type": "xsd:date"
+          }
+        }
+      ]
+    }
+  ]
+}
