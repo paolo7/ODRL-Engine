@@ -428,7 +428,7 @@ if __name__ == "__main__":
     with p.open(encoding="utf-8") as f:
         data = json.load(f)
 
-    # ODRL validation
+    # ODRL validation check
     validate.generate_ODRL_diagnostic_report(data)
 
     # format conversion
@@ -438,9 +438,11 @@ if __name__ == "__main__":
     with open("./example_policies/policy_6_BIOSKIN_2025-09-22_13-17-07_converted.json", "w", encoding="utf-8") as f:
         json.dump(convert_odrl_output, f, ensure_ascii=False, indent=2)
 
-    # odrl parse
+    # odrl parse, after that, new_odrl_format can be accepted by contract-service
     filtered_data = filter_dicts_with_none_values(convert_odrl_output)
     new_odrl_format = convert_list_to_odrl_jsonld_no_user(filtered_data)
+
+
 
     # save
     with open("./example_policies/policy_6_BIOSKIN_2025-09-22_13-17-07_new_odrl_format.json", "w", encoding="utf-8") as f:
