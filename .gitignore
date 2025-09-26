@@ -113,3 +113,4 @@ dmypy.json
 
 # JetBrains
 .idea/
+/convert_list_to_odrl_jsonld_test.py

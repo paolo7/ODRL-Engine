@@ -262,7 +262,6 @@ def convert_list_to_odrl_jsonld_no_user(data_list):
     odrl_duties = []
     odrl_rules = []
 
-
     policy = {
         "permission": odrl_permissions,
         "prohibition": odrl_prohibitions,
@@ -271,142 +270,122 @@ def convert_list_to_odrl_jsonld_no_user(data_list):
         "rule": odrl_rules,
         "uid": "http://example.org/policy-" + str(uuid.uuid4()),
         "@context": [
-        "http://www.w3.org/ns/odrl.jsonld",
-        {
-            "dcat": "http://www.w3.org/ns/dcat#",
-            "dpv": "https://w3id.org/dpv/dpv-owl#",
-        }
+            "http://www.w3.org/ns/odrl.jsonld",
+            {
+                "dcat": "http://www.w3.org/ns/dcat#",
+                "dpv": "https://w3id.org/dpv/dpv-owl#",
+                "ex":  "http://example.org/ns#"
+            }
         ],
-
         "@type": "Policy",
     }
+
     for data in data_list:
-        if data["action"] is not None and data["actor"] is not None and data["target"] is not None:
-            if "rule" in data:
-                ruleType = str(data["rule"].split("/")[-1]).lower()
+        # Basic presence check
+        if data.get("action") is None or data.get("actor") is None or data.get("target") is None:
+            continue
 
-                if len(data["actorrefinements"])>0:
-                    actor = {"@type":"PartyCollection", "source": data["actor"], "refinement": []}
-                else:
-                    actor = data["actor"]
-                if len(data["actionrefinements"])>0:
-                    action = {"source": data["action"], "refinement": []}
-                else:
-                    action = data["action"]
+        # Determine rule type
+        if "rule" in data and data["rule"]:
+            ruleType = str(data["rule"].split("/")[-1]).lower()
+        else:
+            ruleType = "rule"
 
+        # Build actor/assignee
+        actor_refinements = data.get("actorrefinements", []) or []
+        if len(actor_refinements) > 0:
+            actor = {"@type": "PartyCollection", "source": data["actor"], "refinement": []}
+        else:
+            actor = data["actor"]
 
-                if len(data["targetrefinements"])>0:
-                    target = {"@type":"AssetCollection", "source": data["target"], "refinement": []}
-                else:
-                    target = data["target"]
+        # Build action
+        action_refinements = data.get("actionrefinements", []) or []
+        if len(action_refinements) > 0:
+            action = {"source": data["action"], "refinement": []}
+        else:
+            action = data["action"]
 
-                odrl_jsonld = {
-                    "action": action,  # Extract the action type
-                    "assignee": actor,
-                    "target": target,
-                    "constraint": [],
-                }
+        # Build target
+        target_refinements = data.get("targetrefinements", []) or []
+        if len(target_refinements) > 0:
+            target = {"@type": "AssetCollection", "source": data["target"], "refinement": []}
+        else:
+            target = data["target"]
 
-                if len(data["purposerefinements"])>0:
+        # Start rule object
+        odrl_jsonld = {
+            "action": action,
+            "assignee": actor,
+            "target": target,
+            "constraint": [],
+        }
 
-                    purpose = data["purpose"]
-                    purposerefinements = {"and":[]}
-                    purposerefinements["and"].append({
-                        "leftOperand": "purpose",
-                        "operator": "http://www.w3.org/ns/odrl/2/eq",
-                        "rightOperand": purpose,
-                    })
-
-                    for constraint in data["purposerefinements"]:
-
-                        if constraint["operator"] is not None:
-                            purposerefinements["and"].append(
-                                {
-                                    "leftOperand": constraint["type"].split("#")[
-                                        -1
-                                    ],  # Extract the constraint type
-                                    "operator": constraint["operator"],
-                                    "rightOperand": constraint["value"],
-                                }
-                            )
-
-                    odrl_jsonld["constraint"].append(purposerefinements)
-                else:
-                    purpose = data["purpose"]
-                    odrl_jsonld["constraint"].append(
-                        {
-                            "leftOperand": "purpose",
-                            "operator": "http://www.w3.org/ns/odrl/2/eq",
-                            "rightOperand": purpose,
-                        }
-                    )
+        # PURPOSE AS TOP-LEVEL FIELD (not a constraint)
+        purpose = data.get("purpose")
+        purpose_refinements = data.get("purposerefinements", []) or []
+        if purpose is not None:
+            if len(purpose_refinements) > 0:
+                purpose_obj = {"source": purpose, "refinement": []}
+                for pr in purpose_refinements:
+                    if pr.get("operator") is not None:
+                        purpose_obj["refinement"].append({
+                            "leftOperand": pr.get("type", "").split("#")[-1],
+                            "operator": pr["operator"],
+                            "rightOperand": pr.get("value"),
+                        })
+                odrl_jsonld["purpose"] = purpose_obj
             else:
-                ruleType = "rule"
-                odrl_jsonld = {
-                    "action": data["action"],  # Extract the action type
-                    "assignee": data["actor"],
-                    "constraint": [],
-                }
-            if "query" in data:
-                if data["query"] is not '':
-                    odrl_jsonld["constraint"].append(
-                        {
-                            "leftOperand": "ex:query",
-                            "operator": "http://www.w3.org/ns/odrl/2/eq",
-                            "rightOperand": data["query"],
-                        }
-                    )
-            for constraint in data["constraints"]:
-                if constraint["operator"] is not None:
-                    odrl_jsonld["constraint"].append(
-                        {
-                            "leftOperand": constraint["type"].split("#")[
-                                -1
-                            ],  # Extract the constraint type
-                            "operator": constraint["operator"],
-                            "rightOperand": constraint["value"],
-                        }
-                    )
-            for constraint in data["actorrefinements"]:
-                if constraint["operator"] is not None:
-                    print(constraint)
-                    print(odrl_jsonld)
-                    print(odrl_jsonld["assignee"]["refinement"])
-                    print(constraint["type"])
-                    print(constraint["operator"])
-                    print(constraint["value"])
-                    odrl_jsonld["assignee"]["refinement"].append(
-                        {
-                            "leftOperand": constraint["type"].split("#")[
-                                -1
-                            ],  # Extract the constraint type
-                            "operator": constraint["operator"],
-                            "rightOperand": constraint["value"],
-                        }
-                    )
-            for constraint in data["actionrefinements"]:
-                if constraint["operator"] is not None:
-                    odrl_jsonld["action"]["refinement"].append(
-                        {
-                            "leftOperand": constraint["type"].split("#")[
-                                -1
-                            ],  # Extract the constraint type
-                            "operator": constraint["operator"],
-                            "rightOperand": constraint["value"],
-                        }
-                    )
-            for constraint in data["targetrefinements"]:
-                if constraint["operator"] is not None:
-                    odrl_jsonld["target"]["refinement"].append(
-                        {
-                            "leftOperand": constraint["type"].split("#")[
-                                -1
-                            ],  # Extract the constraint type
-                            "operator": constraint["operator"],
-                            "rightOperand": constraint["value"],
-                        }
-                    )
-            policy[ruleType].append(odrl_jsonld)
+                odrl_jsonld["purpose"] = purpose
+
+        # Optional query constraint
+        if "query" in data:
+            if data["query"] != '':
+                odrl_jsonld["constraint"].append({
+                    "leftOperand": "ex:query",
+                    "operator": "http://www.w3.org/ns/odrl/2/eq",
+                    "rightOperand": data["query"],
+                })
+
+        # Generic constraints (non-purpose)
+        for constraint in data.get("constraints", []) or []:
+            if constraint.get("operator") is not None:
+                odrl_jsonld["constraint"].append({
+                    "leftOperand": constraint.get("type", "").split("#")[-1],
+                    "operator": constraint["operator"],
+                    "rightOperand": constraint.get("value"),
+                })
+
+        # Actor refinements
+        for constraint in actor_refinements:
+            if isinstance(actor, dict) and "refinement" in actor and constraint.get("operator") is not None:
+                actor["refinement"].append({
+                    "leftOperand": constraint.get("type", "").split("#")[-1],
+                    "operator": constraint["operator"],
+                    "rightOperand": constraint.get("value"),
+                })
+
+        # Action refinements
+        for constraint in action_refinements:
+            if isinstance(action, dict) and "refinement" in action and constraint.get("operator") is not None:
+                action["refinement"].append({
+                    "leftOperand": constraint.get("type", "").split("#")[-1],
+                    "operator": constraint["operator"],
+                    "rightOperand": constraint.get("value"),
+                })
+
+        # Target refinements
+        for constraint in target_refinements:
+            if isinstance(target, dict) and "refinement" in target and constraint.get("operator") is not None:
+                target["refinement"].append({
+                    "leftOperand": constraint.get("type", "").split("#")[-1],
+                    "operator": constraint["operator"],
+                    "rightOperand": constraint.get("value"),
+                })
+
+        # Append to the proper rule collection
+        policy[ruleType].append(odrl_jsonld)
+
+    # Remove empty collections
     if len(policy["permission"]) == 0:
         del policy["permission"]
     if len(policy["prohibition"]) == 0:
@@ -417,6 +396,7 @@ def convert_list_to_odrl_jsonld_no_user(data_list):
         del policy["duty"]
     if len(policy["rule"]) == 0:
         del policy["rule"]
+
     return policy
 
 
@@ -431,6 +411,7 @@ if __name__ == "__main__":
             odrl_jsonld format: policy_6_BIOSKIN_2025-09-22_13-17-07_new_odrl_jsonld_format.json
         
     """
+
     # read a policy file
     p = Path("./example_policies/policy_6_BIOSKIN_2025-09-22_13-17-07.json")
     with p.open(encoding="utf-8") as f:
