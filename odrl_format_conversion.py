@@ -422,30 +422,37 @@ def convert_list_to_odrl_jsonld_no_user(data_list):
 
 if __name__ == "__main__":
 
-
+    """
+        cactus policy format --> validation check --> custom format --> convert to odrl_jsonld
+        for example in example_policies:
+        
+            Cactus policy format: policy_6_BIOSKIN_2025-09-22_13-17-07.json
+            custom format: policy_6_BIOSKIN_2025-09-22_13-17-07_custom_format.json
+            odrl_jsonld format: policy_6_BIOSKIN_2025-09-22_13-17-07_new_odrl_jsonld_format.json
+        
+    """
     # read a policy file
     p = Path("./example_policies/policy_6_BIOSKIN_2025-09-22_13-17-07.json")
     with p.open(encoding="utf-8") as f:
-        data = json.load(f)
+        cactus_format = json.load(f)
 
     # ODRL validation check
-    validate.generate_ODRL_diagnostic_report(data)
+    validate.generate_ODRL_diagnostic_report(cactus_format)
 
     # format conversion
-    convert_odrl_output = custom_convert_odrl_policy(data) #(see https://colab.research.google.com/drive/1bLIqDCpadolC1dfyC4z9p9HPtnEvrqSx#scrollTo=GqYKvyFkuqUa)
+    custom_format = custom_convert_odrl_policy(cactus_format) #(see https://colab.research.google.com/drive/1bLIqDCpadolC1dfyC4z9p9HPtnEvrqSx#scrollTo=GqYKvyFkuqUa)
 
-    # save
-    with open("./example_policies/policy_6_BIOSKIN_2025-09-22_13-17-07_converted.json", "w", encoding="utf-8") as f:
-        json.dump(convert_odrl_output, f, ensure_ascii=False, indent=2)
+    # # save
+    with open("./example_policies/policy_6_BIOSKIN_2025-09-22_13-17-07_custom_format.json", "w", encoding="utf-8") as f:
+        json.dump(custom_format, f, ensure_ascii=False, indent=2)
 
     # odrl parse, after that, new_odrl_format can be accepted by contract-service
-    filtered_data = filter_dicts_with_none_values(convert_odrl_output)
+    filtered_data = filter_dicts_with_none_values(custom_format)
     new_odrl_format = convert_list_to_odrl_jsonld_no_user(filtered_data)
 
 
-
-    # save
-    with open("./example_policies/policy_6_BIOSKIN_2025-09-22_13-17-07_new_odrl_format.json", "w", encoding="utf-8") as f:
+    # # save
+    with open("./example_policies/policy_6_BIOSKIN_2025-09-22_13-17-07_new_odrl_jsonld_format.json", "w", encoding="utf-8") as f:
         json.dump(new_odrl_format, f, ensure_ascii=False, indent=2)
 
 

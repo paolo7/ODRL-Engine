@@ -2,18 +2,62 @@
   {
     "rule": "http://www.w3.org/ns/odrl/2/Permission",
     "actor": "https://www.cactusweb.gr/vocab/Cactus_Account_Manager",
-    "action": "https://www.cactusweb.gr/vocab/Customer_Analysis",
+    "action": "http://www.w3.org/ns/odrl/2/use",
     "target": "https://www.cactusweb.gr/vocab/id/DATASET_BIOSKIN_59454A19",
     "purpose": "",
     "query": "",
     "constraints": [
       {
         "type": "http://www.w3.org/ns/odrl/2/purpose",
+        "operator": "http://www.w3.org/ns/odrl/2/isAnyOf",
+        "value": [
+          "http://example.org/resource/8ed7485e-173f-4e98-af14-2b506003f09d"
+        ]
+      },
+      {
+        "type": "http://www.w3.org/ns/odrl/2/dateTime",
+        "operator": "http://www.w3.org/ns/odrl/2/lteq",
+        "value": [
+          "2026-03-22"
+        ]
+      },
+      {
+        "type": "http://www.w3.org/ns/odrl/2/purpose",
         "operator": "http://www.w3.org/ns/odrl/2/neq",
         "value": [
           "https://www.cactusweb.gr/vocab/Personal_Info_Identification"
         ]
-      },
+      }
+    ],
+    "actorrefinements": [
+      {
+        "type": "http://xmlns.com/foaf/0.1/name",
+        "operator": "http://www.w3.org/ns/odrl/2/isAnyOf",
+        "value": [
+          "Δημοσθένης Βαρδουνιώτης"
+        ]
+      }
+    ],
+    "actionrefinements": [],
+    "targetrefinements": [
+      {
+        "type": "https://www.cactusweb.gr/vocab/part",
+        "operator": "http://www.w3.org/ns/odrl/2/eq",
+        "value": [
+          "Report"
+        ]
+      }
+    ],
+    "purposerefinements": []
+  },
+  {
+    "rule": "http://www.w3.org/ns/odrl/2/Permission",
+    "actor": "https://www.cactusweb.gr/vocab/Cactus_Account_Manager",
+    "action": "https://www.cactusweb.gr/vocab/Customer_Analysis",
+    "target": "https://www.cactusweb.gr/vocab/id/DATASET_BIOSKIN_59454A19",
+    "purpose": "",
+    "query": "",
+    "constraints": [
       {
         "type": "http://www.w3.org/ns/odrl/2/purpose",
         "operator": "http://www.w3.org/ns/odrl/2/isAnyOf",
@@ -27,6 +71,13 @@
         "value": [
           "2025-12-22"
         ]
+      },
+      {
+        "type": "http://www.w3.org/ns/odrl/2/purpose",
+        "operator": "http://www.w3.org/ns/odrl/2/neq",
+        "value": [
+          "https://www.cactusweb.gr/vocab/Personal_Info_Identification"
+        ]
       }
     ],
     "actorrefinements": [
@@ -38,6 +89,49 @@
         ]
       }
     ],
+    "actionrefinements": [],
+    "targetrefinements": [
+      {
+        "type": "https://www.cactusweb.gr/vocab/part",
+        "operator": "http://www.w3.org/ns/odrl/2/eq",
+        "value": [
+          "Analytics Data"
+        ]
+      }
+    ],
+    "purposerefinements": []
+  },
+  {
+    "rule": "http://www.w3.org/ns/odrl/2/Permission",
+    "actor": "https://www.cactusweb.gr/vocab/Cactus",
+    "action": "https://www.cactusweb.gr/vocab/LLM_Processing",
+    "target": "https://www.cactusweb.gr/vocab/id/DATASET_BIOSKIN_59454A19",
+    "purpose": "",
+    "query": "",
+    "constraints": [
+      {
+        "type": "http://www.w3.org/ns/odrl/2/dateTime",
+        "operator": "http://www.w3.org/ns/odrl/2/lteq",
+        "value": [
+          "2025-12-22"
+        ]
+      },
+      {
+        "type": "http://www.w3.org/ns/odrl/2/purpose",
+        "operator": "http://www.w3.org/ns/odrl/2/neq",
+        "value": [
+          "https://www.cactusweb.gr/vocab/Personal_Info_Identification"
+        ]
+      },
+      {
+        "type": "http://www.w3.org/ns/odrl/2/purpose",
+        "operator": "http://www.w3.org/ns/odrl/2/isAnyOf",
+        "value": [
+          "http://example.org/resource/1d38d921-7ae2-4eb7-99c9-1821ca405f4f"
+        ]
+      }
+    ],
+    "actorrefinements": [],
     "actionrefinements": [],
     "targetrefinements": [
       {
@@ -103,149 +197,12 @@
   },
   {
     "rule": "http://www.w3.org/ns/odrl/2/Permission",
-    "actor": "https://www.cactusweb.gr/vocab/Cactus",
-    "action": "https://www.cactusweb.gr/vocab/LLM_Processing",
-    "target": "https://www.cactusweb.gr/vocab/id/DATASET_BIOSKIN_59454A19",
-    "purpose": "",
-    "query": "",
-    "constraints": [
-      {
-        "type": "http://www.w3.org/ns/odrl/2/purpose",
-        "operator": "http://www.w3.org/ns/odrl/2/neq",
-        "value": [
-          "https://www.cactusweb.gr/vocab/Personal_Info_Identification"
-        ]
-      },
-      {
-        "type": "http://www.w3.org/ns/odrl/2/purpose",
-        "operator": "http://www.w3.org/ns/odrl/2/isAnyOf",
-        "value": [
-          "http://example.org/resource/636a4e75-0070-40cd-9fe2-631e30eea515"
-        ]
-      },
-      {
-        "type": "http://www.w3.org/ns/odrl/2/dateTime",
-        "operator": "http://www.w3.org/ns/odrl/2/lteq",
-        "value": [
-          "2025-12-22"
-        ]
-      }
-    ],
-    "actorrefinements": [],
-    "actionrefinements": [],
-    "targetrefinements": [
-      {
-        "type": "https://www.cactusweb.gr/vocab/part",
-        "operator": "http://www.w3.org/ns/odrl/2/eq",
-        "value": [
-          "Analytics Data"
-        ]
-      }
-    ],
-    "purposerefinements": []
-  },
-  {
-    "rule": "http://www.w3.org/ns/odrl/2/Permission",
-    "actor": "https://www.cactusweb.gr/vocab/Cactus_Account_Manager",
-    "action": "http://www.w3.org/ns/odrl/2/use",
-    "target": "https://www.cactusweb.gr/vocab/id/DATASET_BIOSKIN_59454A19",
-    "purpose": "",
-    "query": "",
-    "constraints": [
-      {
-        "type": "http://www.w3.org/ns/odrl/2/purpose",
-        "operator": "http://www.w3.org/ns/odrl/2/neq",
-        "value": [
-          "https://www.cactusweb.gr/vocab/Personal_Info_Identification"
-        ]
-      },
-      {
-        "type": "http://www.w3.org/ns/odrl/2/dateTime",
-        "operator": "http://www.w3.org/ns/odrl/2/lteq",
-        "value": [
-          "2026-03-22"
-        ]
-      },
-      {
-        "type": "http://www.w3.org/ns/odrl/2/purpose",
-        "operator": "http://www.w3.org/ns/odrl/2/isAnyOf",
-        "value": [
-          "http://example.org/resource/617fa9f9-0fbe-4339-bb84-0abd6246e107"
-        ]
-      }
-    ],
-    "actorrefinements": [
-      {
-        "type": "http://xmlns.com/foaf/0.1/name",
-        "operator": "http://www.w3.org/ns/odrl/2/isAnyOf",
-        "value": [
-          "Δημοσθένης Βαρδουνιώτης"
-        ]
-      }
-    ],
-    "actionrefinements": [],
-    "targetrefinements": [
-      {
-        "type": "https://www.cactusweb.gr/vocab/part",
-        "operator": "http://www.w3.org/ns/odrl/2/eq",
-        "value": [
-          "Report"
-        ]
-      }
-    ],
-    "purposerefinements": []
-  },
-  {
-    "rule": "http://www.w3.org/ns/odrl/2/Permission",
-    "actor": "https://www.cactusweb.gr/vocab/Cactus",
-    "action": "https://w3id.org/dpv/owl#Store",
-    "target": "https://www.cactusweb.gr/vocab/id/DATASET_BIOSKIN_59454A19",
-    "purpose": "",
-    "query": "",
-    "constraints": [
-      {
-        "type": "http://www.w3.org/ns/odrl/2/purpose",
-        "operator": "http://www.w3.org/ns/odrl/2/neq",
-        "value": [
-          "https://www.cactusweb.gr/vocab/Personal_Info_Identification"
-        ]
-      },
-      {
-        "type": "http://www.w3.org/ns/odrl/2/dateTime",
-        "operator": "http://www.w3.org/ns/odrl/2/lteq",
-        "value": [
-          "2025-12-22"
-        ]
-      }
-    ],
-    "actorrefinements": [],
-    "actionrefinements": [],
-    "targetrefinements": [
-      {
-        "type": "https://www.cactusweb.gr/vocab/part",
-        "operator": "http://www.w3.org/ns/odrl/2/eq",
-        "value": [
-          "Analytics Data"
-        ]
-      }
-    ],
-    "purposerefinements": []
-  },
-  {
-    "rule": "http://www.w3.org/ns/odrl/2/Permission",
     "actor": "https://www.cactusweb.gr/vocab/Cactus_Account_Manager",
     "action": "https://www.cactusweb.gr/vocab/Marketing_Analysis",
     "target": "https://www.cactusweb.gr/vocab/id/DATASET_BIOSKIN_59454A19",
     "purpose": "",
     "query": "",
     "constraints": [
-      {
-        "type": "http://www.w3.org/ns/odrl/2/purpose",
-        "operator": "http://www.w3.org/ns/odrl/2/neq",
-        "value": [
-          "https://www.cactusweb.gr/vocab/Personal_Info_Identification"
-        ]
-      },
       {
         "type": "http://www.w3.org/ns/odrl/2/dateTime",
         "operator": "http://www.w3.org/ns/odrl/2/lteq",
@@ -259,6 +216,13 @@
         "value": [
           "https://www.cactusweb.gr/vocab/Audit_Provision"
         ]
+      },
+      {
+        "type": "http://www.w3.org/ns/odrl/2/purpose",
+        "operator": "http://www.w3.org/ns/odrl/2/neq",
+        "value": [
+          "https://www.cactusweb.gr/vocab/Personal_Info_Identification"
+        ]
       }
     ],
     "actorrefinements": [
@@ -313,6 +277,42 @@
         "operator": "http://www.w3.org/ns/odrl/2/eq",
         "value": [
           "Report"
+        ]
+      }
+    ],
+    "purposerefinements": []
+  },
+  {
+    "rule": "http://www.w3.org/ns/odrl/2/Permission",
+    "actor": "https://www.cactusweb.gr/vocab/Cactus",
+    "action": "https://w3id.org/dpv/owl#Store",
+    "target": "https://www.cactusweb.gr/vocab/id/DATASET_BIOSKIN_59454A19",
+    "purpose": "",
+    "query": "",
+    "constraints": [
+      {
+        "type": "http://www.w3.org/ns/odrl/2/dateTime",
+        "operator": "http://www.w3.org/ns/odrl/2/lteq",
+        "value": [
+          "2025-12-22"
+        ]
+      },
+      {
+        "type": "http://www.w3.org/ns/odrl/2/purpose",
+        "operator": "http://www.w3.org/ns/odrl/2/neq",
+        "value": [
+          "https://www.cactusweb.gr/vocab/Personal_Info_Identification"
+        ]
+      }
+    ],
+    "actorrefinements": [],
+    "actionrefinements": [],
+    "targetrefinements": [
+      {
+        "type": "https://www.cactusweb.gr/vocab/part",
+        "operator": "http://www.w3.org/ns/odrl/2/eq",
+        "value": [
+          "Analytics Data"
         ]
       }
     ],
@@ -327,17 +327,17 @@
     "query": "",
     "constraints": [
       {
-        "type": "http://www.w3.org/ns/odrl/2/dateTime",
-        "operator": "http://www.w3.org/ns/odrl/2/lteq",
-        "value": [
-          "2025-12-22"
-        ]
-      },
-      {
         "type": "http://www.w3.org/ns/odrl/2/purpose",
         "operator": "http://www.w3.org/ns/odrl/2/neq",
         "value": [
           "https://www.cactusweb.gr/vocab/Personal_Info_Identification"
+        ]
+      },
+      {
+        "type": "http://www.w3.org/ns/odrl/2/dateTime",
+        "operator": "http://www.w3.org/ns/odrl/2/lteq",
+        "value": [
+          "2025-12-22"
         ]
       },
       {
