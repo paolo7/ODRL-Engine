@@ -252,7 +252,7 @@ def filter_dicts_with_none_values(data):
         return data
 
 
-def convert_list_to_odrl_jsonld_no_user(data_list):
+def oder_reformat_convert_list_to_odrl_jsonld(data_list):
     # data_list = recursive_replace (data_list,"https://w3id.org/dpv/dpv-owl#","https://w3id.org/dpv#")
     # data_list = recursive_replace (data_list,"http://www.w3.org/ns/odrl/2/","")
 
@@ -429,7 +429,7 @@ if __name__ == "__main__":
 
     # odrl parse, after that, new_odrl_format can be accepted by contract-service
     filtered_data = filter_dicts_with_none_values(custom_format)
-    new_odrl_format = convert_list_to_odrl_jsonld_no_user(filtered_data)
+    new_odrl_format = oder_reformat_convert_list_to_odrl_jsonld(filtered_data)
 
 
     # # save
