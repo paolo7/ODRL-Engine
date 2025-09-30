@@ -22,8 +22,8 @@ def parse_string_to_graph(data: str) -> tuple[Graph, str] | None:
     """
     formats = [
         "json-ld",
-        "turtle",
         "xml",  # RDF/XML
+        "turtle",
         "nt",
         "trig",
         "n3",
