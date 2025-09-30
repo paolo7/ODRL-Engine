@@ -1,16 +1,18 @@
 from rdflib import Graph
+from typing import Union
 import json
 import pyshacl
 import os
 
-def parse_string_to_graph(data: str) -> tuple[Graph, str] | None:
+def parse_string_to_graph(data: Union[str, bytes]) -> tuple[Graph, str] | None:
     """
-    Detect the RDF serialization of a given string and return both the parsed graph and the format.
+    Detect the RDF serialization of a given string or bytes and return both 
+    the parsed graph and the format.
 
     Parameters
     ----------
-    data : str
-        The RDF content as a string.
+    data : str | bytes
+        The RDF content as a string or raw bytes.
 
     Returns
     -------
@@ -22,7 +24,7 @@ def parse_string_to_graph(data: str) -> tuple[Graph, str] | None:
     """
     formats = [
         "json-ld",
-        "xml",  # RDF/XML
+        "xml",   # RDF/XML
         "turtle",
         "nt",
         "trig",
@@ -30,10 +32,16 @@ def parse_string_to_graph(data: str) -> tuple[Graph, str] | None:
         "nquads",
     ]
 
+    # Normalize input: ensure we always pass bytes to rdflib
+    if isinstance(data, str):
+        data_bytes = data.encode("utf-8")
+    else:
+        data_bytes = data
+
     for fmt in formats:
         g = Graph()
         try:
-            g.parse(data=data, format=fmt)
+            g.parse(data=data_bytes, format=fmt)
             return g, fmt
         except Exception:
             continue
