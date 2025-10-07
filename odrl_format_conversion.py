@@ -13,6 +13,8 @@ ODRL = Namespace("http://www.w3.org/ns/odrl/2/")
 DPV = Namespace("https://w3id.org/dpv/dpv-owl#")
 EX = Namespace("http://example.org/resource/")
 
+
+
 def normalize_odrl_graph(g):
     properties_to_wrap = [ODRL.action, ODRL.assignee, ODRL.assigner, ODRL.target]
 
@@ -22,40 +24,46 @@ def normalize_odrl_graph(g):
     # Step 1: Wrap direct IRIs into blank nodes with odrl:source
     for s, p, o in g:
         if p in properties_to_wrap and isinstance(o, URIRef):
-            # Create new blank node
             bn = BNode()
             triples_to_add.append((s, p, bn))
             triples_to_add.append((bn, ODRL.source, o))
             triples_to_remove.append((s, p, o))
 
-    for triple in triples_to_remove:
-        g.remove(triple)
-    for triple in triples_to_add:
-        g.add(triple)
+    for t in triples_to_remove:
+        g.remove(t)
+    for t in triples_to_add:
+        g.add(t)
 
-    # Step 2: Replace all blank nodes with fresh IRIs
+    # Step 2: Replace all blank nodes with fresh IRIs,
+    # except if they are part of RDF lists.
     bnode_to_iri = {}
 
-    for s, p, o in list(g):
-        new_s = bnode_to_iri.get(s, None)
-        new_o = bnode_to_iri.get(o, None)
+    # Detect all blank nodes used in RDF collections
+    list_bnodes = set()
+    for s, p, o in g.triples((None, RDF.first, None)):
+        list_bnodes.add(s)
+    for s, p, o in g.triples((None, RDF.rest, None)):
+        list_bnodes.add(s)
+        if isinstance(o, BNode):
+            list_bnodes.add(o)
 
-        # Subject replacement
-        if isinstance(s, BNode):
+    for s, p, o in list(g):
+        new_s = bnode_to_iri.get(s)
+        new_o = bnode_to_iri.get(o)
+
+        if isinstance(s, BNode) and s not in list_bnodes:
             if s not in bnode_to_iri:
                 bnode_to_iri[s] = EX[str(uuid.uuid4())]
             new_s = bnode_to_iri[s]
 
-        # Object replacement
-        if isinstance(o, BNode):
+        if isinstance(o, BNode) and o not in list_bnodes:
             if o not in bnode_to_iri:
                 bnode_to_iri[o] = EX[str(uuid.uuid4())]
             new_o = bnode_to_iri[o]
 
-        # Only modify if replacements happened
         if new_s or new_o:
             g.remove((s, p, o))
-            g.add((new_s if new_s else s, p, new_o if new_o else o))
+            g.add((new_s or s, p, new_o or o))
 
     return g
 
@@ -139,19 +147,32 @@ def process_rule(g, rule_uri, rule_type):
 
     # Helper to group refinements or constraints by (leftOperand, operator)
     def group_constraints_or_refinements(query):
-        result = defaultdict(lambda: {"type": None, "operator": None, "value": []})
+        result = []
+
         qres = g.query(query, initNs={'odrl': ODRL, 'dpv': DPV, 'rdf': RDF})
 
         for row in qres:
             left = str(row.left)
             op = str(row.op)
-            right = row.right.toPython() if hasattr(row.right, 'toPython') else str(getattr(row.right, 'toPython', lambda: row.right)())
-            key = (left, op)
-            result[key]["type"] = left
-            result[key]["operator"] = op
-            result[key]["value"].append(str(getattr(row.right, 'toPython', lambda: row.right)()))
+            right = row.right
 
-        return list(result.values())
+            # If right is a list head (rdf:first / rdf:rest)
+            if isinstance(right, BNode) and (right, RDF.first, None) in g:
+                collection = Collection(g, right)
+                for item in collection:
+                    result.append({
+                        "type": left,
+                        "operator": op,
+                        "value": [str(item.toPython() if hasattr(item, 'toPython') else item)]
+                    })
+            else:
+                result.append({
+                    "type": left,
+                    "operator": op,
+                    "value": [str(right.toPython() if hasattr(right, 'toPython') else right)]
+                })
+
+        return result
 
     # Get constraints (grouped)
     constraints_query = """
@@ -213,7 +234,6 @@ def process_rule(g, rule_uri, rule_type):
         "targetrefinements": target_refinements,
         "purposerefinements": []
     }
-
 
 def has_none_value_on_first_level(d):
     """ Check if dictionary d has at least one None value on the first level """
@@ -424,7 +444,7 @@ if __name__ == "__main__":
     custom_format = custom_convert_odrl_policy(cactus_format) #(see https://colab.research.google.com/drive/1bLIqDCpadolC1dfyC4z9p9HPtnEvrqSx#scrollTo=GqYKvyFkuqUa)
 
     # # save
-    with open("./example_policies/policy_6_BIOSKIN_2025-09-22_13-17-07_custom_format.json", "w", encoding="utf-8") as f:
+    with open("example_policies/policy_6_BIOSKIN_2025-09-22_13-17-07_custom_format.json", "w", encoding="utf-8") as f:
         json.dump(custom_format, f, ensure_ascii=False, indent=2)
 
     # odrl parse, after that, new_odrl_format can be accepted by contract-service
@@ -433,7 +453,7 @@ if __name__ == "__main__":
 
 
     # # save
-    with open("./example_policies/policy_6_BIOSKIN_2025-09-22_13-17-07_new_odrl_jsonld_format.json", "w", encoding="utf-8") as f:
+    with open("example_policies/policy_6_BIOSKIN_2025-09-22_13-17-07_new_odrl_jsonld_format.json", "w", encoding="utf-8") as f:
         json.dump(new_odrl_format, f, ensure_ascii=False, indent=2)
 
 
