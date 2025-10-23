@@ -353,13 +353,14 @@ def convert_list_to_odrl_jsonld_no_user(data_list):
                     odrl_jsonld["constraint"].append(purposerefinements)
                 else:
                     purpose = data["purpose"]
-                    odrl_jsonld["constraint"].append(
-                        {
-                            "leftOperand": "purpose",
-                            "operator": "http://www.w3.org/ns/odrl/2/eq",
-                            "rightOperand": purpose,
-                        }
-                    )
+                    if purpose:
+                      odrl_jsonld["constraint"].append(
+                          {
+                              "leftOperand": "purpose",
+                              "operator": "http://www.w3.org/ns/odrl/2/eq",
+                              "rightOperand": purpose,
+                          }
+                      )
             else:
                 ruleType = "rule"
                 odrl_jsonld = {
