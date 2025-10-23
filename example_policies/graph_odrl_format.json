@@ -1,0 +1,27 @@
+{
+  "permission": [
+    {
+      "action": "http://www.w3.org/ns/odrl/2/aggregate",
+      "assignee": "https://w3id.org/dpv/owl#DataProcessor",
+      "target": "https://upcast-project.eu/dataset/189aa4e7-e443-4480-99aa-89542e7b40e5",
+      "constraint": [
+        {
+          "leftOperand": "http://www.w3.org/ns/odrl/2/purpose",
+          "operator": "http://www.w3.org/ns/odrl/2/eq",
+          "rightOperand": [
+            "https://w3id.org/dpv/owl#DeliveryOfGoods"
+          ]
+        }
+      ]
+    }
+  ],
+  "uid": "http://example.org/policy-4eafe23f-96e4-4552-ac0b-b55da57ef5fc",
+  "@context": [
+    "http://www.w3.org/ns/odrl.jsonld",
+    {
+      "dcat": "http://www.w3.org/ns/dcat#",
+      "dpv": "https://w3id.org/dpv/owl#"
+    }
+  ],
+  "@type": "Policy"
+}

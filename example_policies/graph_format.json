@@ -1,0 +1,64 @@
+{
+    "@graph": [
+      {
+        "@id": "_:b0",
+        "odrl:source": "https://upcast-project.eu/dataset/189aa4e7-e443-4480-99aa-89542e7b40e5",
+        "@type": "odrl:Asset"
+      },
+      {
+        "@id": "_:b1",
+        "odrl:leftOperand": {
+          "@id": "odrl:purpose"
+        },
+        "odrl:operator": {
+          "@id": "odrl:eq"
+        },
+        "odrl:rightOperandReference": {
+          "@value": "https://w3id.org/dpv/owl#DeliveryOfGoods",
+          "@type": "xsd:anyURI"
+        }
+      },
+      {
+        "@id": "https://upcast-project.eu/policy/67c6a79c-f6d4-48af-947f-a32932201533",
+        "odrl:permission": {
+          "@id": "http://upcast-project.eu/policy/permission/e7f8203c-ded8-42d8-ae4b-eefc5ad49c5c"
+        },
+        "@type": "odrl:Request"
+      },
+      {
+        "@id": "http://upcast-project.eu/policy/permission/e7f8203c-ded8-42d8-ae4b-eefc5ad49c5c",
+        "odrl:assignee": {
+          "@id": "_:b2"
+        },
+        "odrl:action": {
+          "@id": "_:b3"
+        },
+        "odrl:target": {
+          "@id": "_:b0"
+        },
+        "odrl:constraint": {
+          "@id": "_:b1"
+        }
+      },
+      {
+        "@id": "_:b2",
+        "odrl:source": {
+          "@id": "https://w3id.org/dpv/owl#DataProcessor"
+        },
+        "@type": "odrl:Party"
+      },
+      {
+        "@id": "_:b3",
+        "rdf:value": {
+          "@id": "odrl:aggregate"
+        }
+      }
+    ],
+    "@context": {
+      "xsd": "http://www.w3.org/2001/XMLSchema#",
+      "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+      "odrl": "http://www.w3.org/ns/odrl/2/",
+      "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+      "owl": "http://www.w3.org/2002/07/owl#"
+    }
+}
