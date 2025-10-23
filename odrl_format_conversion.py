@@ -185,6 +185,19 @@ def process_rule(g, rule_uri, rule_type):
     """ % rule_uri
     constraints = group_constraints_or_refinements(constraints_query)
 
+    # Extract purpose constraint if it is the only constraint
+    purpose = ""
+    if len(constraints) == 1:
+        constraint = constraints[0]
+        if (
+            constraint.get("type") == str(ODRL.purpose)
+            and constraint.get("operator") == str(ODRL.eq)
+        ):
+            values = constraint.get("value") or []
+            if values:
+                purpose = values[0]
+                constraints = []
+
     # Get actor refinements (grouped)
     actor_ref_query = """
     SELECT ?left ?op ?right WHERE {
@@ -226,7 +239,7 @@ def process_rule(g, rule_uri, rule_type):
         "actor": actor,
         "action": action,
         "target": target,
-        "purpose": "",  # Placeholder
+        "purpose": purpose,
         "query": "",    # Placeholder
         "constraints": constraints,
         "actorrefinements": actor_refinements,
