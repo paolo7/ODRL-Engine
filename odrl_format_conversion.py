@@ -180,7 +180,7 @@ def process_rule(g, rule_uri, rule_type):
       <%s> odrl:constraint ?c .
       ?c odrl:leftOperand ?left ;
          odrl:operator ?op ;
-         odrl:rightOperand ?right .
+         odrl:rightOperand | odrl:rightOperandReference ?right .
     }
     """ % rule_uri
     constraints = group_constraints_or_refinements(constraints_query)
@@ -192,7 +192,7 @@ def process_rule(g, rule_uri, rule_type):
       ?actorNode odrl:refinement ?ref .
       ?ref odrl:leftOperand ?left ;
            odrl:operator ?op ;
-           odrl:rightOperand ?right .
+           odrl:rightOperand | odrl:rightOperandReference ?right .
     }
     """ % rule_uri
     actor_refinements = group_constraints_or_refinements(actor_ref_query)
@@ -204,7 +204,7 @@ def process_rule(g, rule_uri, rule_type):
       ?actionNode odrl:refinement ?ref .
       ?ref odrl:leftOperand ?left ;
            odrl:operator ?op ;
-           odrl:rightOperand ?right .
+           odrl:rightOperand | odrl:rightOperandReference ?right .
     }
     """ % rule_uri
     action_refinements = group_constraints_or_refinements(action_ref_query)
@@ -216,7 +216,7 @@ def process_rule(g, rule_uri, rule_type):
       ?targetNode odrl:refinement ?ref .
       ?ref odrl:leftOperand ?left ;
            odrl:operator ?op ;
-           odrl:rightOperand ?right .
+           odrl:rightOperand | odrl:rightOperandReference ?right .
     }
     """ % rule_uri
     target_refinements = group_constraints_or_refinements(target_ref_query)
