@@ -57,6 +57,7 @@ def upload_file():
 def show_interface():
     import validate
     from colab_functions import visualise
+    from colab_functions import graph_equality_comparison
     # --- DROPDOWN MENU ---
     dropdown = widgets.Dropdown(
         options=[
@@ -64,6 +65,7 @@ def show_interface():
             ('File Info', 'fileinfo'),
             ('Visualise Policy', 'visualise'),
             ('Full ODRL Validation', 'validate'),
+            ('Compare two graph for triple equality', 'comparetriplebytriple'),
         ],
         description='Select:',
     )
@@ -90,7 +92,8 @@ def show_interface():
                     validate.generate_ODRL_diagnostic_report(UploadState.filename)
                 else:
                     print("⚠️ No file uploaded yet.")
-
+            elif selected == "comparetriplebytriple":
+                graph_equality_comparison.compare_rdf_files()
     run_button.on_click(on_run_clicked)
 
     # --- DISPLAY EVERYTHING ---
