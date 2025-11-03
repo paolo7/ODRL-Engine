@@ -32,11 +32,9 @@ def setup():
     clear_output(wait=True)
     print("✅ ODRL-Engine setup complete and all imports successful!")
 
-if __name__ == "__main__":
-    setup()
-
-filename = None
-content = None
+class UploadState:
+    filename = None
+    content = None
 
 def upload_file():
     uploaded = files.upload()
@@ -44,5 +42,9 @@ def upload_file():
     if len(uploaded) != 1:
         raise ValueError("Please upload exactly one file.")
     # Extract filename and content
-    filename = list(uploaded.keys())[0]
-    content = uploaded[filename]
+    UploadState.filename = list(uploaded.keys())[0]
+    UploadState.content = uploaded[UploadState.filename]
+    print(f"✅ Uploaded: {UploadState.filename}")
+
+if __name__ == "__main__":
+    setup()
