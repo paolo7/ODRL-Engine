@@ -81,6 +81,7 @@ def get_label(node):
     return str(node)
 
 def build_html_tree(node, visited=None, level=1, parent_predicate=None):
+    global g, format
     if visited is None:
         visited = set()
     visited.add(node)
@@ -158,6 +159,7 @@ def build_html_tree(node, visited=None, level=1, parent_predicate=None):
 
 
 def explore_policies_html():
+    global g, format
     fn = setup_colab.UploadState.filename
     policy_content = setup_colab.UploadState.content.decode('utf-8')
     g, format = rdf_utils.parse_string_to_graph(policy_content)
