@@ -12,9 +12,10 @@ from rdflib import Graph, Namespace, RDF, RDFS, SKOS
 from IPython.display import display, HTML
 from google.colab import files
 
-fn = setup_colab.UploadState.filename
-policy_content = setup_colab.UploadState.content.decode('utf-8')
-g, format = rdf_utils.parse_string_to_graph(policy_content)
+fn = None
+policy_content = None
+g = None
+format = None
 
 # --- Ontologies ---
 ODRL = rdflib.Namespace("http://www.w3.org/ns/odrl/2/")
@@ -156,6 +157,10 @@ def build_html_tree(node, visited=None, level=1, parent_predicate=None):
 
 
 def explore_policies_html():
+    fn = setup_colab.UploadState.filename
+    policy_content = setup_colab.UploadState.content.decode('utf-8')
+    g, format = rdf_utils.parse_string_to_graph(policy_content)
+
     policy_types = [ODRL.Policy, ODRL.Set, ODRL.Agreement, ODRL.Offer]
     policy_nodes = []
     for t in policy_types:
