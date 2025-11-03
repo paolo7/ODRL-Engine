@@ -4,7 +4,6 @@ import subprocess
 from google.colab import files
 import ipywidgets as widgets
 from IPython.display import display, clear_output
-import colab_functions.visualise
 
 def run_cmd(cmd):
     print(f"\n[RUNNING] {cmd}")
@@ -28,6 +27,7 @@ def setup():
     import validate
     import rdflib
     from rdflib.namespace import RDF, RDFS, SKOS
+    import colab_functions.visualise
     import ipywidgets
     from IPython.display import display, HTML, clear_output
 
