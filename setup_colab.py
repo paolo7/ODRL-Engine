@@ -4,7 +4,6 @@ import subprocess
 from google.colab import files
 import ipywidgets as widgets
 from IPython.display import display, clear_output
-import validate
 import colab_functions.visualise
 
 def run_cmd(cmd):
