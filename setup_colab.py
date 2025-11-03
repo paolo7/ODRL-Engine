@@ -26,7 +26,10 @@ def setup():
     from rdflib.namespace import RDF, RDFS, SKOS
     import ipywidgets
     from IPython.display import display, HTML, clear_output
-    print("✅ All imports successful!")
+
+    # if we reach this point, everything worked fine
+    clear_output(wait=True)
+    print("✅ ODRL-Engine setup complete and all imports successful!")
 
 if __name__ == "__main__":
     setup()
