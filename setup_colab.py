@@ -56,6 +56,7 @@ def upload_file():
     print(f"✅ Uploaded: {UploadState.filename}")
 
 def show_interface():
+    import validate
     # --- DROPDOWN MENU ---
     dropdown = widgets.Dropdown(
         options=[
