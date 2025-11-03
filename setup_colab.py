@@ -33,11 +33,11 @@ def setup():
     import validate
     import rdflib
     from rdflib.namespace import RDF, RDFS, SKOS
-    import colab_functions.visualise
+    global colab_functions
+    import colab_functions.visualise as colab_functions
     import ipywidgets
     from IPython.display import display, HTML, clear_output
 
-    # if we reach this point, everything worked fine
     print("✅ ODRL-Engine setup complete and all imports successful!")
     clear_output(wait=True)
 
