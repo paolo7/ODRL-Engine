@@ -81,17 +81,20 @@ def show_interface():
             if selected == "upload":
                 upload_file()
             elif selected == "visualise":
-                visualise.explore_policies_html()
+                if UploadState.filename and UploadState.content:
+                    visualise.explore_policies_html()
+                else:
+                    print("⚠️ No ODRL file uploaded yet.")
             elif selected == "fileinfo":
                 if UploadState.filename and UploadState.content:
                     print(f'User uploaded file "{UploadState.filename}" with length {len(UploadState.content)} bytes')
                 else:
-                    print("⚠️ No file uploaded yet.")
+                    print("⚠️ No ODRL file uploaded yet.")
             elif selected == "validate":
                 if UploadState.filename:
                     validate.generate_ODRL_diagnostic_report(UploadState.filename)
                 else:
-                    print("⚠️ No file uploaded yet.")
+                    print("⚠️ No ODRL file uploaded yet.")
             elif selected == "comparetriplebytriple":
                 graph_equality_comparison.compare_rdf_files()
     run_button.on_click(on_run_clicked)
