@@ -187,5 +187,3 @@ def explore_policies_html():
         '''
         display(HTML(top_box_html))
 
-# Display interactive HTML tree with colored levels
-explore_policies_html()
