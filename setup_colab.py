@@ -1,3 +1,9 @@
+#  !git clone https://github.com/paolo7/ODRL-Engine.git
+#  %cd ODRL-Engine
+#  from setup_colab import setup, show_interface
+#  setup()
+#  show_interface()
+
 import os
 import sys
 import subprocess
@@ -32,8 +38,8 @@ def setup():
     from IPython.display import display, HTML, clear_output
 
     # if we reach this point, everything worked fine
-    clear_output(wait=True)
     print("✅ ODRL-Engine setup complete and all imports successful!")
+    clear_output(wait=True)
 
 class UploadState:
     filename = None
