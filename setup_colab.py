@@ -34,7 +34,6 @@ def setup():
     import rdflib
     from rdflib.namespace import RDF, RDFS, SKOS
     global colab_functions
-    import colab_functions.visualise as colab_functions
     import ipywidgets
     from IPython.display import display, HTML, clear_output
 
@@ -57,6 +56,7 @@ def upload_file():
 
 def show_interface():
     import validate
+    from colab_functions import visualise
     # --- DROPDOWN MENU ---
     dropdown = widgets.Dropdown(
         options=[
@@ -79,7 +79,7 @@ def show_interface():
             if selected == "upload":
                 upload_file()
             elif selected == "visualise":
-                colab_functions.visualise.explore_policies_html()
+                visualise.explore_policies_html()
             elif selected == "fileinfo":
                 if UploadState.filename and UploadState.content:
                     print(f'User uploaded file "{UploadState.filename}" with length {len(UploadState.content)} bytes')
