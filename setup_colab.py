@@ -65,7 +65,7 @@ def show_interface():
             ('File Info', 'fileinfo'),
             ('Visualise Policy', 'visualise'),
             ('Full ODRL Validation', 'validate'),
-            ('Compare two graph for triple equality', 'comparetriplebytriple'),
+            ('Graph Diff', 'comparetriplebytriple'),
         ],
         description='Select:',
     )
