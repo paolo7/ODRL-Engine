@@ -8,6 +8,7 @@ if parent_folder not in sys.path:
 
 import rdf_utils
 import setup_colab
+import rdflib
 from rdflib import Graph, Namespace, RDF, RDFS, SKOS
 from IPython.display import display, HTML
 from google.colab import files
