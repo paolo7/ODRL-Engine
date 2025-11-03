@@ -2,6 +2,10 @@ import os
 import sys
 import subprocess
 from google.colab import files
+import ipywidgets as widgets
+from IPython.display import display, clear_output
+import validate
+import colab_functions.visualise
 
 def run_cmd(cmd):
     print(f"\n[RUNNING] {cmd}")
@@ -46,5 +50,46 @@ def upload_file():
     UploadState.content = uploaded[UploadState.filename]
     print(f"✅ Uploaded: {UploadState.filename}")
 
+def show_interface():
+    # --- DROPDOWN MENU ---
+    dropdown = widgets.Dropdown(
+        options=[
+            ('Upload ODRL File', 'upload'),
+            ('File Info', 'fileinfo'),
+            ('Visualise Policy', 'visualise'),
+            ('Full ODRL Validation', 'validate'),
+        ],
+        description='Select:',
+    )
+
+    # --- RUN BUTTON ---
+    run_button = widgets.Button(description="Run", button_style='success')
+    output_run = widgets.Output()
+
+    def on_run_clicked(b):
+        with output_run:
+            clear_output()
+            selected = dropdown.value
+            if selected == "upload":
+                upload_file()
+            elif selected == "visualise":
+                colab_functions.visualise.explore_policies_html()
+            elif selected == "fileinfo":
+                if UploadState.filename and UploadState.content:
+                    print(f'User uploaded file "{UploadState.filename}" with length {len(UploadState.content)} bytes')
+                else:
+                    print("⚠️ No file uploaded yet.")
+            elif selected == "validate":
+                if UploadState.filename:
+                    validate.generate_ODRL_diagnostic_report(UploadState.filename)
+                else:
+                    print("⚠️ No file uploaded yet.")
+
+    run_button.on_click(on_run_clicked)
+
+    # --- DISPLAY EVERYTHING ---
+    display(dropdown, run_button, output_run)
+
 if __name__ == "__main__":
     setup()
+    show_interface()
