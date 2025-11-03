@@ -1,6 +1,7 @@
 import os
 import sys
 import subprocess
+from google.colab import files
 
 def run_cmd(cmd):
     print(f"\n[RUNNING] {cmd}")
@@ -33,3 +34,15 @@ def setup():
 
 if __name__ == "__main__":
     setup()
+
+filename = None
+content = None
+
+def upload_file():
+    uploaded = files.upload()
+    # Enforce single file upload
+    if len(uploaded) != 1:
+        raise ValueError("Please upload exactly one file.")
+    # Extract filename and content
+    filename = list(uploaded.keys())[0]
+    content = uploaded[filename]
