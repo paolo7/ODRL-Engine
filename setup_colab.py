@@ -140,37 +140,45 @@ def show_interface():
                 download_button.disabled = True
                 download_button.layout.opacity = '0.5'
                 info_button = widgets.ToggleButton(description="INFO", value=False, button_style='warning')
-                info_textarea = widgets.Textarea(
-                    value=(
-                        "policy_number:\n  A) Number of policies to generate.\n"
-                        "  B) Determines how many distinct policies are created in the RDF graph.\n"
-                        "  C) Each policy will have its own set of rules and constraints but share the same sampled constants.\n\n"
-                        "p_rule_n:\n  A) Number of permission rules per policy.\n"
-                        "  B) Controls how many permission rules each policy contains.\n"
-                        "  C) Permissions specify allowed actions in the policy; higher values generate more permission nodes.\n\n"
-                        "f_rule_n:\n  A) Number of prohibition rules per policy.\n"
-                        "  B) Determines how many prohibitions each policy has.\n"
-                        "  C) Prohibitions prevent certain actions; more rules create richer, restrictive policies.\n\n"
-                        "o_rule_n:\n  A) Number of obligation/duty rules per policy.\n"
-                        "  B) Sets the count of duties each policy imposes.\n"
-                        "  C) Duties represent obligations to perform actions; this parameter defines how many such obligations exist.\n\n"
-                        "constants_per_feature:\n  A) Number of actions, parties, and targets sampled.\n"
-                        "  B) Controls the diversity of IRIs used across rules.\n"
-                        "  C) All policies share the same sampled constants, ensuring consistency while allowing randomness in rule assignment.\n\n"
-                        "constraint_number_min / constraint_number_max:\n  A) Minimum and maximum number of constraints per rule.\n"
-                        "  B) Determines how many constraint nodes each rule may have.\n"
-                        "  C) Constraints refine rules with conditions (leftOperand, operator, rightOperand); these limits control rule complexity.\n\n"
-                        "chance_feature_null:\n  A) Probability that a non-required feature (assignee/target) is omitted.\n"
-                        "  B) Float between 0 and 1.\n"
-                        "  C) Higher values lead to sparser rules, simulating optional rule features.\n\n"
-                        "constraint_right_operand_min / max:\n  A) Range for generating random right operands in constraints.\n"
-                        "  B) Sets numeric bounds for constraint values.\n"
-                        "  C) Determines the possible numeric thresholds or limits applied in each constraint.\n\n"
-                        "ontology_path:\n  A) Path to the ontology TTL file.\n"
-                        "  B) Loaded to gather IRIs for actions, parties, targets, and leftOperands.\n"
-                        "  C) Ensures realistic, ontology-compliant IRIs are used for synthetic policy generation."
-                    ),
-                    layout=widgets.Layout(width='700px', height='400px'),
+                info_textarea = widgets.HTML(
+                    value="""
+                    <div style="font-family:Arial, sans-serif; line-height:1.6; max-width:700px;">
+                        <h3>Policy Generation Parameters</h3>
+                        <p><b>Number of Policies:</b> Number of policies to generate.<br>
+                        Each policy will have its own set of rules and constraints but share the same sampled constants.</p>
+
+                        <p><b>Number of Permission Rules:</b> How many permission rules each policy contains.<br>
+                        Permissions specify allowed actions within the policy. Higher numbers create more permission nodes, increasing policy richness.</p>
+
+                        <p><b>Number of Prohibition Rules:</b> How many prohibition rules each policy contains.<br>
+                        Prohibitions restrict actions. Increasing this number makes policies more restrictive and detailed.</p>
+
+                        <p><b>Number of Obligation Rules:</b> How many obligation/duty rules each policy imposes.<br>
+                        Duties define actions that must be performed. More obligations increase the complexity of each policy.</p>
+
+                        <p><b>Constants per Feature:</b> Number of actions, parties, and targets sampled for all policies.<br>
+                        Controls the diversity of IRIs used across rules. All policies share the same sampled constants for consistency while allowing randomness in rule assignment.</p>
+
+                        <p><b>Minimum Constraints per Rule:</b> Lower bound on the number of constraints per rule.<br>
+                        Constraints refine rules using leftOperand, operator, and rightOperand, adding conditions to permissions, prohibitions, or obligations.</p>
+
+                        <p><b>Maximum Constraints per Rule:</b> Upper bound on the number of constraints per rule.<br>
+                        Works together with the minimum to control rule complexity and variability.</p>
+
+                        <p><b>Chance Feature is Null (0-1):</b> Probability that a non-required feature (assignee or target) is omitted.<br>
+                        A value closer to 1 means more features will be left empty, producing sparser and less specific rules.</p>
+
+                        <p><b>Constraint Right Operand Min:</b> Minimum numeric value for randomly generated constraint rightOperands.<br>
+                        Sets the lower bound for numeric thresholds used in constraints.</p>
+
+                        <p><b>Constraint Right Operand Max:</b> Maximum numeric value for randomly generated constraint rightOperands.<br>
+                        Sets the upper bound for numeric thresholds used in constraints.</p>
+
+                        <p><b>Ontology Path:</b> Path to the TTL ontology file used for sampling IRIs.<br>
+                        Ensures that all actions, parties, targets, and leftOperands come from a valid ontology and are realistic for policy generation.</p>
+                    </div>
+                    """,
+                    layout=widgets.Layout(width='750px', height='450px'),
                     disabled=True
                 )
 
