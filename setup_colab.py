@@ -134,16 +134,60 @@ def show_interface():
                     labeled_widget("Ontology Path:", ontology_path_widget)
                 ]
 
-                # --- Buttons and output ---
+                # --- Buttons and outputs ---
                 generate_button = widgets.Button(description="Generate", button_style='success')
                 download_button = widgets.Button(description="Download TTL", button_style='info')
-                download_button.disabled = True  # initially greyed out
-                download_button.layout.opacity = '0.5'  # visually greyed out
+                download_button.disabled = True
+                download_button.layout.opacity = '0.5'
+                info_button = widgets.ToggleButton(description="INFO", value=False, button_style='warning')
+                info_textarea = widgets.Textarea(
+                    value=(
+                        "policy_number:\n  A) Number of policies to generate.\n"
+                        "  B) Determines how many distinct policies are created in the RDF graph.\n"
+                        "  C) Each policy will have its own set of rules and constraints but share the same sampled constants.\n\n"
+                        "p_rule_n:\n  A) Number of permission rules per policy.\n"
+                        "  B) Controls how many permission rules each policy contains.\n"
+                        "  C) Permissions specify allowed actions in the policy; higher values generate more permission nodes.\n\n"
+                        "f_rule_n:\n  A) Number of prohibition rules per policy.\n"
+                        "  B) Determines how many prohibitions each policy has.\n"
+                        "  C) Prohibitions prevent certain actions; more rules create richer, restrictive policies.\n\n"
+                        "o_rule_n:\n  A) Number of obligation/duty rules per policy.\n"
+                        "  B) Sets the count of duties each policy imposes.\n"
+                        "  C) Duties represent obligations to perform actions; this parameter defines how many such obligations exist.\n\n"
+                        "constants_per_feature:\n  A) Number of actions, parties, and targets sampled.\n"
+                        "  B) Controls the diversity of IRIs used across rules.\n"
+                        "  C) All policies share the same sampled constants, ensuring consistency while allowing randomness in rule assignment.\n\n"
+                        "constraint_number_min / constraint_number_max:\n  A) Minimum and maximum number of constraints per rule.\n"
+                        "  B) Determines how many constraint nodes each rule may have.\n"
+                        "  C) Constraints refine rules with conditions (leftOperand, operator, rightOperand); these limits control rule complexity.\n\n"
+                        "chance_feature_null:\n  A) Probability that a non-required feature (assignee/target) is omitted.\n"
+                        "  B) Float between 0 and 1.\n"
+                        "  C) Higher values lead to sparser rules, simulating optional rule features.\n\n"
+                        "constraint_right_operand_min / max:\n  A) Range for generating random right operands in constraints.\n"
+                        "  B) Sets numeric bounds for constraint values.\n"
+                        "  C) Determines the possible numeric thresholds or limits applied in each constraint.\n\n"
+                        "ontology_path:\n  A) Path to the ontology TTL file.\n"
+                        "  B) Loaded to gather IRIs for actions, parties, targets, and leftOperands.\n"
+                        "  C) Ensures realistic, ontology-compliant IRIs are used for synthetic policy generation."
+                    ),
+                    layout=widgets.Layout(width='700px', height='400px'),
+                    disabled=True
+                )
+
                 output_generate = widgets.Output()
-
-                display(widgets.VBox(widgets_list + [generate_button, download_button, output_generate]))
-
                 policies_graph = None
+
+                # --- Toggle INFO visibility ---
+                def on_info_toggled(change):
+                    if info_button.value:
+                        display(info_textarea)
+                    else:
+                        info_textarea.close()  # hides the textarea
+
+                info_button.observe(on_info_toggled, names='value')
+
+                # Display all widgets
+                display(widgets.VBox(widgets_list + [generate_button, download_button, info_button, output_generate]))
 
                 # --- Generate button ---
                 def on_generate_clicked(b):
@@ -164,11 +208,8 @@ def show_interface():
                                 constraint_right_operand_max=constraint_right_operand_max_widget.value,
                                 ontology_path=ontology_path_widget.value
                             )
-                            # Print Turtle serialization
                             turtle_output = policies_graph.serialize(format="turtle")
                             print(turtle_output.decode("utf-8") if isinstance(turtle_output, bytes) else turtle_output)
-
-                            # Enable download button visually
                             download_button.disabled = False
                             download_button.layout.opacity = '1.0'
                         except Exception as e:
