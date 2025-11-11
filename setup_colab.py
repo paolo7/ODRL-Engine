@@ -56,6 +56,7 @@ def upload_file():
 
 def show_interface():
     import validate
+    import ODRL_generator
     from colab_functions import visualise
     from colab_functions import graph_equality_comparison
     # --- DROPDOWN MENU ---
@@ -66,6 +67,7 @@ def show_interface():
             ('Visualise Policy', 'visualise'),
             ('Full ODRL Validation', 'validate'),
             ('Graph Diff', 'comparetriplebytriple'),
+            ('Generate ODRL Policies', 'ODRLgeneration'),
         ],
         description='Select:',
     )
@@ -97,6 +99,66 @@ def show_interface():
                     print("⚠️ No ODRL file uploaded yet.")
             elif selected == "comparetriplebytriple":
                 graph_equality_comparison.compare_rdf_files()
+            elif selected == "ODRLgeneration":
+                # --- Create input widgets for all parameters ---
+                policy_number_widget = widgets.IntText(value=1, description="policy_number:")
+                p_rule_n_widget = widgets.IntText(value=2, description="p_rule_n:")
+                f_rule_n_widget = widgets.IntText(value=2, description="f_rule_n:")
+                o_rule_n_widget = widgets.IntText(value=1, description="o_rule_n:")
+                constants_per_feature_widget = widgets.IntText(value=4, description="constants_per_feature:")
+                constraint_number_min_widget = widgets.IntText(value=0, description="constraint_number_min:")
+                constraint_number_max_widget = widgets.IntText(value=4, description="constraint_number_max:")
+                chance_feature_null_widget = widgets.FloatText(value=0.5, description="chance_feature_null:")
+                constraint_right_operand_min_widget = widgets.IntText(value=0,
+                                                                      description="constraint_right_operand_min:")
+                constraint_right_operand_max_widget = widgets.IntText(value=100,
+                                                                      description="constraint_right_operand_max:")
+                ontology_path_widget = widgets.Text(value="sample_ontologies/ODRL_DPV.ttl",
+                                                    description="ontology_path:")
+
+                generate_button = widgets.Button(description="Generate", button_style='success')
+                output_generate = widgets.Output()
+
+                # Display all widgets
+                display(policy_number_widget,
+                        p_rule_n_widget,
+                        f_rule_n_widget,
+                        o_rule_n_widget,
+                        constants_per_feature_widget,
+                        constraint_number_min_widget,
+                        constraint_number_max_widget,
+                        chance_feature_null_widget,
+                        constraint_right_operand_min_widget,
+                        constraint_right_operand_max_widget,
+                        ontology_path_widget,
+                        generate_button,
+                        output_generate)
+
+                # --- Define generate button behavior ---
+                def on_generate_clicked(b):
+                    with output_generate:
+                        clear_output()
+                        try:
+                            policies = ODRL_generator.generate_ODRL(
+                                policy_number=policy_number_widget.value,
+                                p_rule_n=p_rule_n_widget.value,
+                                f_rule_n=f_rule_n_widget.value,
+                                o_rule_n=o_rule_n_widget.value,
+                                constants_per_feature=constants_per_feature_widget.value,
+                                constraint_number_min=constraint_number_min_widget.value,
+                                constraint_number_max=constraint_number_max_widget.value,
+                                chance_feature_null=chance_feature_null_widget.value,
+                                constraint_right_operand_min=constraint_right_operand_min_widget.value,
+                                constraint_right_operand_max=constraint_right_operand_max_widget.value,
+                                ontology_path=ontology_path_widget.value
+                            )
+                            print(policies.serialize(format="turtle").decode("utf-8") if isinstance(
+                                policies.serialize(format="turtle"), bytes) else policies.serialize(format="turtle"))
+                        except Exception as e:
+                            print(f"⚠️ Error during generation: {e}")
+
+                generate_button.on_click(on_generate_clicked)
+
     run_button.on_click(on_run_clicked)
 
     # --- DISPLAY EVERYTHING ---
