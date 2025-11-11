@@ -148,34 +148,28 @@ def show_interface():
                         Each policy will have its own set of rules and constraints but share the same sampled constants.</p>
 
                         <p><b>Number of Permission Rules:</b> How many permission rules each policy contains.<br>
-                        Permissions specify allowed actions within the policy. Higher numbers create more permission nodes, increasing policy richness.</p>
+                        Permissions specify allowed actions within the policy. Higher numbers create more permission nodes.</p>
 
                         <p><b>Number of Prohibition Rules:</b> How many prohibition rules each policy contains.<br>
-                        Prohibitions restrict actions. Increasing this number makes policies more restrictive and detailed.</p>
+                        Prohibitions restrict actions. Increasing this number makes policies more restrictive.</p>
 
-                        <p><b>Number of Obligation Rules:</b> How many obligation/duty rules each policy imposes.<br>
-                        Duties define actions that must be performed. More obligations increase the complexity of each policy.</p>
+                        <p><b>Number of Obligation Rules:</b> How many duty (obligation) rules each policy imposes.<br>
+                        Duties define actions that must be performed.</p>
 
-                        <p><b>Constants per Feature:</b> Number of actions, parties, and targets sampled for all policies.<br>
+                        <p><b>Constants per Feature:</b> Number of actions, parties, targets and left operands (for constraints) sampled for all policies.<br>
                         Controls the diversity of IRIs used across rules. All policies share the same sampled constants for consistency while allowing randomness in rule assignment.</p>
 
-                        <p><b>Minimum Constraints per Rule:</b> Lower bound on the number of constraints per rule.<br>
+                        <p><b>Minimum/Maximum Constraints per Rule:</b> Lower/Upper bound on the number of constraints per rule.<br>
                         Constraints refine rules using leftOperand, operator, and rightOperand, adding conditions to permissions, prohibitions, or obligations.</p>
-
-                        <p><b>Maximum Constraints per Rule:</b> Upper bound on the number of constraints per rule.<br>
-                        Works together with the minimum to control rule complexity and variability.</p>
 
                         <p><b>Chance Feature is Null (0-1):</b> Probability that a non-required feature (assignee or target) is omitted.<br>
                         A value closer to 1 means more features will be left empty, producing sparser and less specific rules.</p>
 
-                        <p><b>Constraint Right Operand Min:</b> Minimum numeric value for randomly generated constraint rightOperands.<br>
-                        Sets the lower bound for numeric thresholds used in constraints.</p>
-
-                        <p><b>Constraint Right Operand Max:</b> Maximum numeric value for randomly generated constraint rightOperands.<br>
-                        Sets the upper bound for numeric thresholds used in constraints.</p>
+                        <p><b>Constraint Right Operand Min/Max:</b> Minimum/Maximum numeric value for randomly generated constraint rightOperands.<br>
+                        Sets the lower bound for numeric thresholds used in constraints. Currently, all constraints are treated as numerical intervals.</p>
 
                         <p><b>Ontology Path:</b> Path to the TTL ontology file used for sampling IRIs.<br>
-                        Ensures that all actions, parties, targets, and leftOperands come from a valid ontology and are realistic for policy generation.</p>
+                        Ensures that all actions, parties, targets, and leftOperands come from an ontology and are realistic for policy generation.</p>
                     </div>
                     """,
                     layout=widgets.Layout(width='750px', height='450px'),
