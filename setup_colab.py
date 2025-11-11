@@ -100,6 +100,8 @@ def show_interface():
             elif selected == "comparetriplebytriple":
                 graph_equality_comparison.compare_rdf_files()
             elif selected == "ODRLgeneration":
+                clear_output()  # clear output before showing new widgets
+
                 # --- Create input widgets for all parameters ---
                 policy_number_widget = widgets.IntText(value=1, description="policy_number:")
                 p_rule_n_widget = widgets.IntText(value=2, description="p_rule_n:")
@@ -119,20 +121,22 @@ def show_interface():
                 generate_button = widgets.Button(description="Generate", button_style='success')
                 output_generate = widgets.Output()
 
-                # Display all widgets
-                display(policy_number_widget,
-                        p_rule_n_widget,
-                        f_rule_n_widget,
-                        o_rule_n_widget,
-                        constants_per_feature_widget,
-                        constraint_number_min_widget,
-                        constraint_number_max_widget,
-                        chance_feature_null_widget,
-                        constraint_right_operand_min_widget,
-                        constraint_right_operand_max_widget,
-                        ontology_path_widget,
-                        generate_button,
-                        output_generate)
+                # Display widgets
+                display(widgets.VBox([
+                    policy_number_widget,
+                    p_rule_n_widget,
+                    f_rule_n_widget,
+                    o_rule_n_widget,
+                    constants_per_feature_widget,
+                    constraint_number_min_widget,
+                    constraint_number_max_widget,
+                    chance_feature_null_widget,
+                    constraint_right_operand_min_widget,
+                    constraint_right_operand_max_widget,
+                    ontology_path_widget,
+                    generate_button,
+                    output_generate
+                ]))
 
                 # --- Define generate button behavior ---
                 def on_generate_clicked(b):
@@ -152,8 +156,9 @@ def show_interface():
                                 constraint_right_operand_max=constraint_right_operand_max_widget.value,
                                 ontology_path=ontology_path_widget.value
                             )
-                            print(policies.serialize(format="turtle").decode("utf-8") if isinstance(
-                                policies.serialize(format="turtle"), bytes) else policies.serialize(format="turtle"))
+                            # Print Turtle serialization
+                            turtle_output = policies.serialize(format="turtle")
+                            print(turtle_output.decode("utf-8") if isinstance(turtle_output, bytes) else turtle_output)
                         except Exception as e:
                             print(f"⚠️ Error during generation: {e}")
 
