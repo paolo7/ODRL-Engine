@@ -169,7 +169,8 @@ def show_interface():
                         Sets the lower bound for numeric thresholds used in constraints. Currently, all constraints are treated as numerical intervals.</p>
 
                         <p><b>Ontology Path:</b> Path to the TTL ontology file used for sampling IRIs.<br>
-                        Ensures that all actions, parties, targets, and leftOperands come from an ontology and are realistic for policy generation.</p>
+                        Ensures that all actions, parties, targets, and leftOperands come from an ontology and are realistic for policy generation.
+                        Actions, parties, targets and leftOperands are currently defined as the subclasses and instances of odrl:Action, odrl:Party, odrl:Asset and odrl:LeftOperand, respectively.</p>
                     </div>
                     """,
                     layout=widgets.Layout(width='750px', height='450px'),
