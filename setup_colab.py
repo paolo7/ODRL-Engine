@@ -119,6 +119,8 @@ def show_interface():
                                                     description="ontology_path:")
 
                 generate_button = widgets.Button(description="Generate", button_style='success')
+                download_button = widgets.Button(description="Download TTL", button_style='info')
+                download_button.disabled = True  # initially disabled
                 output_generate = widgets.Output()
 
                 # Display widgets
@@ -135,15 +137,19 @@ def show_interface():
                     constraint_right_operand_max_widget,
                     ontology_path_widget,
                     generate_button,
+                    download_button,
                     output_generate
                 ]))
 
+                policies_graph = None  # global placeholder for download
+
                 # --- Define generate button behavior ---
                 def on_generate_clicked(b):
+                    nonlocal policies_graph
                     with output_generate:
                         clear_output()
                         try:
-                            policies = ODRL_generator.generate_ODRL(
+                            policies_graph = ODRL_generator.generate_ODRL(
                                 policy_number=policy_number_widget.value,
                                 p_rule_n=p_rule_n_widget.value,
                                 f_rule_n=f_rule_n_widget.value,
@@ -157,12 +163,27 @@ def show_interface():
                                 ontology_path=ontology_path_widget.value
                             )
                             # Print Turtle serialization
-                            turtle_output = policies.serialize(format="turtle")
+                            turtle_output = policies_graph.serialize(format="turtle")
                             print(turtle_output.decode("utf-8") if isinstance(turtle_output, bytes) else turtle_output)
+                            download_button.disabled = False  # enable download button
                         except Exception as e:
                             print(f"⚠️ Error during generation: {e}")
+                            download_button.disabled = True
 
                 generate_button.on_click(on_generate_clicked)
+
+                # --- Define download button behavior ---
+                def on_download_clicked(b):
+                    if policies_graph is not None:
+                        import tempfile
+                        from google.colab import files
+
+                        with tempfile.NamedTemporaryFile(suffix=".ttl", delete=False) as tmp_file:
+                            policies_graph.serialize(destination=tmp_file.name, format="turtle")
+                            tmp_file.flush()
+                            files.download(tmp_file.name)
+
+                download_button.on_click(on_download_clicked)
 
     run_button.on_click(on_run_clicked)
 
