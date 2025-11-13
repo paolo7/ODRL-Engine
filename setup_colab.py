@@ -329,26 +329,73 @@ def show_interface():
                 # --- Show Rule Conditions toggle handler ---
                 def on_show_rules_clicked(change):
                     if show_rules_button.value:
-                        # User enabled the toggle → show the rules
+                        # Show the box
                         rules_output_box.layout.display = 'block'
                         with rules_output_box:
                             clear_output()
+
                             if not UploadState.filename:
                                 print("⚠️ No ODRL file uploaded yet.")
-                            else:
-                                try:
-                                    rules = SotW_generator.extract_rule_list_from_policy_from_file(
-                                        UploadState.filename
-                                    )
-                                    print(rules)
-                                except Exception as e:
-                                    print(f"⚠️ Error extracting rule list: {e}")
+                                return
+
+                            try:
+                                rules = SotW_generator.extract_rule_list_from_policy_from_file(
+                                    UploadState.filename
+                                )
+
+                                print(str(rules) + "\n")
+
+                                def pretty_print_rules(rule_list):
+                                    out_lines = []
+                                    for rule in rule_list:
+                                        out_lines.append(f"Policy IRI: {rule['policy_iri']}\n")
+
+                                        # permissions
+                                        out_lines.append("    Permissions:")
+                                        if rule["permissions"]:
+                                            for cond_group in rule["permissions"]:
+                                                out_lines.append("        Condition group:")
+                                                for cond in cond_group:
+                                                    subj, op, obj = cond
+                                                    out_lines.append(f"            {subj} {op} {obj}")
+                                        else:
+                                            out_lines.append("        (none)")
+                                        out_lines.append("")  # blank line
+
+                                        # prohibitions
+                                        out_lines.append("    Prohibitions:")
+                                        if rule["prohibitions"]:
+                                            for cond_group in rule["prohibitions"]:
+                                                out_lines.append("        Condition group:")
+                                                for cond in cond_group:
+                                                    subj, op, obj = cond
+                                                    out_lines.append(f"            {subj} {op} {obj}")
+                                        else:
+                                            out_lines.append("        (none)")
+                                        out_lines.append("")  # blank line
+
+                                        # obligations
+                                        out_lines.append("    Obligations:")
+                                        if rule["obligations"]:
+                                            for cond_group in rule["obligations"]:
+                                                out_lines.append("        Condition group:")
+                                                for cond in cond_group:
+                                                    subj, op, obj = cond
+                                                    out_lines.append(f"            {subj} {op} {obj}")
+                                        else:
+                                            out_lines.append("        (none)")
+                                        out_lines.append("")  # blank line
+
+                                    return "\n".join(out_lines)
+
+                                print(pretty_print_rules(rules))
+
+                            except Exception as e:
+                                print(f"⚠️ Error extracting rule list: {e}")
+
                     else:
-                        # Toggle turned off → hide box
+                        # Hide the rules
                         rules_output_box.layout.display = 'none'
-
-                show_rules_button.observe(on_show_rules_clicked, names='value')
-
 
     run_button.on_click(on_run_clicked)
 
