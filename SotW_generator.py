@@ -217,7 +217,7 @@ def generate_state_of_the_world_from_policies(
     now = datetime.now()
 
     # ---------------------------------------------------------
-    # PRECOMPUTE which rows will be invalid (if valid=False)
+    # PRECOMPUTE invalid rows (10% but min 1)
     # ---------------------------------------------------------
     if not valid:
         n_invalid = max(1, int(0.10 * number_of_records))
@@ -227,38 +227,57 @@ def generate_state_of_the_world_from_policies(
 
     for i in range(number_of_records):
 
-        # whether this row should invert the rule logic
-        invert_condition = (i in invalid_indices)
+        row_should_invert = (i in invalid_indices)
 
         row = {}
         if not policy_list:
             continue
+
+        # pick a random policy and random permission
         policy = random.choice(policy_list)
         if not policy["permissions"]:
             continue
 
         permission_triplets_lists = random.choice(policy["permissions"])
-        permission_triplets = [t for sublist in permission_triplets_lists for t in sublist]
+
+        # ---------------------------------------------------------
+        # IDENTIFY all features with matching triplets
+        # ---------------------------------------------------------
+        features_with_triplets = [
+            feature["iri"]
+            for feature in features
+            if any(t[0] == feature["iri"] for t in permission_triplets_lists)
+        ]
+
+        # choose one feature whose rule gets inverted
+        inverted_feature_iri = None
+        if row_should_invert and features_with_triplets:
+            inverted_feature_iri = random.choice(features_with_triplets)
 
         for feature in features:
             iri = feature["iri"]
             ftype = feature["type"]
 
-            # datetime column
+            # datetime special case
             if iri == "http://www.w3.org/ns/odrl/2/dateTime":
                 row[iri] = (now - timedelta(minutes=i * 10)).isoformat()
                 continue
 
+            # match policy rule triplets
             matching_triplets = [t for t in permission_triplets_lists if t[0] == iri]
+
+            # determine if THIS specific feature should be inverted
+            invert_condition = (iri == inverted_feature_iri)
 
             if matching_triplets:
                 _, op, val = random.choice(matching_triplets)
 
+                # ------------------------------------------
+                # Try integer
+                # ------------------------------------------
                 try:
-                    # Try integer first
                     val_int = int(val)
 
-                    # Integer operator with inversion logic
                     if (op == "=" and not invert_condition) or (op == "!=" and invert_condition):
                         row[iri] = val_int
                     elif (op == "!=" and not invert_condition) or (op == "=" and invert_condition):
@@ -275,11 +294,12 @@ def generate_state_of_the_world_from_policies(
                         row[iri] = val_int
 
                 except ValueError:
+                    # ------------------------------------------
                     # Try float
+                    # ------------------------------------------
                     try:
                         val_float = float(val)
 
-                        # Float operator with inversion logic
                         if (op == "=" and not invert_condition) or (op == "!=" and invert_condition):
                             row[iri] = val_float
                         elif (op == "!=" and not invert_condition) or (op == "=" and invert_condition):
@@ -296,7 +316,9 @@ def generate_state_of_the_world_from_policies(
                             row[iri] = val_float
 
                     except ValueError:
+                        # ------------------------------------------
                         # Non-numeric fallback
+                        # ------------------------------------------
                         if (op == "=" and not invert_condition) or (op == "!=" and invert_condition):
                             row[iri] = val
                         elif (op == "!=" and not invert_condition) or (op == "=" and invert_condition):
@@ -305,7 +327,7 @@ def generate_state_of_the_world_from_policies(
                             row[iri] = ""
 
             else:
-                # No constraint exists for this feature
+                # no rule for this feature
                 if random.random() < chance_feature_empty:
                     row[iri] = ""
                 else:
@@ -316,12 +338,13 @@ def generate_state_of_the_world_from_policies(
 
         rows.append(row)
 
-    # Write CSV
+    # write CSV
     with open(csv_file, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=feature_iris)
         writer.writeheader()
         for r in rows:
             writer.writerow(r)
+
 
     #print(f"CSV file '{csv_file}' generated with {len(rows)} rows and {len(feature_iris)} columns.")
 
