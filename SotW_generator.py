@@ -216,19 +216,30 @@ def generate_state_of_the_world_from_policies(
     rows = []
     now = datetime.now()
 
+    # ---------------------------------------------------------
+    # PRECOMPUTE which rows will be invalid (if valid=False)
+    # ---------------------------------------------------------
+    if not valid:
+        n_invalid = max(1, int(0.10 * number_of_records))
+        invalid_indices = set(random.sample(range(number_of_records), n_invalid))
+    else:
+        invalid_indices = set()
+
     for i in range(number_of_records):
+
+        # whether this row should invert the rule logic
+        invert_condition = (i in invalid_indices)
+
         row = {}
-        # pick a random policy and a random permission (ignore prohibitions/obligations for now)
         if not policy_list:
             continue
         policy = random.choice(policy_list)
         if not policy["permissions"]:
             continue
+
         permission_triplets_lists = random.choice(policy["permissions"])
-        #print(permission_triplets_lists)
-        # flatten triplets
         permission_triplets = [t for sublist in permission_triplets_lists for t in sublist]
-        #print(permission_triplets)
+
         for feature in features:
             iri = feature["iri"]
             ftype = feature["type"]
@@ -238,47 +249,63 @@ def generate_state_of_the_world_from_policies(
                 row[iri] = (now - timedelta(minutes=i * 10)).isoformat()
                 continue
 
-            # collect all triplets that match the current feature
-            #print(iri)
-            #print(permission_triplets_lists)
             matching_triplets = [t for t in permission_triplets_lists if t[0] == iri]
-            #print(matching_triplets)
 
             if matching_triplets:
-                # pick one at random if multiple match
                 _, op, val = random.choice(matching_triplets)
 
-                #print("triplet for " + str(feature))
-                #print(op+" "+val)
-                # handle numeric operators if val is numeric
                 try:
-                    val_float = float(val)
-                    if op == "=":
-                        row[iri] = val_float
-                    elif op == "!=":
-                        row[iri] = val_float + random.uniform(1, 100)
-                    elif op == "<":
-                        row[iri] = val_float - random.uniform(1, 100)
-                    elif op == "<=":
-                        row[iri] = val_float - random.uniform(0, 100)
-                    elif op == ">":
-                        row[iri] = val_float + random.uniform(1, 100)
-                    elif op == ">=":
-                        row[iri] = val_float + random.uniform(0, 100)
+                    # Try integer first
+                    val_int = int(val)
+
+                    # Integer operator with inversion logic
+                    if (op == "=" and not invert_condition) or (op == "!=" and invert_condition):
+                        row[iri] = val_int
+                    elif (op == "!=" and not invert_condition) or (op == "=" and invert_condition):
+                        row[iri] = val_int + random.randint(1, 100)
+                    elif (op == "<" and not invert_condition) or (op == ">=" and invert_condition):
+                        row[iri] = val_int - random.randint(1, 100)
+                    elif (op == "<=" and not invert_condition) or (op == ">" and invert_condition):
+                        row[iri] = val_int - random.randint(0, 100)
+                    elif (op == ">" and not invert_condition) or (op == "<=" and invert_condition):
+                        row[iri] = val_int + random.randint(1, 100)
+                    elif (op == ">=" and not invert_condition) or (op == "<" and invert_condition):
+                        row[iri] = val_int + random.randint(0, 100)
                     else:
-                        row[iri] = val
+                        row[iri] = val_int
+
                 except ValueError:
-                    # non-numeric
-                    if op == "=":
-                        row[iri] = val
-                    elif op == "!=":
-                        row[iri] = f"https://example.com/iri/sotw#{random.randint(1, 100000)}"
-                    else:
-                        row[iri] = ""
+                    # Try float
+                    try:
+                        val_float = float(val)
+
+                        # Float operator with inversion logic
+                        if (op == "=" and not invert_condition) or (op == "!=" and invert_condition):
+                            row[iri] = val_float
+                        elif (op == "!=" and not invert_condition) or (op == "=" and invert_condition):
+                            row[iri] = val_float + random.uniform(1, 100)
+                        elif (op == "<" and not invert_condition) or (op == ">=" and invert_condition):
+                            row[iri] = val_float - random.uniform(1, 100)
+                        elif (op == "<=" and not invert_condition) or (op == ">" and invert_condition):
+                            row[iri] = val_float - random.uniform(0, 100)
+                        elif (op == ">" and not invert_condition) or (op == "<=" and invert_condition):
+                            row[iri] = val_float + random.uniform(1, 100)
+                        elif (op == ">=" and not invert_condition) or (op == "<" and invert_condition):
+                            row[iri] = val_float + random.uniform(0, 100)
+                        else:
+                            row[iri] = val_float
+
+                    except ValueError:
+                        # Non-numeric fallback
+                        if (op == "=" and not invert_condition) or (op == "!=" and invert_condition):
+                            row[iri] = val
+                        elif (op == "!=" and not invert_condition) or (op == "=" and invert_condition):
+                            row[iri] = f"https://example.com/iri/sotw#{random.randint(1, 100000)}"
+                        else:
+                            row[iri] = ""
 
             else:
-                # no triplet matches this feature
-                #print("no triplet match "+str(feature))
+                # No constraint exists for this feature
                 if random.random() < chance_feature_empty:
                     row[iri] = ""
                 else:
@@ -289,7 +316,7 @@ def generate_state_of_the_world_from_policies(
 
         rows.append(row)
 
-    # write CSV
+    # Write CSV
     with open(csv_file, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=feature_iris)
         writer.writeheader()
