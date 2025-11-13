@@ -57,6 +57,7 @@ def upload_file():
 def show_interface():
     import validate
     import ODRL_generator
+    import SotW_generator
     from colab_functions import visualise
     from colab_functions import graph_equality_comparison
     # --- DROPDOWN MENU ---
@@ -68,6 +69,7 @@ def show_interface():
             ('Full ODRL Validation', 'validate'),
             ('Graph Diff', 'comparetriplebytriple'),
             ('Generate ODRL Policies', 'ODRLgeneration'),
+            ('Generate State of the World', 'SotWgeneration'),
         ],
         description='Select:',
     )
@@ -233,6 +235,120 @@ def show_interface():
                             files.download(tmp_file.name)
 
                 download_button.on_click(on_download_clicked)
+            elif selected == "SotWgeneration":
+                clear_output()  # clear output before showing new widgets
+                import SotW_generator
+
+                # --- Helper function for labeled input ---
+                def labeled_widget(label_text, widget):
+                    return widgets.HBox([
+                        widgets.Label(value=label_text, layout=widgets.Layout(width='220px')),
+                        widget
+                    ])
+
+                # --- Input widgets with DEFAULT values ---
+                number_of_records_widget = widgets.IntText(value=100)
+                valid_widget = widgets.Checkbox(value=True)
+                chance_feature_empty_widget = widgets.FloatText(value=0.5)
+                csv_file_widget = widgets.Text(value="sotw.csv")
+
+                # Wrap widgets with labels
+                widgets_list = [
+                    labeled_widget("Number of Records:", number_of_records_widget),
+                    labeled_widget("Valid:", valid_widget),
+                    labeled_widget("Chance Feature Empty (0-1):", chance_feature_empty_widget),
+                    labeled_widget("CSV Output Filename:", csv_file_widget),
+                ]
+
+                # Buttons
+                generate_button = widgets.Button(description="Generate", button_style='success')
+                download_button = widgets.Button(description="Download CSV", button_style='info')
+                download_button.disabled = True
+                download_button.layout.opacity = '0.5'
+
+                # NEW: Show Rule Conditions toggle button
+                show_rules_button = widgets.ToggleButton(
+                    value=False,
+                    description="Show Rule Conditions",
+                    button_style='warning'
+                )
+
+                # Output areas
+                output_generate = widgets.Output()
+                rules_output_box = widgets.Output()  # shows rule conditions
+                rules_output_box.layout.display = 'none'  # initially hidden
+
+                generated_csv_path = None
+
+                # Display everything
+                display(widgets.VBox(
+                    widgets_list +
+                    [generate_button, download_button, show_rules_button, output_generate, rules_output_box]
+                ))
+
+                # --- Generate button handler ---
+                def on_generate_clicked(b):
+                    nonlocal generated_csv_path
+                    with output_generate:
+                        clear_output()
+                        if not UploadState.filename:
+                            print("⚠️ No ODRL file uploaded yet.")
+                            return
+                        try:
+                            SotW_generator.generate_state_of_the_world_from_policies_from_file(
+                                file_path=UploadState.filename,
+                                number_of_records=number_of_records_widget.value,
+                                valid=valid_widget.value,
+                                chance_feature_empty=chance_feature_empty_widget.value,
+                                csv_file=csv_file_widget.value
+                            )
+                            generated_csv_path = csv_file_widget.value
+                            print(f"✅ State of the World generated successfully: {generated_csv_path}")
+
+                            download_button.disabled = False
+                            download_button.layout.opacity = '1.0'
+
+                        except Exception as e:
+                            print(f"⚠️ Error during SotW generation: {e}")
+                            download_button.disabled = True
+                            download_button.layout.opacity = '0.5'
+
+                generate_button.on_click(on_generate_clicked)
+
+                # --- Download button handler ---
+                def on_download_clicked(b):
+                    if generated_csv_path:
+                        try:
+                            files.download(generated_csv_path)
+                        except Exception as e:
+                            with output_generate:
+                                print(f"⚠️ Error downloading file: {e}")
+
+                download_button.on_click(on_download_clicked)
+
+                # --- Show Rule Conditions toggle handler ---
+                def on_show_rules_clicked(change):
+                    if show_rules_button.value:
+                        # User enabled the toggle → show the rules
+                        rules_output_box.layout.display = 'block'
+                        with rules_output_box:
+                            clear_output()
+                            if not UploadState.filename:
+                                print("⚠️ No ODRL file uploaded yet.")
+                            else:
+                                try:
+                                    rules = SotW_generator.extract_rule_list_from_policy_from_file(
+                                        UploadState.filename
+                                    )
+                                    print(rules)
+                                except Exception as e:
+                                    print(f"⚠️ Error extracting rule list: {e}")
+                    else:
+                        # Toggle turned off → hide box
+                        rules_output_box.layout.display = 'none'
+
+                show_rules_button.observe(on_show_rules_clicked, names='value')
+
 
     run_button.on_click(on_run_clicked)
 

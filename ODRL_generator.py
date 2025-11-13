@@ -6,6 +6,8 @@ base_uri = "https://example.com/iri/"
 ODRL_operators = [
     "http://www.w3.org/ns/odrl/2/lt",
     "http://www.w3.org/ns/odrl/2/lteq",
+    "http://www.w3.org/ns/odrl/2/gt",
+    "http://www.w3.org/ns/odrl/2/gteq",
     "http://www.w3.org/ns/odrl/2/eq",
     "http://www.w3.org/ns/odrl/2/neq"
 ]
