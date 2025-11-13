@@ -7,6 +7,7 @@
 import os
 import sys
 import subprocess
+import json
 from google.colab import files
 import ipywidgets as widgets
 from IPython.display import display, clear_output
@@ -343,7 +344,7 @@ def show_interface():
                                     UploadState.filename
                                 )
 
-                                print(str(rules) + "\n")
+                                print("\n Pretty Printed Rule Conditions\n")
 
                                 def pretty_print_rules(rule_list):
                                     out_lines = []
@@ -354,7 +355,7 @@ def show_interface():
                                         out_lines.append("    Permissions:")
                                         if rule["permissions"]:
                                             for cond_group in rule["permissions"]:
-                                                out_lines.append("        Condition group:")
+                                                out_lines.append("        Rule conditions:")
                                                 for cond in cond_group:
                                                     subj, op, obj = cond
                                                     out_lines.append(f"            {subj} {op} {obj}")
@@ -366,7 +367,7 @@ def show_interface():
                                         out_lines.append("    Prohibitions:")
                                         if rule["prohibitions"]:
                                             for cond_group in rule["prohibitions"]:
-                                                out_lines.append("        Condition group:")
+                                                out_lines.append("        Rule conditions:")
                                                 for cond in cond_group:
                                                     subj, op, obj = cond
                                                     out_lines.append(f"            {subj} {op} {obj}")
@@ -378,7 +379,7 @@ def show_interface():
                                         out_lines.append("    Obligations:")
                                         if rule["obligations"]:
                                             for cond_group in rule["obligations"]:
-                                                out_lines.append("        Condition group:")
+                                                out_lines.append("        Rule conditions:")
                                                 for cond in cond_group:
                                                     subj, op, obj = cond
                                                     out_lines.append(f"            {subj} {op} {obj}")
@@ -389,6 +390,10 @@ def show_interface():
                                     return "\n".join(out_lines)
 
                                 print(pretty_print_rules(rules))
+
+                                print("\n Rule Conditions as JSON object\n")
+                                print(json.dumps(rules, indent=4, ensure_ascii=False))
+                                print("\n")
 
                             except Exception as e:
                                 print(f"⚠️ Error extracting rule list: {e}")
