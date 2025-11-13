@@ -397,6 +397,8 @@ def show_interface():
                         # Hide the rules
                         rules_output_box.layout.display = 'none'
 
+                show_rules_button.observe(on_show_rules_clicked, names='value')
+
     run_button.on_click(on_run_clicked)
 
     # --- DISPLAY EVERYTHING ---
