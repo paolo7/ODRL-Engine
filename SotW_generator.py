@@ -29,6 +29,88 @@ policy_predicates = {ODRL.permission, ODRL.prohibition, ODRL.obligation}
 
 last_seen_list_of_features = None
 
+sample_actions = [
+    "https://example.com#MarketSegmentation",
+    "https://example.com#APIconnection",
+    "https://example.com#PermissionSetting",
+    "https://example.com#LocalDataBackup",
+    "https://example.com#UserAuthentication",
+    "https://example.com#DataEncryption",
+    "https://example.com#ReportGeneration",
+    "https://example.com#DataAnalytics",
+    "https://example.com#ErrorLogging",
+    "https://example.com#UserInterfaceDesign",
+    "https://example.com#VersionControl",
+    "https://example.com#EventLogging",
+    "https://example.com#PaymentProcessing",
+    "https://example.com#DataVisualization",
+    "https://example.com#FeedbackCollection",
+    "https://example.com#APIIntegration",
+    "https://example.com#DataMigration",
+    "https://example.com#MonitoringDashboard",
+    "https://example.com#UserRoleManagement",
+    "https://example.com#DataQualityAssessment",
+    "https://example.com#AccessControlList",
+    "https://example.com#SystemIntegration",
+    "https://example.com#SecurityAudit",
+    "https://example.com#ResourceAllocation",
+    "https://example.com#PrototypeTesting",
+    "https://example.com#CustomerDataManagement"
+]
+sample_parties = [
+    "https://example.com#Sarah_Wilson",
+    "https://example.com#Michael_Johnson",
+    "https://example.com#David_Brown",
+    "https://example.com#Emily_Davis",
+    "https://example.com#John_Smith",
+    "https://example.com#Linda_Garcia",
+    "https://example.com#Robert_Lee",
+    "https://example.com#Jessica_Martinez",
+    "https://example.com#William_Hall",
+    "https://example.com#Christina_Thompson",
+    "https://example.com#James_Scott",
+    "https://example.com#Susan_Bailey",
+    "https://example.com#Daniel_Adams",
+    "https://example.com#Maria_Walker",
+    "https://example.com#David_Allen",
+    "https://example.com#Karen_Nelson",
+    "https://example.com#Paul_Moore",
+    "https://example.com#Patricia_Taylor",
+    "https://example.com#Linda_Hernandez",
+    "https://example.com#George_Young",
+    "https://example.com#Nancy_King",
+    "https://example.com#Charles_Wright",
+    "https://example.com#Rebecca_Hill",
+    "https://example.com#Edward_Green",
+    "https://example.com#Angela_Sanchez"
+]
+sample_assets = [
+    "https://example.com#AirQualityDatasetCompressed",
+    "https://example.com#CardioMonitoringLogs",
+    "https://example.com#SteelProductionIndex2025",
+    "https://example.com#StudentPerformanceMetrics",
+    "https://example.com#SalesForecastData",
+    "https://example.com#InventoryRecords2023",
+    "https://example.com#CustomerFeedbackSurveys",
+    "https://example.com#ProductReviewsStatistics",
+    "https://example.com#WebsiteTrafficLogs",
+    "https://example.com#EmployeeEngagementScores",
+    "https://example.com#MarketResearchFindings",
+    "https://example.com#FinancialPerformanceMetrics",
+    "https://example.com#UserActivityLogs",
+    "https://example.com#SocialMediaEngagementData",
+    "https://example.com#SupplyChainDataAnalytics",
+    "https://example.com#WeatherDataDaily",
+    "https://example.com#DigitalMarketingMetrics",
+    "https://example.com#RetailSalesStatistics",
+    "https://example.com#CustomerDemographics",
+    "https://example.com#HealthcareOutcomesData",
+    "https://example.com#TransportEfficiencyData",
+    "https://example.com#UserSatisfactionReports",
+    "https://example.com#ECommerceAnalytics2024",
+    "https://example.com#AdvertisingPerformanceData",
+    "https://example.com#CybersecurityIncidentReports"
+]
 # LIMITATIONS
 # this code does not deal with constraints expressed as lists, thus it also fails to support logic constraints
 # returns an alphabetically ordered list of unique features (left operands) from the policies
@@ -331,8 +413,14 @@ def generate_state_of_the_world_from_policies(
                 if random.random() < chance_feature_empty:
                     row[iri] = ""
                 else:
-                    if ftype == "http://www.w3.org/ns/shacl#IRI":
-                        row[iri] = f"https://example.com/iri/sotw#{random.randint(1, 100000)}"
+                    if iri == "http://www.w3.org/ns/odrl/2/Party":
+                        row[iri] = random.choice(sample_parties)
+                    elif iri == "http://www.w3.org/ns/odrl/2/Action":
+                        row[iri] = random.choice(sample_actions)
+                    elif iri == "http://www.w3.org/ns/odrl/2/Asset":
+                        row[iri] = random.choice(sample_assets)
+                    elif ftype == "http://www.w3.org/ns/shacl#IRI":
+                        row[iri] = f"https://example.com/iri/sotw#{random.randint(1, 100)}"
                     else:
                         row[iri] = random.randint(0, 100)
 
