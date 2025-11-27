@@ -5,6 +5,7 @@ import rdf_utils
 import csv
 import random
 from datetime import datetime, timedelta
+import pandas as pd
 
 base_features = [
     {"iri": "http://www.w3.org/ns/odrl/2/dateTime",
@@ -282,13 +283,11 @@ def extract_rule_list_from_policy(odrl_graph: rdflib.Graph):
 
     return policy_list
 
-
-def generate_state_of_the_world_from_policies(
+def generate_pd_state_of_the_world_from_policies(
     odrl_graph: rdflib.Graph,
     number_of_records=100,
     valid=True,
-    chance_feature_empty=0.5,
-    csv_file="sotw.csv"
+    chance_feature_empty=0.5
 ):
     features = extract_features_list_from_policy(odrl_graph)
     policy_list = extract_rule_list_from_policy(odrl_graph)
@@ -298,9 +297,7 @@ def generate_state_of_the_world_from_policies(
     rows = []
     now = datetime.now()
 
-    # ---------------------------------------------------------
     # PRECOMPUTE invalid rows (10% but min 1)
-    # ---------------------------------------------------------
     if not valid:
         n_invalid = max(1, int(0.10 * number_of_records))
         invalid_indices = set(random.sample(range(number_of_records), n_invalid))
@@ -308,30 +305,26 @@ def generate_state_of_the_world_from_policies(
         invalid_indices = set()
 
     for i in range(number_of_records):
-
-        row_should_invert = (i in invalid_indices)
-
-        row = {}
         if not policy_list:
             continue
 
-        # pick a random policy and random permission
+        row_should_invert = (i in invalid_indices)
+        row = {}
+
         policy = random.choice(policy_list)
         if not policy["permissions"]:
             continue
 
         permission_triplets_lists = random.choice(policy["permissions"])
 
-        # ---------------------------------------------------------
-        # IDENTIFY all features with matching triplets
-        # ---------------------------------------------------------
+        # Features that appear in permission rules
         features_with_triplets = [
             feature["iri"]
             for feature in features
             if any(t[0] == feature["iri"] for t in permission_triplets_lists)
         ]
 
-        # choose one feature whose rule gets inverted
+        # Choose 1 feature to invert
         inverted_feature_iri = None
         if row_should_invert and features_with_triplets:
             inverted_feature_iri = random.choice(features_with_triplets)
@@ -340,26 +333,20 @@ def generate_state_of_the_world_from_policies(
             iri = feature["iri"]
             ftype = feature["type"]
 
-            # datetime special case
+            # Special datetime feature
             if iri == "http://www.w3.org/ns/odrl/2/dateTime":
                 row[iri] = (now - timedelta(minutes=i * 10)).isoformat()
                 continue
 
-            # match policy rule triplets
             matching_triplets = [t for t in permission_triplets_lists if t[0] == iri]
-
-            # determine if THIS specific feature should be inverted
             invert_condition = (iri == inverted_feature_iri)
 
             if matching_triplets:
                 _, op, val = random.choice(matching_triplets)
 
-                # ------------------------------------------
-                # Try integer
-                # ------------------------------------------
+                # INT
                 try:
                     val_int = int(val)
-
                     if (op == "=" and not invert_condition) or (op == "!=" and invert_condition):
                         row[iri] = val_int
                     elif (op == "!=" and not invert_condition) or (op == "=" and invert_condition):
@@ -374,42 +361,41 @@ def generate_state_of_the_world_from_policies(
                         row[iri] = val_int + random.randint(0, 100)
                     else:
                         row[iri] = val_int
-
+                    continue
                 except ValueError:
-                    # ------------------------------------------
-                    # Try float
-                    # ------------------------------------------
-                    try:
-                        val_float = float(val)
+                    pass
 
-                        if (op == "=" and not invert_condition) or (op == "!=" and invert_condition):
-                            row[iri] = val_float
-                        elif (op == "!=" and not invert_condition) or (op == "=" and invert_condition):
-                            row[iri] = val_float + random.uniform(1, 100)
-                        elif (op == "<" and not invert_condition) or (op == ">=" and invert_condition):
-                            row[iri] = val_float - random.uniform(1, 100)
-                        elif (op == "<=" and not invert_condition) or (op == ">" and invert_condition):
-                            row[iri] = val_float - random.uniform(0, 100)
-                        elif (op == ">" and not invert_condition) or (op == "<=" and invert_condition):
-                            row[iri] = val_float + random.uniform(1, 100)
-                        elif (op == ">=" and not invert_condition) or (op == "<" and invert_condition):
-                            row[iri] = val_float + random.uniform(0, 100)
-                        else:
-                            row[iri] = val_float
+                # FLOAT
+                try:
+                    val_float = float(val)
+                    if (op == "=" and not invert_condition) or (op == "!=" and invert_condition):
+                        row[iri] = val_float
+                    elif (op == "!=" and not invert_condition) or (op == "=" and invert_condition):
+                        row[iri] = val_float + random.uniform(1, 100)
+                    elif (op == "<" and not invert_condition) or (op == ">=" and invert_condition):
+                        row[iri] = val_float - random.uniform(1, 100)
+                    elif (op == "<=" and not invert_condition) or (op == ">" and invert_condition):
+                        row[iri] = val_float - random.uniform(0, 100)
+                    elif (op == ">" and not invert_condition) or (op == "<=" and invert_condition):
+                        row[iri] = val_float + random.uniform(1, 100)
+                    elif (op == ">=" and not invert_condition) or (op == "<" and invert_condition):
+                        row[iri] = val_float + random.uniform(0, 100)
+                    else:
+                        row[iri] = val_float
+                    continue
+                except ValueError:
+                    pass
 
-                    except ValueError:
-                        # ------------------------------------------
-                        # Non-numeric fallback
-                        # ------------------------------------------
-                        if (op == "=" and not invert_condition) or (op == "!=" and invert_condition):
-                            row[iri] = val
-                        elif (op == "!=" and not invert_condition) or (op == "=" and invert_condition):
-                            row[iri] = f"https://example.com/iri/sotw#{random.randint(1, 100000)}"
-                        else:
-                            row[iri] = ""
+                # STRING fallback
+                if (op == "=" and not invert_condition) or (op == "!=" and invert_condition):
+                    row[iri] = val
+                elif (op == "!=" and not invert_condition) or (op == "=" and invert_condition):
+                    row[iri] = f"https://example.com/iri/sotw#{random.randint(1, 100000)}"
+                else:
+                    row[iri] = ""
 
             else:
-                # no rule for this feature
+                # No rule → random or empty
                 if random.random() < chance_feature_empty:
                     row[iri] = ""
                 else:
@@ -426,12 +412,26 @@ def generate_state_of_the_world_from_policies(
 
         rows.append(row)
 
-    # write CSV
-    with open(csv_file, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=feature_iris)
-        writer.writeheader()
-        for r in rows:
-            writer.writerow(r)
+    # RETURN pandas DataFrame
+    return pd.DataFrame(rows, columns=feature_iris)
+
+
+def generate_state_of_the_world_from_policies(
+    odrl_graph: rdflib.Graph,
+    number_of_records=100,
+    valid=True,
+    chance_feature_empty=0.5,
+    csv_file="sotw.csv"
+):
+    df = generate_pd_state_of_the_world_from_policies(
+        odrl_graph,
+        number_of_records=number_of_records,
+        valid=valid,
+        chance_feature_empty=chance_feature_empty
+    )
+
+    df.to_csv(csv_file, index=False, encoding="utf-8")
+    return df
 
 
     #print(f"CSV file '{csv_file}' generated with {len(rows)} rows and {len(feature_iris)} columns.")
