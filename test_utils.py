@@ -6,9 +6,9 @@ import random
 def generate_permission_test_cases(
     test_n,
     # ---- parameters forwarded to generate_ODRL ----
-    policy_number=3,
-    p_rule_n=6,
-    f_rule_n=0,
+    policy_number=1,
+    p_rule_n=3,
+    f_rule_n=3,
     o_rule_n=0,
     constants_per_feature=6,
     constraint_number_min=0,
