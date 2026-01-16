@@ -89,10 +89,13 @@ def generate_ODRL(policy_number = 1, p_rule_n = 2, f_rule_n = 2, o_rule_n = 1,
     # --- Constraint creation
     def add_constraints(rule):
         n = random.randint(constraint_number_min, constraint_number_max)
-        for _ in range(n):
+        # limit n to available left operands
+        n = min(n, len(selected_left_operands))
+        left_operands = random.sample(selected_left_operands, n)
+
+        for left in left_operands:
             constraint = BNode()
             g.add((rule, ODRL.constraint, constraint))
-            left = random.choice(selected_left_operands)
             operator = URIRef(random.choice(ODRL_operators))
             right = Literal(random.randint(constraint_right_operand_min, constraint_right_operand_max))
             g.add((constraint, ODRL.leftOperand, left))
