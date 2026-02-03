@@ -2,7 +2,10 @@ import Evaluation.evaluator_functions
 import rdf_utils
 import SotW_generator
 import pandas as pd
-
+import validate
+import ODRL_generator
+import SotW_generator
+import operator
 def evaluate_ODRL_from_files(policy_file, SotW_file):
     graph = rdf_utils.load(policy_file)[0]
     graph_rules = SotW_generator.extract_rule_list_from_policy(graph)
