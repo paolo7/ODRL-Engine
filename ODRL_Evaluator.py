@@ -12,4 +12,4 @@ def evaluate_ODRL_from_files(policy_file, SotW_file):
 def evaluate_ODRL_on_dataframe(rules, SotW_file):
     return True, {}, "Dummy function returned true. \n\nRules:\n"+str(rules)+"\n\nDataframe:\n"+str(SotW_file)
 
-print("Evaluation: "+str(evaluate_ODRL_from_files("example_policies/exampleEvaluationPolicy.ttl","example_policies/exampleSotW.csv")))
+#print("Evaluation: "+str(evaluate_ODRL_from_files("example_policies/exampleEvaluationPolicy.ttl","example_policies/exampleSotW.csv")))
