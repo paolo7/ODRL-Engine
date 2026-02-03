@@ -14,7 +14,6 @@ OPS_MAP = {
     ">=": operator.ge,
 }
 
-
 def evaluate_ODRL_from_files(policy_file, SotW_file):
     graph = rdf_utils.load(policy_file)[0]
     graph_rules = SotW_generator.extract_rule_list_from_policy(graph)
@@ -23,24 +22,44 @@ def evaluate_ODRL_from_files(policy_file, SotW_file):
 
 
 def evaluate_ODRL_on_dataframe(policies, data_frame):
-    
-    # Evaluate all rows using your existing rowwise evaluation functions
+    """
+    Evaluate all dataframe rows against given policies.
+    Returns False if any row is denied, otherwise True.
+    """
+
     results = evaluate_all_policies_rowwise(data_frame, policies, OPS_MAP)
 
-    # Build message string
-    messages = []
+    evaluation_output = []
+    has_deny = False
+
     for r in results:
         if r["decision"] == "DENY":
-            messages.append(str(r))  # full dict for DENY
+            has_deny = True
+            evaluation_output.append({
+                "row_index": r["row_index"],
+                "status": "DENY",
+                "details": r
+            })
         else:
-            messages.append(f"Row_index: {r['row_index']} Pass")  # simple for ALLOW
+            evaluation_output.append({
+                "row_index": r["row_index"],
+                "status": "COMPLIANT",
+                "message": "This row is compliant"
+            })
 
-    # Join all messages
-    message_str = "\n".join(messages)
+    # If any DENY exists, return False
+    success = not has_deny
 
-    return True, {}, message_str
+    return success, {}, evaluation_output
+
+
 
 def eval_constraint(row, constraint, OPS_MAP):
+    """
+    Evaluate a single policy constraint on a dataframe row.
+    Supports equality and numeric comparison operators.
+    Returns True if the constraint is satisfied, else False.
+    """
     left, op_symbol, right = constraint
 
     if left not in row:
@@ -76,7 +95,10 @@ def eval_ruleset(row, rules, OPS_MAP):
         if eval_rule(row, rule, OPS_MAP):
             return True
     return False
+
+
 def evaluate_row_policy_verbose(row, policy, OPS_MAP):
+    
     permission_matches = []
     prohibition_matches = []
 
@@ -107,28 +129,25 @@ def evaluate_row_policy_verbose(row, policy, OPS_MAP):
         "permissions_satisfied": permission_matches,
         "prohibitions_satisfied": prohibition_matches,
     }
+
+
 def evaluate_policy_df_rowwise(df, policy, OPS_MAP):
     results = []
 
     for idx, row in df.iterrows():
         row_result = evaluate_row_policy_verbose(row, policy, OPS_MAP)
-        row_result.update({
-            "row_index": idx,
-            "policy": policy["policy_iri"]
-        })
+        row_result.update({"row_index": idx, "policy": policy["policy_iri"]})
         results.append(row_result)
 
     return results
 
+
 def evaluate_all_policies_rowwise(df, policies, OPS_MAP):
     all_results = []
-
     for policy in policies:
         row_results = evaluate_policy_df_rowwise(df, policy, OPS_MAP)
         all_results.extend(row_results)
-
     return all_results
-
 
 
 # print("Evaluation: "+str(evaluate_ODRL_from_files("example_policies/exampleEvaluationPolicy.ttl","example_policies/exampleSotW.csv")))
