@@ -238,68 +238,57 @@ def show_interface():
 
                 download_button.on_click(on_download_clicked)
             elif selected == "SotWevaluation":
-                clear_output()  # clear output before showing new widgets
+                clear_output()
                 import Evaluation.ODRL_Evaluator as Evaluator
 
-                # --- Local state for SotW upload ---
+                # ----------------------------
+                # Local upload state
+                # ----------------------------
                 class SotWUploadState:
                     filename = None
-                    content = None
 
-                # --- Upload handlers ---
+                # ----------------------------
+                # Output areas (DO NOT clear globally)
+                # ----------------------------
+                odrl_upload_out = widgets.Output()
+                sotw_upload_out = widgets.Output()
+                eval_out = widgets.Output()
+
+                result_box = widgets.Textarea(
+                    layout=widgets.Layout(width="100%", height="250px"),
+                    disabled=True
+                )
+
+                # ----------------------------
+                # Upload handlers
+                # ----------------------------
                 def upload_odrl_clicked(b):
-                    with output_box:
-                        clear_output()
-                        upload_file()  # reuse existing ODRL upload
-                        print("📄 ODRL policy ready.")
+                    with odrl_upload_out:
+                        odrl_upload_out.clear_output()
+                        uploaded = files.upload()
+                        if len(uploaded) != 1:
+                            print("⚠️ Please upload exactly one ODRL file.")
+                            return
+                        UploadState.filename = list(uploaded.keys())[0]
+                        UploadState.content = uploaded[UploadState.filename]
+                        print(f"✅ ODRL uploaded: {UploadState.filename}")
 
                 def upload_sotw_clicked(b):
-                    with output_box:
-                        clear_output()
+                    with sotw_upload_out:
+                        sotw_upload_out.clear_output()
                         uploaded = files.upload()
                         if len(uploaded) != 1:
                             print("⚠️ Please upload exactly one CSV file.")
                             return
                         SotWUploadState.filename = list(uploaded.keys())[0]
-                        SotWUploadState.content = uploaded[SotWUploadState.filename]
-                        print(f"📊 Uploaded SotW CSV: {SotWUploadState.filename}")
+                        print(f"✅ SotW CSV uploaded: {SotWUploadState.filename}")
 
-                # --- Widgets ---
-                odrl_label = widgets.HTML(
-                    "<b>Please upload an ODRL policy (if you haven't already)</b>"
-                )
-                odrl_upload_button = widgets.Button(
-                    description="Upload ODRL Policy",
-                    button_style="success"
-                )
-
-                sotw_label = widgets.HTML(
-                    "<b>Please upload a State of the World (SotW) file in CSV format.</b>"
-                )
-                sotw_upload_button = widgets.Button(
-                    description="Upload SotW CSV",
-                    button_style="success"
-                )
-
-                evaluate_button = widgets.Button(
-                    description="Evaluate",
-                    button_style="warning"  # orange
-                )
-
-                output_box = widgets.Output()
-                result_box = widgets.Textarea(
-                    value="",
-                    layout=widgets.Layout(width="100%", height="250px"),
-                    disabled=True
-                )
-
-                # --- Button wiring ---
-                odrl_upload_button.on_click(upload_odrl_clicked)
-                sotw_upload_button.on_click(upload_sotw_clicked)
-
+                # ----------------------------
+                # Evaluate handler
+                # ----------------------------
                 def on_evaluate_clicked(b):
-                    with output_box:
-                        clear_output()
+                    with eval_out:
+                        eval_out.clear_output()
 
                         if not UploadState.filename:
                             print("⚠️ No ODRL policy uploaded.")
@@ -326,19 +315,43 @@ def show_interface():
                             result_box.value = ""
                             print(f"⚠️ Evaluation error: {e}")
 
-                evaluate_button.on_click(on_evaluate_clicked)
+                # ----------------------------
+                # Widgets
+                # ----------------------------
+                odrl_btn = widgets.Button(
+                    description="Upload ODRL Policy",
+                    button_style="success"
+                )
+                sotw_btn = widgets.Button(
+                    description="Upload SotW CSV",
+                    button_style="success"
+                )
+                eval_btn = widgets.Button(
+                    description="Evaluate",
+                    button_style="warning"
+                )
 
-                # --- Display layout ---
+                odrl_btn.on_click(upload_odrl_clicked)
+                sotw_btn.on_click(upload_sotw_clicked)
+                eval_btn.on_click(on_evaluate_clicked)
+
+                # ----------------------------
+                # Layout (upload widget appears RIGHT BELOW button)
+                # ----------------------------
                 display(
                     widgets.VBox([
-                        odrl_label,
-                        odrl_upload_button,
+                        widgets.HTML("<b>Please upload an ODRL policy (if you haven't already)</b>"),
+                        odrl_btn,
+                        odrl_upload_out,
+
+                        widgets.HTML("<br><b>Please upload a State of the World (SotW) file in CSV format.</b>"),
+                        sotw_btn,
+                        sotw_upload_out,
+
                         widgets.HTML("<br>"),
-                        sotw_label,
-                        sotw_upload_button,
-                        widgets.HTML("<br>"),
-                        evaluate_button,
-                        output_box,
+                        eval_btn,
+                        eval_out,
+
                         widgets.HTML("<b>Evaluation Result:</b>"),
                         result_box
                     ])
