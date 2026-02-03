@@ -22,31 +22,23 @@ def evaluate_ODRL_from_files(policy_file, SotW_file):
 
 
 def evaluate_ODRL_on_dataframe(policies, data_frame):
-    """
-    Evaluate all dataframe rows against given policies.
-    Returns:
-        success (bool): False if any row is denied, otherwise True
-        evaluation_output (list): row-wise evaluation details
-    """
+
     results = evaluate_all_policies_rowwise(data_frame, policies, OPS_MAP)
 
-    evaluation_output = []
-    success = True
+    has_deny = False
+    messages = []
 
     for r in results:
         if r["decision"] == "DENY":
-            success = False
-            evaluation_output.append({
-                "row_index": r["row_index"],
-                "status": "Non-COMPLIANT"
-            })
+            has_deny = True
+            messages.append(f"Row {r['row_index']} is NON-COMPLIANT")
         else:
-            evaluation_output.append({
-                "row_index": r["row_index"],
-                "status": "COMPLIANT"
-            })
+            messages.append(f"Row {r['row_index']} is COMPLIANT")
 
-    return success, evaluation_output
+    message_str = "\n".join(messages)
+
+    # If any DENY → return False
+    return (not has_deny), {}, message_str
 
 
 
