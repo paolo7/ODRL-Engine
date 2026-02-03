@@ -1,0 +1,68 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> . 
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> . 
+@prefix dpv: <https://w3id.org/dpv/owl#> . 
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix dp: <https://datapact.eu/ns/> . 
+
+dp:b203dfc9-2795-440f-a2b3-40f9ab4f006e a odrl:Policy ; 
+    odrl:permission
+		# This is a generic permission to use non personal data for communication for customer care
+		[ a odrl:Permission ; 
+            odrl:action odrl:use ; 
+			odrl:target [
+				rdf:value dpv:NonPersonalData ; 
+			] ;
+			odrl:assignee dp:Cactus ; 
+			odrl:constraint [
+				odrl:leftOperand odrl:Purpose ;
+				odrl:operator odrl:eq ;
+				odrl:rightOperand dpv:CommunicationForCustomerCare ;
+			] ;
+		] ,
+	    # These are two consent policies. Entities dp:EntityA and dp:EntityB agree to share PersonalData	
+        [ a odrl:Permission ; 
+            odrl:action odrl:use ; 
+			odrl:target [
+				rdf:value dpv:PersonalData ; 
+				odrl:refinement [
+					odrl:leftOperand dpv:hasDataController ; 
+					odrl:operator odrl:eq ;
+					odrl:rightOperand dp:EntityA ;
+				]
+			] ;
+			odrl:assignee dp:Cactus ; 
+			odrl:constraint [
+				odrl:leftOperand odrl:Purpose ;
+				odrl:operator odrl:eq ;
+				odrl:rightOperand dpv:CommunicationForCustomerCare ;
+			] ;
+			odrl:constraint [
+				odrl:leftOperand odrl:dateTime ;
+				odrl:operator odrl:leq ;
+				odrl:rightOperand "2026-10-15"^^xsd:date ;
+			] ;
+		],	
+		[ a odrl:Permission ; 
+            odrl:action odrl:use ; 
+			odrl:target [
+				rdf:value dpv:PersonalData ; 
+				odrl:refinement [
+					odrl:leftOperand dpv:hasDataController ; 
+					odrl:operator odrl:eq ;
+					odrl:rightOperand dp:EntityB ;
+				]
+			] ;
+			odrl:assignee dp:Cactus ; 
+			odrl:constraint [
+				odrl:leftOperand odrl:Purpose ;
+				odrl:operator odrl:eq ;
+				odrl:rightOperand dpv:CommunicationForCustomerCare ;
+			] ;
+			odrl:constraint [
+				odrl:leftOperand odrl:dateTime ;
+				odrl:operator odrl:leq ;
+				odrl:rightOperand "2026-10-15"^^xsd:date ;
+			] ;
+		] .

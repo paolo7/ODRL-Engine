@@ -31,9 +31,6 @@ def setup():
 
     # test imports
     print("\n✅ Testing imports...")
-    import validate
-    import rdflib
-    from rdflib.namespace import RDF, RDFS, SKOS
     global colab_functions
     import ipywidgets
     from IPython.display import display, HTML, clear_output
@@ -58,7 +55,6 @@ def upload_file():
 def show_interface():
     import validate
     import ODRL_generator
-    import SotW_generator
     from colab_functions import visualise
     from colab_functions import graph_equality_comparison
     # --- DROPDOWN MENU ---
@@ -239,7 +235,7 @@ def show_interface():
                 download_button.on_click(on_download_clicked)
             elif selected == "SotWevaluation":
                 clear_output()
-                import Evaluation.ODRL_Evaluator as Evaluator
+                import ODRL_Evaluator as Evaluator
 
                 # ----------------------------
                 # Local upload state
@@ -298,15 +294,20 @@ def show_interface():
                             return
 
                         try:
-                            result = Evaluator.evaluate_ODRL_from_files(
-                                odrl_file_path=UploadState.filename,
-                                sotw_csv_path=SotWUploadState.filename
+                            is_valid, violations, message = Evaluator.evaluate_ODRL_from_files(
+                                UploadState.filename,
+                                SotWUploadState.filename
                             )
 
+                            # Store violations for future use (not displayed for now)
+                            SotWUploadState.violations = violations
+
+                            validity_str = "YES" if is_valid else "NO"
+
                             result_box.value = (
-                                json.dumps(result, indent=4, ensure_ascii=False)
-                                if isinstance(result, (dict, list))
-                                else str(result)
+                                f"Is the State of the World valid? {validity_str}\n\n"
+                                f"Evaluation report:\n"
+                                f"{message}"
                             )
 
                             print("✅ Evaluation completed.")
