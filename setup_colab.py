@@ -343,41 +343,6 @@ def show_interface():
                 # Evaluate handler
                 # ----------------------------
                 def on_evaluate_clicked(b):
-                    with detail_eval_out:
-                        detail_eval_out.clear_output()
-
-                        if not UploadState.filename:
-                            print("⚠️ No ODRL policy uploaded.")
-                            return
-                        if not SotWUploadState.filename:
-                            print("⚠️ No SotW CSV uploaded.")
-                            return
-
-                        try:
-                            is_valid, violations, message = (
-                                Evaluator.evaluate_ODRL_from_files(
-                                    UploadState.filename, SotWUploadState.filename
-                                )
-                            )
-
-                            # Store violations for future use (not displayed for now)
-                            SotWUploadState.violations = violations
-
-                            validity_str = "YES" if is_valid else "NO"
-
-                            detail_result_box.value = (
-                                f"Is the State of the World valid? {validity_str}\n\n"
-                                f"Evaluation report:\n"
-                                f"{message}"
-                            )
-
-                            print("✅ Evaluation completed.")
-
-                        except Exception as e:
-                            detail_result_box.value = ""
-                            print(f"⚠️ Evaluation error: {e}")
-
-                def on_detail_evaluation_clicked(b):
                     with eval_out:
                         eval_out.clear_output()
 
@@ -411,6 +376,71 @@ def show_interface():
                         except Exception as e:
                             result_box.value = ""
                             print(f"⚠️ Evaluation error: {e}")
+
+                def on_detail_evaluation_clicked(b):
+                     with detail_eval_out:
+                        detail_eval_out.clear_output()
+
+                        if not UploadState.filename:
+                            print("⚠️ No ODRL policy uploaded.")
+                            return
+                        if not SotWUploadState.filename:
+                            print("⚠️ No SotW CSV uploaded.")
+                            return
+
+                        try:
+                            # Call your new detailed evaluator
+                            evaluation = Evaluator.detailed_evaluation_from_files(
+                                UploadState.filename, SotWUploadState.filename
+                            )
+
+                            # Store raw results for future use if needed
+                            SotWUploadState.raw_results = evaluation["raw_results"]
+
+                            # Overall compliance
+                            validity_str = "YES" if evaluation["overall_compliant"] else "NO"
+
+                            # Start building the output text
+                            output_lines = [f"Is the State of the World valid? {validity_str}\n"]
+
+                            deny_details = evaluation["deny_details"]
+                            if not deny_details:
+                                output_lines.append("✅ No violations detected.")
+                            else:
+                                output_lines.append(f"⚠️ {len(deny_details)} violation(s) detected:\n")
+                                for r in deny_details:
+                                    output_lines.append(f"=== Row {r['row_index']} DENIED ===")
+
+                                    # Row data
+                                    output_lines.append("Row data (schema + values):")
+                                    for col, val in r["row_data"].items():
+                                        output_lines.append(f"  {col}: {val}")
+
+                                    # Policy and reason
+                                    output_lines.append(f"Policy: {r['policy_iri']}")
+                                    output_lines.append(f"Reason for DENY: {r['reason']}")
+
+                                    # Prohibitions violated
+                                    output_lines.append("Prohibitions violated:")
+                                    for i, rule in enumerate(r["prohibitions_violated"]):
+                                        output_lines.append(f"  [{i}] {rule}")
+
+                                    # Permissions satisfied (optional)
+                                    if r.get("permissions_satisfied"):
+                                        output_lines.append("Permissions satisfied (for reference):")
+                                        for i, rule in enumerate(r["permissions_satisfied"]):
+                                            output_lines.append(f"  [{i}] {rule}")
+
+                                    output_lines.append("-" * 60)
+
+                            # Join everything into one string
+                            detail_result_box.value = "\n".join(output_lines)
+                            print("✅ Evaluation completed.")
+
+                        except Exception as e:
+                            detail_result_box.value = ""
+                            print(f"⚠️ Evaluation error: {e}")
+
 
                 # ----------------------------
                 # Widgets
