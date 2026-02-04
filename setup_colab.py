@@ -343,8 +343,8 @@ def show_interface():
                 # Evaluate handler
                 # ----------------------------
                 def on_evaluate_clicked(b):
-                    with eval_out:
-                        eval_out.clear_output()
+                    with detail_eval_out:
+                        detail_eval_out.clear_output()
 
                         if not UploadState.filename:
                             print("⚠️ No ODRL policy uploaded.")
@@ -365,7 +365,7 @@ def show_interface():
 
                             validity_str = "YES" if is_valid else "NO"
 
-                            result_box.value = (
+                            detail_result_box.value = (
                                 f"Is the State of the World valid? {validity_str}\n\n"
                                 f"Evaluation report:\n"
                                 f"{message}"
@@ -374,7 +374,7 @@ def show_interface():
                             print("✅ Evaluation completed.")
 
                         except Exception as e:
-                            result_box.value = ""
+                            detail_result_box.value = ""
                             print(f"⚠️ Evaluation error: {e}")
 
                 def on_detail_evaluation_clicked(b):
