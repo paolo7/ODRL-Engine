@@ -14,6 +14,7 @@ OPS_MAP = {
     ">=": operator.ge,
 }
 
+
 def evaluate_ODRL_from_files(policy_file, SotW_file):
     graph = rdf_utils.load(policy_file)[0]
     graph_rules = SotW_generator.extract_rule_list_from_policy(graph)
@@ -39,7 +40,6 @@ def evaluate_ODRL_on_dataframe(policies, data_frame):
 
     # If any DENY → return False
     return (not has_deny), {}, message_str
-
 
 
 def eval_constraint(row, constraint, OPS_MAP):
@@ -86,19 +86,22 @@ def eval_ruleset(row, rules, OPS_MAP):
 
 
 def evaluate_row_policy_verbose(row, policy, OPS_MAP):
-    
     permission_matches = []
+    satisfied_permissions = []
     prohibition_matches = []
+    violated_prohibitions = []
 
     # check permissions
     for i, rule in enumerate(policy["permissions"]):
         if eval_rule(row, rule, OPS_MAP):
             permission_matches.append(i)
+            satisfied_permissions.append(rule)
 
     # check prohibitions
     for i, rule in enumerate(policy["prohibitions"]):
         if eval_rule(row, rule, OPS_MAP):
             prohibition_matches.append(i)
+            violated_prohibitions.append(rule)
 
     # decision logic
     if prohibition_matches:
@@ -114,8 +117,10 @@ def evaluate_row_policy_verbose(row, policy, OPS_MAP):
     return {
         "decision": decision,
         "reason": reason,
-        "permissions_satisfied": permission_matches,
-        "prohibitions_satisfied": prohibition_matches,
+        "permissions_satisfied_indices": permission_matches,
+        "permissions_satisfied_rules": satisfied_permissions,
+        "prohibitions_violated_indices": prohibition_matches,
+        "prohibitions_violated_rules": violated_prohibitions,
     }
 
 
@@ -124,10 +129,15 @@ def evaluate_policy_df_rowwise(df, policy, OPS_MAP):
 
     for idx, row in df.iterrows():
         row_result = evaluate_row_policy_verbose(row, policy, OPS_MAP)
-        row_result.update({"row_index": idx, "policy": policy["policy_iri"]})
+        row_result.update({
+            "row_index": idx,
+            "policy_iri": policy.get("policy_iri", "unknown_policy"),
+            "row_data": row.to_dict()  # optional, include actual row values
+        })
         results.append(row_result)
 
     return results
+
 
 
 def evaluate_all_policies_rowwise(df, policies, OPS_MAP):
