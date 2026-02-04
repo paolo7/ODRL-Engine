@@ -458,7 +458,7 @@ def show_interface():
                             detail_eval_btn,
                             detail_eval_out,
                             widgets.HTML("<b>Details of Non Compliance SoTWs:</b>"),
-                            detail_result_box,
+                            detail_result_box
                         ]
                     )
                 )
