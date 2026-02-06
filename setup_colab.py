@@ -444,6 +444,31 @@ def show_interface():
                         except Exception as e:
                             detail_result_box.value = ""
                             print(f"⚠️ Evaluation error: {e}")
+               
+                def format_rowwise_stats(rowwise_stats):
+                    lines = []
+                    current_row = None
+
+                    for stat in rowwise_stats:
+                        if current_row != stat["row_index"]:
+                            lines.append(f"\n=== Row {stat['row_index']} ===")
+                            current_row = stat["row_index"]
+
+                        lines.append(f"Policy: {stat['policy_iri']}")
+                        lines.append(
+                            f"  Permission satisfied: {stat['permission_satisfied_percentage']}%"
+                        )
+                        lines.append(
+                            f"  Prohibition violated: {stat['prohibition_violated_percentage']}%"
+                        )
+                        lines.append(
+                            f"  Permissions satisfied indices: {stat['permissions_satisfied_indices']}"
+                        )
+                        lines.append(
+                            f"  Prohibitions violated indices: {stat['prohibitions_violated_indices']}"
+                        )
+
+                    return "\n".join(lines)
                 def on_stats_evaluation_clicked(b):
                     with stats_out:
                         stats_out.clear_output()
@@ -451,26 +476,28 @@ def show_interface():
                         if not UploadState.filename:
                             print("⚠️ No ODRL policy uploaded.")
                             return
+
                         if not SotWUploadState.filename:
                             print("⚠️ No SotW CSV uploaded.")
                             return
 
                         try:
-                            stats = Evaluator.compute_statistics_from_files(
-                                UploadState.filename, SotWUploadState.filename
+                            # This already calls your existing function
+                            rowwise_stats = Evaluator.compute_statistics_from_files(
+                                UploadState.filename,
+                                SotWUploadState.filename
                             )
 
-                            # Format stats into readable text
-                            output_lines = ["=== Policy Evaluation Statistics ===\n"]
-                            for stat_name, stat_value in stats.items():
-                                output_lines.append(f"{stat_name}: {stat_value}")
+                            output = ["=== Policy Evaluation (Row-wise Statistics) ==="]
+                            output.append(format_rowwise_stats(rowwise_stats))
 
-                            stats_box.value = "\n".join(output_lines)
-                            print("✅ Statistics computed.")
+                            stats_box.value = "\n".join(output)
+                            print("✅ Statistics computed successfully.")
 
                         except Exception as e:
                             stats_box.value = ""
                             print(f"⚠️ Statistics computation error: {e}")
+
 
                 # ----------------------------
                 # Widgets
