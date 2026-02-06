@@ -444,7 +444,33 @@ def show_interface():
                         except Exception as e:
                             detail_result_box.value = ""
                             print(f"⚠️ Evaluation error: {e}")
+                def on_stats_evaluation_clicked(b):
+                    with stats_out:
+                        stats_out.clear_output()
 
+                        if not UploadState.filename:
+                            print("⚠️ No ODRL policy uploaded.")
+                            return
+                        if not SotWUploadState.filename:
+                            print("⚠️ No SotW CSV uploaded.")
+                            return
+
+                        try:
+                            stats = Evaluator.compute_statistics_from_files(
+                                UploadState.filename, SotWUploadState.filename
+                            )
+
+                            # Format stats into readable text
+                            output_lines = ["=== Policy Evaluation Statistics ===\n"]
+                            for stat_name, stat_value in stats.items():
+                                output_lines.append(f"{stat_name}: {stat_value}")
+
+                            stats_box.value = "\n".join(output_lines)
+                            print("✅ Statistics computed.")
+
+                        except Exception as e:
+                            stats_box.value = ""
+                            print(f"⚠️ Statistics computation error: {e}")
 
                 # ----------------------------
                 # Widgets
@@ -461,11 +487,15 @@ def show_interface():
                 detail_eval_btn = widgets.Button(
                     description="Detail", button_style="warning"
                 )
+                stats_eval_btn = widgets.Button(
+                    description="Statistics", button_style="info"
+                )
 
                 odrl_btn.on_click(upload_odrl_clicked)
                 sotw_btn.on_click(upload_sotw_clicked)
                 eval_btn.on_click(on_evaluate_clicked)
                 detail_eval_btn.on_click(on_detail_evaluation_clicked)
+                stats_eval_btn.on_click(on_stats_evaluation_clicked)
 
                 # ----------------------------
                 # Layout (upload widget appears RIGHT BELOW button)
@@ -492,7 +522,11 @@ def show_interface():
                             detail_eval_btn,
                             detail_eval_out,
                             widgets.HTML("<b>Details of Non Compliance SoTWs:</b>"),
-                            detail_result_box
+                            detail_result_box,
+                            widgets.HTML("<br>"),
+                            stats_eval_btn,
+                            stats_out,
+                            stats_box
                         ]
                     )
                 )
