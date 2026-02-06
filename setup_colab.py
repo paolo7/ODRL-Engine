@@ -307,11 +307,15 @@ def show_interface():
                 sotw_upload_out = widgets.Output()
                 eval_out = widgets.Output()
                 detail_eval_out = widgets.Output()
+                stats_out = widgets.Output()
 
                 result_box = widgets.Textarea(
                     layout=widgets.Layout(width="100%", height="250px"), disabled=True
                 )
                 detail_result_box = widgets.Textarea(
+                    layout=widgets.Layout(width="100%", height="250px"), disabled=True
+                )
+                stats_box = widgets.Textarea(
                     layout=widgets.Layout(width="100%", height="250px"), disabled=True
                 )
 
