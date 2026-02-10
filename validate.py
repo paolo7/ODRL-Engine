@@ -114,7 +114,7 @@ def diagnose_ODRL(filepath) -> str:
             errors.append("FORMAT ERROR: The provided string is plain JSON. An ODRL file should be in a graph format, like JSON-LD.")
         except (ValueError, TypeError):
             errors.append("FORMAT ERROR: The provided string is not recognised as any ODRL graph formats, such as JSON-LD, Turtle or RDF/XML. It does not appear to be plain JSON either.")
-            return errors, warnings, parsed_info
+            return errors, warnings, parsed_info, False
     parsed_info.append("INFO: The file contains an RDF graph in the following format: "+str(format))
 
     # validate ODRL using SHACL
@@ -133,11 +133,13 @@ def diagnose_ODRL(filepath) -> str:
     else :
         parsed_info.append("\nSHACL validation failed")
         parsed_info.append("SHACL validation report : \n" + str(report))
-    return errors, warnings, parsed_info
+    is_valid = conforms and not errors
+    return errors, warnings, parsed_info, is_valid
 
 def generate_ODRL_diagnostic_report(filepath: str) -> str:
-    errors, warnings, parsed_info = diagnose_ODRL(filepath)
+    errors, warnings, parsed_info, is_valid = diagnose_ODRL(filepath)
     print("REPORT START\nAnalysing the file "+str(filepath)+" for ODRL compliance:")
+    print(f"Is it compliant? {is_valid}")
     for error in errors:
         print(error)
     for warning in warnings:
