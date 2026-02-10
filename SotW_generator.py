@@ -119,7 +119,9 @@ sample_assets = [
 # from constraints.
 # all lists contain datetime, party, action and asset by default
 def extract_features_list_from_policy(odrl_graph: rdflib.Graph):
-    features = []
+
+    features = list(base_features)
+    seen_iris = {f["iri"] for f in base_features}
 
     # Predicates used to decide top-level policy-like nodes
     policy_predicates = {ODRL.permission, ODRL.prohibition, ODRL.obligation}
@@ -136,20 +138,18 @@ def extract_features_list_from_policy(odrl_graph: rdflib.Graph):
             continue
         left_operand = str(lefts[0])
 
-        added_as_direct = False
-
         # Find any parent that references this constraint via odrl:constraint
         for parent in odrl_graph.subjects(predicate=ODRL.constraint, object=constraint):
             has_policy_like = any(
                 next(odrl_graph.subjects(predicate=p, object=parent), None) is not None
                 for p in policy_predicates
             )
-            if has_policy_like:
+            if has_policy_like and left_operand not in seen_iris:
                 features.append({
                     "iri": left_operand,
                     "type": "http://www.w3.org/ns/shacl#Literal"
                 })
-                added_as_direct = True
+                seen_iris.add(left_operand)
 
         # If constraint was not attached directly to a policy-like parent, check for refinement attachments.
         # A refinement is modeled as some node R having odrl:refinement -> constraint.
@@ -159,34 +159,20 @@ def extract_features_list_from_policy(odrl_graph: rdflib.Graph):
             for iri_prefix, incoming_pred in refinement_contexts_incoming.items():
                 # If there exists any triple (?s, incoming_pred, referrer), then referrer is of that context
                 if any(odrl_graph.subjects(predicate=incoming_pred, object=referrer)):
-                    features.append({
-                        "iri": f"{iri_prefix} {left_operand}",
-                        "type": "http://www.w3.org/ns/shacl#Literal"
-                    })
+                    iri = f"{iri_prefix} {left_operand}"
+                    if iri not in seen_iris:
+                        features.append({
+                            "iri": iri,
+                            "type": "http://www.w3.org/ns/shacl#Literal"
+                        })
+                        seen_iris.add(iri)
                     matched = True
                     # could be multiple context types, don't break; allow multiple if RDF encodes them
             # If referrer is attached to something that itself is a node used in permission/prohibition/obligation,
             # it's possible the referrer is nested under a rule — the above incoming-edge checks cover the requested detection.
 
-
-
-    # 1. Sort features alphabetically by iri, to have deterministic lists of features
     features = sorted(features, key=lambda f: f["iri"])
-
-    # 2. Prepend the base features
-    all_features = base_features + features
-
-    # 3. Deduplicate by (iri, type)
-    seen = set()
-    unique_features = []
-    for f in all_features:
-        key = f["iri"]  # only compare by IRI
-        if key not in seen:
-            seen.add(key)
-            unique_features.append(f)
-
-    last_seen_list_of_features = unique_features
-    return unique_features
+    return features
 
 def extract_rule_list(odrl_graph, rule_node, features):
     """
@@ -453,8 +439,8 @@ def generate_state_of_the_world_from_policies_from_file(
     return generate_state_of_the_world_from_policies(g, number_of_records, valid, chance_feature_empty, csv_file)
 
 # Example usage
-#g = rdf_utils.load("example_policies/example_valid2.ttl")[0]
-#file_path = "example_policies/example_valid2.ttl"
+#g = rdf_utils.load("example_policies/example_valid3.ttl")[0]
+#file_path = "example_policies/example_valid3.ttl"
 #print(*extract_features_list_from_policy_from_file(file_path), sep ="\n")
 #print("\nPolicies with rules:")
 #print(*extract_rule_list_from_policy_from_file(file_path), sep="\n")
