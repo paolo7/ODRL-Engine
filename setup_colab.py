@@ -12,12 +12,14 @@ from google.colab import files
 import ipywidgets as widgets
 from IPython.display import display, clear_output
 
+
 def run_cmd(cmd):
     print(f"\n[RUNNING] {cmd}")
     result = subprocess.run(cmd, shell=True, check=False, text=True)
     if result.returncode != 0:
         print(f"⚠️ Command failed: {cmd}")
     return result
+
 
 def setup():
     print("🚀 Setting up ODRL-Engine environment in Google Colab...\n")
@@ -38,9 +40,11 @@ def setup():
     print("✅ ODRL-Engine setup complete and all imports successful!")
     clear_output(wait=True)
 
+
 class UploadState:
     filename = None
     content = None
+
 
 def upload_file():
     uploaded = files.upload()
@@ -52,28 +56,30 @@ def upload_file():
     UploadState.content = uploaded[UploadState.filename]
     print(f"✅ Uploaded: {UploadState.filename}")
 
+
 def show_interface():
     import validate
     import ODRL_generator
     from colab_functions import visualise
     from colab_functions import graph_equality_comparison
+
     # --- DROPDOWN MENU ---
     dropdown = widgets.Dropdown(
         options=[
-            ('Upload ODRL File', 'upload'),
-            ('File Info', 'fileinfo'),
-            ('Visualise Policy', 'visualise'),
-            ('Full ODRL Validation', 'validate'),
-            ('Graph Diff', 'comparetriplebytriple'),
-            ('Generate ODRL Policies', 'ODRLgeneration'),
-            ('Generate State of the World', 'SotWgeneration'),
-            ('Evaluate State of the World', 'SotWevaluation'),
+            ("Upload ODRL File", "upload"),
+            ("File Info", "fileinfo"),
+            ("Visualise Policy", "visualise"),
+            ("Full ODRL Validation", "validate"),
+            ("Graph Diff", "comparetriplebytriple"),
+            ("Generate ODRL Policies", "ODRLgeneration"),
+            ("Generate State of the World", "SotWgeneration"),
+            ("Evaluate State of the World", "SotWevaluation"),
         ],
-        description='Select:',
+        description="Select:",
     )
 
     # --- RUN BUTTON ---
-    run_button = widgets.Button(description="Run", button_style='success')
+    run_button = widgets.Button(description="Run", button_style="success")
     output_run = widgets.Output()
 
     def on_run_clicked(b):
@@ -89,7 +95,9 @@ def show_interface():
                     print("⚠️ No ODRL file uploaded yet.")
             elif selected == "fileinfo":
                 if UploadState.filename and UploadState.content:
-                    print(f'User uploaded file "{UploadState.filename}" with length {len(UploadState.content)} bytes')
+                    print(
+                        f'User uploaded file "{UploadState.filename}" with length {len(UploadState.content)} bytes'
+                    )
                 else:
                     print("⚠️ No ODRL file uploaded yet.")
             elif selected == "validate":
@@ -104,7 +112,14 @@ def show_interface():
 
                 # --- Helper function for labeled input ---
                 def labeled_widget(label_text, widget):
-                    return widgets.HBox([widgets.Label(value=label_text, layout=widgets.Layout(width='220px')), widget])
+                    return widgets.HBox(
+                        [
+                            widgets.Label(
+                                value=label_text, layout=widgets.Layout(width="220px")
+                            ),
+                            widget,
+                        ]
+                    )
 
                 # --- Input widgets ---
                 policy_number_widget = widgets.IntText(value=1)
@@ -117,7 +132,9 @@ def show_interface():
                 chance_feature_null_widget = widgets.FloatText(value=0.5)
                 constraint_right_operand_min_widget = widgets.IntText(value=0)
                 constraint_right_operand_max_widget = widgets.IntText(value=100)
-                ontology_path_widget = widgets.Text(value="sample_ontologies/ODRL_DPV.ttl")
+                ontology_path_widget = widgets.Text(
+                    value="sample_ontologies/ODRL_DPV.ttl"
+                )
 
                 # Wrap with labels
                 widgets_list = [
@@ -125,21 +142,42 @@ def show_interface():
                     labeled_widget("Number of Permission Rules:", p_rule_n_widget),
                     labeled_widget("Number of Prohibition Rules:", f_rule_n_widget),
                     labeled_widget("Number of Obligation Rules:", o_rule_n_widget),
-                    labeled_widget("Constants per Feature (Actions/Parties/Targets):", constants_per_feature_widget),
-                    labeled_widget("Minimum Constraints per Rule:", constraint_number_min_widget),
-                    labeled_widget("Maximum Constraints per Rule:", constraint_number_max_widget),
-                    labeled_widget("Chance Feature is Null (0-1):", chance_feature_null_widget),
-                    labeled_widget("Constraint Right Operand Min:", constraint_right_operand_min_widget),
-                    labeled_widget("Constraint Right Operand Max:", constraint_right_operand_max_widget),
-                    labeled_widget("Ontology Path:", ontology_path_widget)
+                    labeled_widget(
+                        "Constants per Feature (Actions/Parties/Targets):",
+                        constants_per_feature_widget,
+                    ),
+                    labeled_widget(
+                        "Minimum Constraints per Rule:", constraint_number_min_widget
+                    ),
+                    labeled_widget(
+                        "Maximum Constraints per Rule:", constraint_number_max_widget
+                    ),
+                    labeled_widget(
+                        "Chance Feature is Null (0-1):", chance_feature_null_widget
+                    ),
+                    labeled_widget(
+                        "Constraint Right Operand Min:",
+                        constraint_right_operand_min_widget,
+                    ),
+                    labeled_widget(
+                        "Constraint Right Operand Max:",
+                        constraint_right_operand_max_widget,
+                    ),
+                    labeled_widget("Ontology Path:", ontology_path_widget),
                 ]
 
                 # --- Buttons and outputs ---
-                generate_button = widgets.Button(description="Generate", button_style='success')
-                download_button = widgets.Button(description="Download TTL", button_style='info')
+                generate_button = widgets.Button(
+                    description="Generate", button_style="success"
+                )
+                download_button = widgets.Button(
+                    description="Download TTL", button_style="info"
+                )
                 download_button.disabled = True
-                download_button.layout.opacity = '0.5'
-                info_button = widgets.ToggleButton(description="INFO", value=False, button_style='warning')
+                download_button.layout.opacity = "0.5"
+                info_button = widgets.ToggleButton(
+                    description="INFO", value=False, button_style="warning"
+                )
                 info_textarea = widgets.HTML(
                     value="""
                     <div style="font-family:Arial, sans-serif; line-height:1.6; max-width:700px;">
@@ -173,8 +211,8 @@ def show_interface():
                         Actions, parties, targets and leftOperands are currently defined as the subclasses and instances of odrl:Action, odrl:Party, odrl:Asset and odrl:LeftOperand, respectively.</p>
                     </div>
                     """,
-                    layout=widgets.Layout(width='750px', height='450px'),
-                    disabled=True
+                    layout=widgets.Layout(width="750px", height="450px"),
+                    disabled=True,
                 )
 
                 output_generate = widgets.Output()
@@ -187,10 +225,20 @@ def show_interface():
                     else:
                         info_textarea.close()  # hides the textarea
 
-                info_button.observe(on_info_toggled, names='value')
+                info_button.observe(on_info_toggled, names="value")
 
                 # Display all widgets
-                display(widgets.VBox(widgets_list + [generate_button, download_button, info_button, output_generate]))
+                display(
+                    widgets.VBox(
+                        widgets_list
+                        + [
+                            generate_button,
+                            download_button,
+                            info_button,
+                            output_generate,
+                        ]
+                    )
+                )
 
                 # --- Generate button ---
                 def on_generate_clicked(b):
@@ -209,16 +257,20 @@ def show_interface():
                                 chance_feature_null=chance_feature_null_widget.value,
                                 constraint_right_operand_min=constraint_right_operand_min_widget.value,
                                 constraint_right_operand_max=constraint_right_operand_max_widget.value,
-                                ontology_path=ontology_path_widget.value
+                                ontology_path=ontology_path_widget.value,
                             )
                             turtle_output = policies_graph.serialize(format="turtle")
-                            print(turtle_output.decode("utf-8") if isinstance(turtle_output, bytes) else turtle_output)
+                            print(
+                                turtle_output.decode("utf-8")
+                                if isinstance(turtle_output, bytes)
+                                else turtle_output
+                            )
                             download_button.disabled = False
-                            download_button.layout.opacity = '1.0'
+                            download_button.layout.opacity = "1.0"
                         except Exception as e:
                             print(f"⚠️ Error during generation: {e}")
                             download_button.disabled = True
-                            download_button.layout.opacity = '0.5'
+                            download_button.layout.opacity = "0.5"
 
                 generate_button.on_click(on_generate_clicked)
 
@@ -227,8 +279,13 @@ def show_interface():
                     if policies_graph is not None:
                         import tempfile
                         from google.colab import files
-                        with tempfile.NamedTemporaryFile(suffix=".ttl", delete=False) as tmp_file:
-                            policies_graph.serialize(destination=tmp_file.name, format="turtle")
+
+                        with tempfile.NamedTemporaryFile(
+                            suffix=".ttl", delete=False
+                        ) as tmp_file:
+                            policies_graph.serialize(
+                                destination=tmp_file.name, format="turtle"
+                            )
                             tmp_file.flush()
                             files.download(tmp_file.name)
 
@@ -249,10 +306,17 @@ def show_interface():
                 odrl_upload_out = widgets.Output()
                 sotw_upload_out = widgets.Output()
                 eval_out = widgets.Output()
+                detail_eval_out = widgets.Output()
+                stats_out = widgets.Output()
 
                 result_box = widgets.Textarea(
-                    layout=widgets.Layout(width="100%", height="250px"),
-                    disabled=True
+                    layout=widgets.Layout(width="100%", height="250px"), disabled=True
+                )
+                detail_result_box = widgets.Textarea(
+                    layout=widgets.Layout(width="100%", height="250px"), disabled=True
+                )
+                stats_box = widgets.Textarea(
+                    layout=widgets.Layout(width="100%", height="250px"), disabled=True
                 )
 
                 # ----------------------------
@@ -294,9 +358,10 @@ def show_interface():
                             return
 
                         try:
-                            is_valid, violations, message = Evaluator.evaluate_ODRL_from_files(
-                                UploadState.filename,
-                                SotWUploadState.filename
+                            is_valid, violations, message = (
+                                Evaluator.evaluate_ODRL_from_files(
+                                    UploadState.filename, SotWUploadState.filename
+                                )
                             )
 
                             # Store violations for future use (not displayed for now)
@@ -316,46 +381,181 @@ def show_interface():
                             result_box.value = ""
                             print(f"⚠️ Evaluation error: {e}")
 
+                def on_detail_evaluation_clicked(b):
+                     with detail_eval_out:
+                        detail_eval_out.clear_output()
+
+                        if not UploadState.filename:
+                            print("⚠️ No ODRL policy uploaded.")
+                            return
+                        if not SotWUploadState.filename:
+                            print("⚠️ No SotW CSV uploaded.")
+                            return
+
+                        try:
+                            # Call your new detailed evaluator
+                            evaluation = Evaluator.detailed_evaluation_from_files(
+                                UploadState.filename, SotWUploadState.filename
+                            )
+
+                            # Store raw results for future use if needed
+                            SotWUploadState.raw_results = evaluation["raw_results"]
+
+                            # Overall compliance
+                            validity_str = "YES" if evaluation["overall_compliant"] else "NO"
+
+                            # Start building the output text
+                            output_lines = [f"Is the State of the World valid? {validity_str}\n"]
+
+                            deny_details = evaluation["deny_details"]
+                            if not deny_details:
+                                output_lines.append("✅ No violations detected.")
+                            else:
+                                output_lines.append(f"⚠️ {len(deny_details)} violation(s) detected:\n")
+                                for r in deny_details:
+                                    output_lines.append(f"=== Row {r['row_index']} DENIED ===")
+
+                                    # Row data
+                                    output_lines.append("Row data (schema + values):")
+                                    for col, val in r["row_data"].items():
+                                        output_lines.append(f"  {col}: {val}")
+
+                                    # Policy and reason
+                                    output_lines.append(f"Policy: {r['policy_iri']}")
+                                    output_lines.append(f"Reason for DENY: {r['reason']}")
+
+                                    # Prohibitions violated
+                                    output_lines.append("Prohibitions violated:")
+                                    for i, rule in enumerate(r["prohibitions_violated"]):
+                                        output_lines.append(f"  [{i}] {rule}")
+
+                                    # Permissions satisfied (optional)
+                                    if r.get("permissions_satisfied"):
+                                        output_lines.append("Permissions satisfied (for reference):")
+                                        for i, rule in enumerate(r["permissions_satisfied"]):
+                                            output_lines.append(f"  [{i}] {rule}")
+
+                                    output_lines.append("-" * 60)
+
+                            # Join everything into one string
+                            detail_result_box.value = "\n".join(output_lines)
+                            print("✅ Evaluation completed.")
+
+                        except Exception as e:
+                            detail_result_box.value = ""
+                            print(f"⚠️ Evaluation error: {e}")
+               
+                def format_rowwise_stats(rowwise_stats):
+                    lines = []
+                    current_row = None
+
+                    for stat in rowwise_stats:
+                        if current_row != stat["row_index"]:
+                            lines.append(f"\n=== Row {stat['row_index']} ===")
+                            current_row = stat["row_index"]
+
+                        lines.append(f"Policy: {stat['policy_iri']}")
+                        lines.append(
+                            f"  Permission satisfied: {stat['permission_satisfied_percentage']}%"
+                        )
+                        lines.append(
+                            f"  Prohibition violated: {stat['prohibition_violated_percentage']}%"
+                        )
+                        lines.append(
+                            f"  Permissions satisfied indices: {stat['permissions_satisfied_indices']}"
+                        )
+                        lines.append(
+                            f"  Prohibitions violated indices: {stat['prohibitions_violated_indices']}"
+                        )
+
+                    return "\n".join(lines)
+                def on_stats_evaluation_clicked(b):
+                    with stats_out:
+                        stats_out.clear_output()
+
+                        if not UploadState.filename:
+                            print("⚠️ No ODRL policy uploaded.")
+                            return
+
+                        if not SotWUploadState.filename:
+                            print("⚠️ No SotW CSV uploaded.")
+                            return
+
+                        try:
+                            # This already calls your existing function
+                            rowwise_stats = Evaluator.compute_statistics_from_files(
+                                UploadState.filename,
+                                SotWUploadState.filename
+                            )
+
+                            output = ["=== Policy Evaluation (Row-wise Statistics) ==="]
+                            output.append(format_rowwise_stats(rowwise_stats))
+
+                            stats_box.value = "\n".join(output)
+                            print("✅ Statistics computed successfully.")
+
+                        except Exception as e:
+                            stats_box.value = ""
+                            print(f"⚠️ Statistics computation error: {e}")
+
+
                 # ----------------------------
                 # Widgets
                 # ----------------------------
                 odrl_btn = widgets.Button(
-                    description="Upload ODRL Policy",
-                    button_style="success"
+                    description="Upload ODRL Policy", button_style="success"
                 )
                 sotw_btn = widgets.Button(
-                    description="Upload SotW CSV",
-                    button_style="success"
+                    description="Upload SotW CSV", button_style="success"
                 )
                 eval_btn = widgets.Button(
-                    description="Evaluate",
-                    button_style="warning"
+                    description="Evaluate", button_style="warning"
+                )
+                detail_eval_btn = widgets.Button(
+                    description="Detail", button_style="warning"
+                )
+                stats_eval_btn = widgets.Button(
+                    description="Statistics", button_style="info"
                 )
 
                 odrl_btn.on_click(upload_odrl_clicked)
                 sotw_btn.on_click(upload_sotw_clicked)
                 eval_btn.on_click(on_evaluate_clicked)
+                detail_eval_btn.on_click(on_detail_evaluation_clicked)
+                stats_eval_btn.on_click(on_stats_evaluation_clicked)
 
                 # ----------------------------
                 # Layout (upload widget appears RIGHT BELOW button)
                 # ----------------------------
                 display(
-                    widgets.VBox([
-                        widgets.HTML("<b>Please upload an ODRL policy (if you haven't already)</b>"),
-                        odrl_btn,
-                        odrl_upload_out,
-
-                        widgets.HTML("<br><b>Please upload a State of the World (SotW) file in CSV format.</b>"),
-                        sotw_btn,
-                        sotw_upload_out,
-
-                        widgets.HTML("<br>"),
-                        eval_btn,
-                        eval_out,
-
-                        widgets.HTML("<b>Evaluation Result:</b>"),
-                        result_box
-                    ])
+                    widgets.VBox(
+                        [
+                            widgets.HTML(
+                                "<b>Please upload an ODRL policy (if you haven't already)</b>"
+                            ),
+                            odrl_btn,
+                            odrl_upload_out,
+                            widgets.HTML(
+                                "<br><b>Please upload a State of the World (SotW) file in CSV format.</b>"
+                            ),
+                            sotw_btn,
+                            sotw_upload_out,
+                            widgets.HTML("<br>"),
+                            eval_btn,
+                            eval_out,
+                            widgets.HTML("<b>Evaluation Result:</b>"),
+                            result_box,
+                            widgets.HTML("<br>"),
+                            detail_eval_btn,
+                            detail_eval_out,
+                            widgets.HTML("<b>Details of Non Compliance SoTWs:</b>"),
+                            detail_result_box,
+                            widgets.HTML("<br>"),
+                            stats_eval_btn,
+                            stats_out,
+                            stats_box
+                        ]
+                    )
                 )
             elif selected == "SotWgeneration":
                 clear_output()  # clear output before showing new widgets
@@ -363,10 +563,14 @@ def show_interface():
 
                 # --- Helper function for labeled input ---
                 def labeled_widget(label_text, widget):
-                    return widgets.HBox([
-                        widgets.Label(value=label_text, layout=widgets.Layout(width='220px')),
-                        widget
-                    ])
+                    return widgets.HBox(
+                        [
+                            widgets.Label(
+                                value=label_text, layout=widgets.Layout(width="220px")
+                            ),
+                            widget,
+                        ]
+                    )
 
                 # --- Input widgets with DEFAULT values ---
                 number_of_records_widget = widgets.IntText(value=100)
@@ -378,35 +582,49 @@ def show_interface():
                 widgets_list = [
                     labeled_widget("Number of Records:", number_of_records_widget),
                     labeled_widget("Valid:", valid_widget),
-                    labeled_widget("Chance Feature Empty (0-1):", chance_feature_empty_widget),
+                    labeled_widget(
+                        "Chance Feature Empty (0-1):", chance_feature_empty_widget
+                    ),
                     labeled_widget("CSV Output Filename:", csv_file_widget),
                 ]
 
                 # Buttons
-                generate_button = widgets.Button(description="Generate", button_style='success')
-                download_button = widgets.Button(description="Download CSV", button_style='info')
+                generate_button = widgets.Button(
+                    description="Generate", button_style="success"
+                )
+                download_button = widgets.Button(
+                    description="Download CSV", button_style="info"
+                )
                 download_button.disabled = True
-                download_button.layout.opacity = '0.5'
+                download_button.layout.opacity = "0.5"
 
                 # NEW: Show Rule Conditions toggle button
                 show_rules_button = widgets.ToggleButton(
                     value=False,
                     description="Show Rule Conditions",
-                    button_style='warning'
+                    button_style="warning",
                 )
 
                 # Output areas
                 output_generate = widgets.Output()
                 rules_output_box = widgets.Output()  # shows rule conditions
-                rules_output_box.layout.display = 'none'  # initially hidden
+                rules_output_box.layout.display = "none"  # initially hidden
 
                 generated_csv_path = None
 
                 # Display everything
-                display(widgets.VBox(
-                    widgets_list +
-                    [generate_button, download_button, show_rules_button, output_generate, rules_output_box]
-                ))
+                display(
+                    widgets.VBox(
+                        widgets_list
+                        + [
+                            generate_button,
+                            download_button,
+                            show_rules_button,
+                            output_generate,
+                            rules_output_box,
+                        ]
+                    )
+                )
 
                 # --- Generate button handler ---
                 def on_generate_clicked(b):
@@ -422,18 +640,20 @@ def show_interface():
                                 number_of_records=number_of_records_widget.value,
                                 valid=valid_widget.value,
                                 chance_feature_empty=chance_feature_empty_widget.value,
-                                csv_file=csv_file_widget.value
+                                csv_file=csv_file_widget.value,
                             )
                             generated_csv_path = csv_file_widget.value
-                            print(f"✅ State of the World generated successfully: {generated_csv_path}")
+                            print(
+                                f"✅ State of the World generated successfully: {generated_csv_path}"
+                            )
 
                             download_button.disabled = False
-                            download_button.layout.opacity = '1.0'
+                            download_button.layout.opacity = "1.0"
 
                         except Exception as e:
                             print(f"⚠️ Error during SotW generation: {e}")
                             download_button.disabled = True
-                            download_button.layout.opacity = '0.5'
+                            download_button.layout.opacity = "0.5"
 
                 generate_button.on_click(on_generate_clicked)
 
@@ -452,7 +672,7 @@ def show_interface():
                 def on_show_rules_clicked(change):
                     if show_rules_button.value:
                         # Show the box
-                        rules_output_box.layout.display = 'block'
+                        rules_output_box.layout.display = "block"
                         with rules_output_box:
                             clear_output()
 
@@ -470,16 +690,22 @@ def show_interface():
                                 def pretty_print_rules(rule_list):
                                     out_lines = []
                                     for rule in rule_list:
-                                        out_lines.append(f"Policy IRI: {rule['policy_iri']}\n")
+                                        out_lines.append(
+                                            f"Policy IRI: {rule['policy_iri']}\n"
+                                        )
 
                                         # permissions
                                         out_lines.append("    Permissions:")
                                         if rule["permissions"]:
                                             for cond_group in rule["permissions"]:
-                                                out_lines.append("        Rule conditions:")
+                                                out_lines.append(
+                                                    "        Rule conditions:"
+                                                )
                                                 for cond in cond_group:
                                                     subj, op, obj = cond
-                                                    out_lines.append(f"            {subj} {op} {obj}")
+                                                    out_lines.append(
+                                                        f"            {subj} {op} {obj}"
+                                                    )
                                         else:
                                             out_lines.append("        (none)")
                                         out_lines.append("")  # blank line
@@ -488,10 +714,14 @@ def show_interface():
                                         out_lines.append("    Prohibitions:")
                                         if rule["prohibitions"]:
                                             for cond_group in rule["prohibitions"]:
-                                                out_lines.append("        Rule conditions:")
+                                                out_lines.append(
+                                                    "        Rule conditions:"
+                                                )
                                                 for cond in cond_group:
                                                     subj, op, obj = cond
-                                                    out_lines.append(f"            {subj} {op} {obj}")
+                                                    out_lines.append(
+                                                        f"            {subj} {op} {obj}"
+                                                    )
                                         else:
                                             out_lines.append("        (none)")
                                         out_lines.append("")  # blank line
@@ -500,10 +730,14 @@ def show_interface():
                                         out_lines.append("    Obligations:")
                                         if rule["obligations"]:
                                             for cond_group in rule["obligations"]:
-                                                out_lines.append("        Rule conditions:")
+                                                out_lines.append(
+                                                    "        Rule conditions:"
+                                                )
                                                 for cond in cond_group:
                                                     subj, op, obj = cond
-                                                    out_lines.append(f"            {subj} {op} {obj}")
+                                                    out_lines.append(
+                                                        f"            {subj} {op} {obj}"
+                                                    )
                                         else:
                                             out_lines.append("        (none)")
                                         out_lines.append("")  # blank line
@@ -521,14 +755,15 @@ def show_interface():
 
                     else:
                         # Hide the rules
-                        rules_output_box.layout.display = 'none'
+                        rules_output_box.layout.display = "none"
 
-                show_rules_button.observe(on_show_rules_clicked, names='value')
+                show_rules_button.observe(on_show_rules_clicked, names="value")
 
     run_button.on_click(on_run_clicked)
 
     # --- DISPLAY EVERYTHING ---
     display(dropdown, run_button, output_run)
+
 
 if __name__ == "__main__":
     setup()
