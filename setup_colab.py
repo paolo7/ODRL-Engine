@@ -293,6 +293,10 @@ def show_interface():
             elif selected == "SotWevaluation":
                 clear_output()
                 import ODRL_Evaluator as Evaluator
+                from ODRL_Evaluator_updated import ODRLEvaluator
+                import rdf_utils
+                import SotW_generator
+                import pandas as pd
 
                 # ----------------------------
                 # Local upload state
@@ -358,21 +362,33 @@ def show_interface():
                             return
 
                         try:
-                            is_valid, violations, message = (
-                                Evaluator.evaluate_ODRL_from_files(
-                                    UploadState.filename, SotWUploadState.filename
-                                )
-                            )
+                            # Load policy
+                            graph = rdf_utils.load(UploadState.filename)[0]
+                            policies = SotW_generator.extract_rule_list_from_policy(graph)
+                            features = SotW_generator.extract_features_list_from_policy(graph)
+                            feature_type_map = {f["iri"]: f["type"] for f in features}
 
-                            # Store violations for future use (not displayed for now)
-                            SotWUploadState.violations = violations
+                            # Load CSV
+                            df = pd.read_csv(SotWUploadState.filename)
+
+                            # Create evaluator
+                            evaluator = ODRLEvaluator(policies, feature_type_map)
+
+                            results = evaluator.evaluate_dataframe(df)
+                            is_valid = all(r["decision"] != "DENY" for r in results)
 
                             validity_str = "YES" if is_valid else "NO"
 
+                            messages = []
+                            for r in results:
+                                if r["decision"] == "DENY":
+                                    messages.append(f"Row {r['row_index']} is NON-COMPLIANT")
+                                else:
+                                    messages.append(f"Row {r['row_index']} is COMPLIANT")
+
                             result_box.value = (
                                 f"Is the State of the World valid? {validity_str}\n\n"
-                                f"Evaluation report:\n"
-                                f"{message}"
+                                + "\n".join(messages)
                             )
 
                             print("✅ Evaluation completed.")
@@ -381,8 +397,9 @@ def show_interface():
                             result_box.value = ""
                             print(f"⚠️ Evaluation error: {e}")
 
+
                 def on_detail_evaluation_clicked(b):
-                     with detail_eval_out:
+                    with detail_eval_out:
                         detail_eval_out.clear_output()
 
                         if not UploadState.filename:
@@ -393,57 +410,46 @@ def show_interface():
                             return
 
                         try:
-                            # Call your new detailed evaluator
-                            evaluation = Evaluator.detailed_evaluation_from_files(
-                                UploadState.filename, SotWUploadState.filename
-                            )
+                            graph = rdf_utils.load(UploadState.filename)[0]
+                            policies = SotW_generator.extract_rule_list_from_policy(graph)
+                            features = SotW_generator.extract_features_list_from_policy(graph)
+                            feature_type_map = {f["iri"]: f["type"] for f in features}
 
-                            # Store raw results for future use if needed
-                            SotWUploadState.raw_results = evaluation["raw_results"]
+                            df = pd.read_csv(SotWUploadState.filename)
 
-                            # Overall compliance
-                            validity_str = "YES" if evaluation["overall_compliant"] else "NO"
+                            evaluator = ODRLEvaluator(policies, feature_type_map)
 
-                            # Start building the output text
+                            results = evaluator.evaluate_dataframe(df)
+
+                            overall_compliant = all(r["decision"] != "DENY" for r in results)
+                            validity_str = "YES" if overall_compliant else "NO"
+
                             output_lines = [f"Is the State of the World valid? {validity_str}\n"]
 
-                            deny_details = evaluation["deny_details"]
-                            if not deny_details:
+                            deny_results = [r for r in results if r["decision"] == "DENY"]
+
+                            if not deny_results:
                                 output_lines.append("✅ No violations detected.")
                             else:
-                                output_lines.append(f"⚠️ {len(deny_details)} violation(s) detected:\n")
-                                for r in deny_details:
+                                output_lines.append(f"⚠️ {len(deny_results)} violation(s) detected:\n")
+
+                                for r in deny_results:
                                     output_lines.append(f"=== Row {r['row_index']} DENIED ===")
 
-                                    # Row data
-                                    output_lines.append("Row data (schema + values):")
                                     for col, val in r["row_data"].items():
                                         output_lines.append(f"  {col}: {val}")
 
-                                    # Policy and reason
                                     output_lines.append(f"Policy: {r['policy_iri']}")
-                                    output_lines.append(f"Reason for DENY: {r['reason']}")
-
-                                    # Prohibitions violated
-                                    output_lines.append("Prohibitions violated:")
-                                    for i, rule in enumerate(r["prohibitions_violated"]):
-                                        output_lines.append(f"  [{i}] {rule}")
-
-                                    # Permissions satisfied (optional)
-                                    if r.get("permissions_satisfied"):
-                                        output_lines.append("Permissions satisfied (for reference):")
-                                        for i, rule in enumerate(r["permissions_satisfied"]):
-                                            output_lines.append(f"  [{i}] {rule}")
-
+                                    output_lines.append(f"Reason: {r['reason']}")
                                     output_lines.append("-" * 60)
 
-                            # Join everything into one string
                             detail_result_box.value = "\n".join(output_lines)
-                            print("✅ Evaluation completed.")
+                            print("✅ Detailed evaluation completed.")
 
                         except Exception as e:
                             detail_result_box.value = ""
                             print(f"⚠️ Evaluation error: {e}")
+
                
                 def format_rowwise_stats(rowwise_stats):
                     lines = []
@@ -476,17 +482,21 @@ def show_interface():
                         if not UploadState.filename:
                             print("⚠️ No ODRL policy uploaded.")
                             return
-
                         if not SotWUploadState.filename:
                             print("⚠️ No SotW CSV uploaded.")
                             return
 
                         try:
-                            # This already calls your existing function
-                            rowwise_stats = Evaluator.compute_statistics_from_files(
-                                UploadState.filename,
-                                SotWUploadState.filename
-                            )
+                            graph = rdf_utils.load(UploadState.filename)[0]
+                            policies = SotW_generator.extract_rule_list_from_policy(graph)
+                            features = SotW_generator.extract_features_list_from_policy(graph)
+                            feature_type_map = {f["iri"]: f["type"] for f in features}
+
+                            df = pd.read_csv(SotWUploadState.filename)
+
+                            evaluator = ODRLEvaluator(policies, feature_type_map)
+
+                            rowwise_stats = evaluator.compute_statistics(df)
 
                             output = ["=== Policy Evaluation (Row-wise Statistics) ==="]
                             output.append(format_rowwise_stats(rowwise_stats))
