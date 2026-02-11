@@ -65,8 +65,8 @@ def eval_constraint(row, constraint, OPS_MAP, FEATURE_TYPE_MAP):
     # --- 1️⃣ DateTime handling ---
     if column_type == "http://www.w3.org/2001/XMLSchema#dateTime":
         try:
-            left_date = parser.parse(str(value))
-            right_date = parser.parse(str(right))
+            left_date = parser.parse(str(value)).date()
+            right_date = parser.parse(str(right)).date()
 
             # Normalize timezone (avoid naive vs aware errors)
             if left_date.tzinfo and not right_date.tzinfo:
