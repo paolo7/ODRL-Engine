@@ -292,7 +292,6 @@ def show_interface():
                 download_button.on_click(on_download_clicked)
             elif selected == "SotWevaluation":
                 clear_output()
-                import ODRL_Evaluator as Evaluator
                 from ODRL_Evaluator_updated import ODRLEvaluator
                 import rdf_utils
                 import SotW_generator
