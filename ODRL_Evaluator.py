@@ -106,10 +106,10 @@ def eval_constraint(row, constraint, OPS_MAP, FEATURE_TYPE_MAP):
             right_date = parser.parse(str(right)).date()
 
             # Normalize timezone (avoid naive vs aware errors)
-            if left_date.tzinfo and not right_date.tzinfo:
-                right_date = right_date.replace(tzinfo=left_date.tzinfo)
-            elif right_date.tzinfo and not left_date.tzinfo:
-                left_date = left_date.replace(tzinfo=right_date.tzinfo)
+            # if left_date.tzinfo and not right_date.tzinfo:
+            #     right_date = right_date.replace(tzinfo=left_date.tzinfo)
+            # elif right_date.tzinfo and not left_date.tzinfo:
+            #     left_date = left_date.replace(tzinfo=right_date.tzinfo)
 
             return OPS_MAP[op_symbol](left_date, right_date)
 
