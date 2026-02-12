@@ -1,0 +1,84 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dpv: <https://w3id.org/dpv/owl#> .
+@prefix dpvpd: <https://w3id.org/dpv/pd/owl#> .
+
+<http://example.com/policy:6161>
+
+  a odrl:Policy ;
+  
+  
+  odrl:permission [
+    odrl:action odrl:use ;
+    odrl:target [	  
+	  odrl:source dpv:Data ;
+          odrl:refinement [
+            odrl:leftOperand <https://www.sintef.no/ontology#contains> ;
+            odrl:operator odrl:eq ;
+            odrl:rightOperand dpvpd:EmailAddress ;
+          ] ;
+	] ;
+    odrl:constraint [
+      a odrl:Constraint ;
+      odrl:leftOperand <http://www.w3.org/ns/odrl/2/dateTime> ;
+      odrl:operator odrl:lteq ;
+      odrl:rightOperand "2026-05-09T12:20:59Z"^^xsd:dateTime
+      ];
+    odrl:constraint [
+      a odrl:Constraint ;
+      odrl:leftOperand odrl:purpose ;
+      odrl:operator odrl:eq ;
+      odrl:rightOperand dpv:DataQualityImprovement
+      ]
+  ] ;
+  
+  
+  odrl:permission [
+    odrl:action odrl:use ;
+    odrl:target [	  
+	  odrl:source dpv:Data ;
+          odrl:refinement [
+            odrl:leftOperand <https://www.sintef.no/ontology#contains> ;
+            odrl:operator odrl:eq ;
+            odrl:rightOperand dpvpd:TelephoneNumber ;
+          ] ;
+	] ;
+    odrl:constraint [
+      a odrl:Constraint ;
+      odrl:leftOperand <http://www.w3.org/ns/odrl/2/dateTime> ;
+      odrl:operator odrl:lteq ;
+      odrl:rightOperand "2026-05-09T12:20:59Z"^^xsd:dateTime
+      ];
+    odrl:constraint [
+      a odrl:Constraint ;
+      odrl:leftOperand odrl:purpose ;
+      odrl:operator odrl:eq ;
+      odrl:rightOperand dpv:DataQualityImprovement
+      ]
+  ] ;
+  
+  
+  odrl:permission [
+    odrl:action odrl:use ;
+    odrl:target [	  
+	  odrl:source dpv:Data ;
+          odrl:refinement [
+            odrl:leftOperand <https://www.sintef.no/ontology#contains> ;
+            odrl:operator odrl:eq ;
+            odrl:rightOperand dpvpd:Name ;
+          ] ;
+	] ;
+    odrl:constraint [
+      a odrl:Constraint ;
+      odrl:leftOperand <http://www.w3.org/ns/odrl/2/dateTime> ;
+      odrl:operator odrl:lteq ;
+      odrl:rightOperand "2026-05-09T12:20:59Z"^^xsd:dateTime
+      ];
+    odrl:constraint [
+      a odrl:Constraint ;
+      odrl:leftOperand odrl:purpose ;
+      odrl:operator odrl:eq ;
+      odrl:rightOperand dpv:DataQualityImprovement
+      ]
+  ] .

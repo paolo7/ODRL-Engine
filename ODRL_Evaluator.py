@@ -7,6 +7,7 @@ import validate
 import operator
 # if dateutil is not install then install it using (!pip install python-dateutil)
 from dateutil import parser
+import uuid
 
 OPS_MAP = {
     "=": operator.eq,
@@ -17,6 +18,42 @@ OPS_MAP = {
     ">=": operator.ge,
 }
 
+def evaluate_ODRL_from_files_merge_policies(policy_file, SotW_file):
+    graph_rules = []
+    features = []
+    for file in policy_file:
+        graph = rdf_utils.load(file)[0]
+        graph_rules.append(SotW_generator.extract_rule_list_from_policy(graph))
+        features.append(SotW_generator.extract_features_list_from_policy(graph))
+
+    # temporary merge code, TODO should be updated when a more stable merge function is created
+    merged_permissions = []
+    merged_prohibitions = []
+    merged_obligations = []
+    for policy_list in graph_rules:  # each element is a list of policies
+        for policy in policy_list:
+            merged_permissions.extend(policy.get("permissions", []))
+            merged_prohibitions.extend(policy.get("prohibitions", []))
+            merged_obligations.extend(policy.get("obligations", []))
+
+    merged_policy_iri = graph_rules[0][0]["policy_iri"]
+    merged_graph_rules = [{
+        "policy_iri": merged_policy_iri,
+        "permissions": merged_permissions,
+        "prohibitions": merged_prohibitions,
+        "obligations": merged_obligations
+    }]
+    merged_feature_map = {}
+
+    for feature_list in features:
+        for f in feature_list:
+            iri = f["iri"]
+            if iri not in merged_feature_map:
+                merged_feature_map[iri] = f["type"]
+
+    df = pd.read_csv(SotW_file)
+
+    return evaluate_ODRL_on_dataframe(merged_graph_rules , df, merged_feature_map )
 
 def evaluate_ODRL_from_files(policy_file, SotW_file):
     graph = rdf_utils.load(policy_file)[0]
@@ -264,4 +301,11 @@ def compute_statistics_from_files(policy_file, SotW_file):
     df = pd.read_csv(SotW_file)
 
     return compute_policy_statistics_rowwise(df, policies, OPS_MAP, FEATURE_TYPE_MAP)
+
 # print("Evaluation: "+str(evaluate_ODRL_from_files("example_policies/exampleEvaluationPolicy.ttl","example_policies/exampleSotW.csv")))
+
+#print("Evaluation: "+str(evaluate_ODRL_from_files("example_policies/DD_policy3.ttl","example_policies/formatB.csv")))
+
+#print("Evaluation: "+str(evaluate_ODRL_from_files_merge_policies(
+#    ["example_policies/DD_policy3.ttl","example_policies/DD_policy3.ttl"],
+#    "example_policies/formatB.csv")))

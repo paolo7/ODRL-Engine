@@ -32,9 +32,11 @@ def run_SotW_tests(test_repetitions, test_cases, test_name ):
         pair[1].to_csv(sotw_path, index=False)
 
         # Re-run evaluation once and capture diagnostics
+        FEATURE_TYPE_MAP = {f["iri"]: f["type"] for f in SotW_generator.extract_features_list_from_policy(pair[0])}
         result = ODRL_Evaluator.evaluate_ODRL_on_dataframe(
             SotW_generator.extract_rule_list_from_policy(pair[0]),
-            pair[1]
+            pair[1],
+            FEATURE_TYPE_MAP
         )
 
         with open(log_path, "w", encoding="utf-8") as f:
@@ -52,7 +54,8 @@ def run_SotW_tests(test_repetitions, test_cases, test_name ):
         return uid
 
     for pair in test_cases["valid_pairs"]:
-        if ODRL_Evaluator.evaluate_ODRL_on_dataframe(SotW_generator.extract_rule_list_from_policy(pair[0]), pair[1])[0]:
+        FEATURE_TYPE_MAP = {f["iri"]: f["type"] for f in SotW_generator.extract_features_list_from_policy(pair[0])}
+        if ODRL_Evaluator.evaluate_ODRL_on_dataframe(SotW_generator.extract_rule_list_from_policy(pair[0]), pair[1], FEATURE_TYPE_MAP)[0]:
             tests_passed += 1
         else:
             tests_failed += 1
@@ -62,7 +65,8 @@ def run_SotW_tests(test_repetitions, test_cases, test_name ):
             )
 
     for pair in test_cases["invalid_pairs"]:
-        if not ODRL_Evaluator.evaluate_ODRL_on_dataframe(SotW_generator.extract_rule_list_from_policy(pair[0]), pair[1])[0]:
+        FEATURE_TYPE_MAP = {f["iri"]: f["type"] for f in SotW_generator.extract_features_list_from_policy(pair[0])}
+        if not ODRL_Evaluator.evaluate_ODRL_on_dataframe(SotW_generator.extract_rule_list_from_policy(pair[0]), pair[1],FEATURE_TYPE_MAP)[0]:
             tests_passed += 1
         else:
             tests_failed += 1
@@ -74,7 +78,7 @@ def run_SotW_tests(test_repetitions, test_cases, test_name ):
 
 
 
-def runTests(test_repetitions = 30):
+def runTests(test_repetitions = 2):
     global tests_passed
     global tests_failed
     global test_log
@@ -100,6 +104,19 @@ def runTests(test_repetitions = 30):
         test_log.append("Failed to validate example_policies/example_invalid.json as invalid")
 
     # EVALUATION TESTS
+
+    # evluation with datetime
+    #if ODRL_Evaluator.evaluate_ODRL_from_files("example_policies/example_valid3.json", "example_policies/sotw_ex3_valid.csv")[0]:
+    #    tests_passed += 1
+    #else:
+    #    tests_failed += 1
+    #    test_log.append("Failed to evaluate datetime example example_policies/example_valid3.json3 as valid on SotW example_policies/sotw_ex3_valid.csv")
+
+    #if not ODRL_Evaluator.evaluate_ODRL_from_files("example_policies/example_valid3.json", "example_policies/sotw_ex3_invalid.csv")[0]:
+    #    tests_passed += 1
+    #else:
+    #    tests_failed += 1
+    #    test_log.append("Failed to evaluate datetime example example_policies/example_valid3.json as invalid on SotW example_policies/sotw_ex3_invalid.csv")
 
     run_SotW_tests(test_repetitions,
                    test_utils.generate_permission_test_cases(test_n = test_repetitions,

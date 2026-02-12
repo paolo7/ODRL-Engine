@@ -1,0 +1,5 @@
+http://www.w3.org/ns/odrl/2/dateTime,http://www.w3.org/ns/odrl/2/Party,http://www.w3.org/ns/odrl/2/Action,http://www.w3.org/ns/odrl/2/Asset,http://www.w3.org/ns/odrl/2/Asset https://www.sintef.no/ontology#contains,http://www.w3.org/ns/odrl/2/purpose
+2026-02-09T12:20:59Z,,http://www.w3.org/ns/odrl/2/use,https://w3id.org/dpv/owl#Data,https://w3id.org/dpv/pd/owl#TelephoneNumber,https://w3id.org/dpv/owl#DataQualityImprovement
+2026-02-09T12:20:59Z,,http://www.w3.org/ns/odrl/2/use,https://w3id.org/dpv/owl#Data,https://w3id.org/dpv/pd/owl#EmailAddress,https://w3id.org/dpv/owl#DataQualityImprovement
+2026-02-09T12:20:59Z,,http://www.w3.org/ns/odrl/2/use,https://w3id.org/dpv/owl#Data,https://w3id.org/dpv/pd/owl#PhysicalAddress,https://w3id.org/dpv/owl#DataQualityImprovement
+2026-02-09T12:20:59Z,,http://www.w3.org/ns/odrl/2/use,https://w3id.org/dpv/owl#Data,https://w3id.org/dpv/pd/owl#Name,https://w3id.org/dpv/owl#DataQualityImprovement
