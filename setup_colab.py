@@ -300,6 +300,9 @@ def show_interface():
                 class SotWUploadState:
                     filename = None
 
+                class MultiPolicyState:
+                    policy_files = []
+
                 # ----------------------------
                 # Output areas (DO NOT clear globally)
                 # ----------------------------
@@ -308,7 +311,7 @@ def show_interface():
                 eval_out = widgets.Output()
                 detail_eval_out = widgets.Output()
                 stats_out = widgets.Output()
-
+                policy_list_box = widgets.Output()
                 result_box = widgets.Textarea(
                     layout=widgets.Layout(width="100%", height="250px"), disabled=True
                 )
@@ -322,16 +325,53 @@ def show_interface():
                 # ----------------------------
                 # Upload handlers
                 # ----------------------------
+
+                def refresh_policy_list_display():
+                    policy_list_box.clear_output()
+                    with policy_list_box:
+                        if not MultiPolicyState.policy_files:
+                            print("No policies uploaded yet.")
+                            return
+
+                        for file in MultiPolicyState.policy_files:
+                            minus_btn = widgets.Button(
+                                description="❌",
+                                layout=widgets.Layout(width="40px"),
+                                button_style="danger"
+                            )
+
+                            def remove_policy(b, filename=file):
+                                MultiPolicyState.policy_files.remove(filename)
+                                refresh_policy_list_display()
+
+                            minus_btn.on_click(remove_policy)
+
+                            display(
+                                widgets.HBox([
+                                    widgets.Label(value=file),
+                                    minus_btn
+                                ])
+                            )
+
                 def upload_odrl_clicked(b):
                     with odrl_upload_out:
                         odrl_upload_out.clear_output()
                         uploaded = files.upload()
+
                         if len(uploaded) != 1:
                             print("⚠️ Please upload exactly one ODRL file.")
                             return
-                        UploadState.filename = list(uploaded.keys())[0]
-                        UploadState.content = uploaded[UploadState.filename]
-                        print(f"✅ ODRL uploaded: {UploadState.filename}")
+
+                        filename = list(uploaded.keys())[0]
+
+                        # Avoid duplicates
+                        if filename not in MultiPolicyState.policy_files:
+                            MultiPolicyState.policy_files.append(filename)
+                            print(f"✅ ODRL uploaded: {filename}")
+                        else:
+                            print("⚠️ This policy is already uploaded.")
+
+                        refresh_policy_list_display()
 
                 def upload_sotw_clicked(b):
                     with sotw_upload_out:
@@ -350,22 +390,21 @@ def show_interface():
                     with eval_out:
                         eval_out.clear_output()
 
-                        if not UploadState.filename:
-                            print("⚠️ No ODRL policy uploaded.")
+                        if not MultiPolicyState.policy_files:
+                            print("⚠️ No ODRL policies uploaded.")
                             return
+
                         if not SotWUploadState.filename:
                             print("⚠️ No SotW CSV uploaded.")
                             return
 
                         try:
                             is_valid, violations, message = (
-                                Evaluator.evaluate_ODRL_from_files(
-                                    UploadState.filename, SotWUploadState.filename
+                                Evaluator.evaluate_ODRL_from_files_merge_policies(
+                                    MultiPolicyState.policy_files,
+                                    SotWUploadState.filename
                                 )
                             )
-
-                            # Store violations for future use (not displayed for now)
-                            SotWUploadState.violations = violations
 
                             validity_str = "YES" if is_valid else "NO"
 
@@ -530,11 +569,11 @@ def show_interface():
                 display(
                     widgets.VBox(
                         [
-                            widgets.HTML(
-                                "<b>Please upload an ODRL policy (if you haven't already)</b>"
-                            ),
+                            widgets.HTML("<b>Upload one or more ODRL policies</b>"),
                             odrl_btn,
                             odrl_upload_out,
+                            widgets.HTML("<b>Uploaded Policies:</b>"),
+                            policy_list_box,
                             widgets.HTML(
                                 "<br><b>Please upload a State of the World (SotW) file in CSV format.</b>"
                             ),

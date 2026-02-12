@@ -18,10 +18,10 @@ OPS_MAP = {
     ">=": operator.ge,
 }
 
-def evaluate_ODRL_from_files_merge_policies(policy_file, SotW_file):
+def evaluate_ODRL_from_files_merge_policies(policy_files, SotW_file):
     graph_rules = []
     features = []
-    for file in policy_file:
+    for file in policy_files:
         graph = rdf_utils.load(file)[0]
         graph_rules.append(SotW_generator.extract_rule_list_from_policy(graph))
         features.append(SotW_generator.extract_features_list_from_policy(graph))
@@ -307,5 +307,5 @@ def compute_statistics_from_files(policy_file, SotW_file):
 #print("Evaluation: "+str(evaluate_ODRL_from_files("example_policies/DD_policy3.ttl","example_policies/formatB.csv")))
 
 #print("Evaluation: "+str(evaluate_ODRL_from_files_merge_policies(
-#    ["example_policies/DD_policy3.ttl","example_policies/DD_policy3.ttl"],
+#    ["example_policies/DD_policy.ttl","example_policies/DD_policy2.ttl"],
 #    "example_policies/formatB.csv")))
