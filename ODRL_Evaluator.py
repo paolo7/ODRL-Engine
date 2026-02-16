@@ -28,23 +28,61 @@ def evaluate_ODRL_from_files(policy_file, SotW_file):
 
 
 def evaluate_ODRL_on_dataframe(policies, data_frame, FEATURE_TYPE_MAP):
-
     results = evaluate_all_policies_rowwise(data_frame, policies, OPS_MAP, FEATURE_TYPE_MAP)
 
-    has_deny = False
-    messages = []
+    total_rows = len(data_frame)
+    compliant_count = 0
+    not_permitted_count = 0
+    prohibited_count = 0
+
+    details_not_permitted = []
+    details_prohibited = []
 
     for r in results:
         if r["decision"] == "DENY":
-            has_deny = True
-            messages.append(f"Row {r['row_index']} is NON-COMPLIANT")
+            reason = r["reason"]
+            if reason == "No permission satisfied":
+                not_permitted_count += 1
+                details_not_permitted.append(r)
+            elif reason == "Prohibition violated":
+                prohibited_count += 1
+                details_prohibited.append(r)
         else:
-            messages.append(f"Row {r['row_index']} is COMPLIANT")
+            compliant_count += 1
 
-    message_str = "\n".join(messages)
+    # --- Build message ---
+    if compliant_count == total_rows:
+        message_str = f"Compliant log entries: {compliant_count}/{total_rows} (100%)."
+    else:
+        compliant_percentage = round(compliant_count / total_rows * 100, 2)
+        not_permitted_percentage = round(not_permitted_count / total_rows * 100, 2)
+        prohibited_percentage = round(prohibited_count / total_rows * 100, 2)
 
-    # If any DENY → return False
-    return (not has_deny), {}, message_str
+        message_lines = [
+            f"Compliant log entries: {compliant_count}/{total_rows} ({compliant_percentage}%).",
+            f" - {not_permitted_count}/{total_rows} ({not_permitted_percentage}%) are non compliant because the logged event is not permitted",
+            f" - {prohibited_count}/{total_rows} ({prohibited_percentage}%) are non compliant because the logged event is prohibited",
+            "",
+            "Details of non-compliance:"
+        ]
+
+        # Add row-level details
+        for r in details_not_permitted:
+            row_index = r["row_index"]
+            message_lines.append(f" - The following logged event (row {row_index}) is non-compliant because it is NOT PERMITTED")
+            message_lines.append(str(data_frame.iloc[row_index].to_dict()))
+
+        for r in details_prohibited:
+            row_index = r["row_index"]
+            message_lines.append(f" - The following logged event (row {row_index}) is non-compliant because it is PROHIBITED")
+            message_lines.append(str(data_frame.iloc[row_index].to_dict()))
+
+        message_str = "\n".join(message_lines)
+
+    # Overall compliance
+    overall_compliant = (compliant_count == total_rows)
+
+    return overall_compliant, {}, message_str
 
 
 def eval_constraint(row, constraint, OPS_MAP, FEATURE_TYPE_MAP):
