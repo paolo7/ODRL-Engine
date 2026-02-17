@@ -65,23 +65,83 @@ def evaluate_ODRL_from_files(policy_file, SotW_file):
 
 
 def evaluate_ODRL_on_dataframe(policies, data_frame, FEATURE_TYPE_MAP):
+    results = evaluate_all_policies_rowwise(
+        data_frame, policies, OPS_MAP, FEATURE_TYPE_MAP
+    )
 
-    results = evaluate_all_policies_rowwise(data_frame, policies, OPS_MAP, FEATURE_TYPE_MAP)
+    total_rows = len(data_frame)
+    compliant_count = 0
+    not_permitted = []
+    prohibited = []
 
-    has_deny = False
-    messages = []
-
+    # --- Classify results ---
     for r in results:
         if r["decision"] == "DENY":
-            has_deny = True
-            messages.append(f"Row {r['row_index']} is NON-COMPLIANT")
+            if r["reason"] == "No permission satisfied":
+                not_permitted.append(r)
+            elif r["reason"] == "Prohibition violated":
+                prohibited.append(r)
         else:
-            messages.append(f"Row {r['row_index']} is COMPLIANT")
+            compliant_count += 1
 
-    message_str = "\n".join(messages)
+    not_permitted_count = len(not_permitted)
+    prohibited_count = len(prohibited)
 
-    # If any DENY → return False
-    return (not has_deny), {}, message_str
+    overall_compliant = (compliant_count == total_rows)
+    verdict = "YES" if overall_compliant else "NO"
+
+    # --- Build message ---
+    message_lines = [
+        f"State of the World valid? {verdict}",
+        "",
+        "Evaluation report:",
+    ]
+
+    if overall_compliant:
+        message_lines.append(
+            f"Compliant log entries: {total_rows}/{total_rows} (100%)."
+        )
+    else:
+        compliant_percentage = round(compliant_count / total_rows * 100, 2)
+        message_lines.append(
+            f"Compliant log entries: {compliant_count}/{total_rows} ({compliant_percentage}%)."
+        )
+
+        if not_permitted_count > 0:
+            np_pct = round(not_permitted_count / total_rows * 100, 2)
+            message_lines.append(
+                f" - {not_permitted_count}/{total_rows} ({np_pct}%) are non compliant "
+                f"because the logged event is not permitted"
+            )
+
+        if prohibited_count > 0:
+            p_pct = round(prohibited_count / total_rows * 100, 2)
+            message_lines.append(
+                f" - {prohibited_count}/{total_rows} ({p_pct}%) are non compliant "
+                f"because the logged event is prohibited"
+            )
+
+        message_lines.append("")
+        message_lines.append("Details of non-compliance:")
+
+        for r in not_permitted:
+            idx = r["row_index"]
+            message_lines.append(
+                f" - The following logged event (row {idx}) is non-compliant because it is NOT PERMITTED"
+            )
+            message_lines.append(str(data_frame.iloc[idx].to_dict()))
+
+        for r in prohibited:
+            idx = r["row_index"]
+            message_lines.append(
+                f" - The following logged event (row {idx}) is non-compliant because it is PROHIBITED"
+            )
+            message_lines.append(str(data_frame.iloc[idx].to_dict()))
+
+    message_str = "\n".join(message_lines)
+
+    return overall_compliant, {}, message_str
+
 
 
 def eval_constraint(row, constraint, OPS_MAP, FEATURE_TYPE_MAP):
