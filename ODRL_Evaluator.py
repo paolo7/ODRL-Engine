@@ -16,6 +16,12 @@ OPS_MAP = {
     "<=": operator.le,
     ">": operator.gt,
     ">=": operator.ge,
+    # Missing operators:
+    # odrl.isAnyOf: lambda a, b: a in b,
+    # odrl.isNoneOf: lambda a, b: a not in b,
+    # odrl.hasPart: lambda a, b: all(item in a for item in b) if isinstance(b, list) else b in a,
+    # odrl.isPartOf: lambda a, b: all(item in b for item in a) if isinstance(a, list) else a in b,
+    # odrl.isAllOf: lambda a, b: set(a) == set(b) if isinstance(a, list) and isinstance(b, list) else False,
 }
 
 def evaluate_ODRL_from_files_merge_policies(policy_files, SotW_file):
@@ -73,6 +79,7 @@ def evaluate_ODRL_on_dataframe(policies, data_frame, FEATURE_TYPE_MAP):
     compliant_count = 0
     not_permitted = []
     prohibited = []
+    unfulfilled_obligations = []
 
     # --- Classify results ---
     for r in results:
@@ -81,13 +88,16 @@ def evaluate_ODRL_on_dataframe(policies, data_frame, FEATURE_TYPE_MAP):
                 not_permitted.append(r)
             elif r["reason"] == "Prohibition violated":
                 prohibited.append(r)
+            elif r["reason"] == "Obligation not fulfilled":
+                unfulfilled_obligations.append(r)
         else:
             compliant_count += 1
 
     not_permitted_count = len(not_permitted)
     prohibited_count = len(prohibited)
+    unfulfilled_obligations_count = len(unfulfilled_obligations)
 
-    overall_compliant = (compliant_count == total_rows)
+    overall_compliant = (compliant_count == total_rows and unfulfilled_obligations_count == 0)
     verdict = "YES" if overall_compliant else "NO"
 
     # --- Build message ---
@@ -121,6 +131,11 @@ def evaluate_ODRL_on_dataframe(policies, data_frame, FEATURE_TYPE_MAP):
                 f"because the logged event is prohibited"
             )
 
+        if unfulfilled_obligations_count > 0:
+            message_lines.append(
+                f" - {unfulfilled_obligations_count} obligations are not fulfilled "
+            )
+
         message_lines.append("")
         message_lines.append("Details of non-compliance:")
 
@@ -137,6 +152,11 @@ def evaluate_ODRL_on_dataframe(policies, data_frame, FEATURE_TYPE_MAP):
                 f" - The following logged event (row {idx}) is non-compliant because it is PROHIBITED"
             )
             message_lines.append(str(data_frame.iloc[idx].to_dict()))
+
+        for r in unfulfilled_obligations:
+            message_lines.append(
+                f" - The following obligation is not fulfilled: {r['obligation']}"
+            )
 
     message_str = "\n".join(message_lines)
 
@@ -188,11 +208,11 @@ def eval_constraint(row, constraint, OPS_MAP, FEATURE_TYPE_MAP):
 
 
 
-
+# i.e. match(tau,e) from our paper
 def eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
     return all(eval_constraint(row, c, OPS_MAP, FEATURE_TYPE_MAP) for c in rule)
 
-
+# Unused?
 def eval_ruleset(row, rules, OPS_MAP, FEATURE_TYPE_MAP):
     """
     rules = permissions OR prohibitions list
@@ -258,12 +278,43 @@ def evaluate_policy_df_rowwise(df, policy, OPS_MAP, FEATURE_TYPE_MAP):
 
     return results
 
+def evaluate_obligations_df_rowwise(df, policy, OPS_MAP, FEATURE_TYPE_MAP):
+    results = []
+
+    for obligation in policy.get("obligations", []):
+        fulfilled = False
+        for idx, row in df.iterrows():
+            if eval_rule(row, obligation, OPS_MAP, FEATURE_TYPE_MAP):
+                fulfilled = True
+                row_result = {
+                    "obligation": obligation,
+                    "decision": "ALLOW",
+                    "reason": "Obligation fulfilled",
+                    "row_index": idx,
+                    "policy_iri": policy.get("policy_iri", "unknown_policy"),
+                    "row_data": row.to_dict(),
+                }
+                results.append(row_result)
+                break  # stop after first fulfillment
+        if not fulfilled:
+            results.append({
+                "obligation": obligation,
+                "decision": "DENY",
+                "reason": "Obligation not fulfilled",
+                "policy_iri": policy.get("policy_iri", "unknown_policy"),
+            })
+
+    return results
+
+
 
 def evaluate_all_policies_rowwise(df, policies, OPS_MAP, FEATURE_TYPE_MAP):
     all_results = []
 
     for policy in policies:
         row_results = evaluate_policy_df_rowwise(df, policy, OPS_MAP, FEATURE_TYPE_MAP)
+        obligation_results = evaluate_obligations_df_rowwise(df, policy, OPS_MAP, FEATURE_TYPE_MAP)
+        row_results.extend(obligation_results)
         all_results.extend(row_results)
 
     return all_results

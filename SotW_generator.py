@@ -183,6 +183,7 @@ def extract_rule_list(odrl_graph, rule_node, features):
     triplets = []
 
     # Map ODRL operators to standard symbols
+    # This may be unnecessary. We could keep the original IRIs and handle them in the evaluator.
     operator_map = {
         ODRL.eq: "=",
         ODRL.neq: "!=",
@@ -190,6 +191,7 @@ def extract_rule_list(odrl_graph, rule_node, features):
         ODRL.gt: ">",
         ODRL.lteq: "<=",
         ODRL.gteq: ">="
+        # We need to extract set operators, membership operators, etc.
     }
 
     # Helper to extract values from a node (URI, literal, or complex node with rdf:value/odrl:source)
