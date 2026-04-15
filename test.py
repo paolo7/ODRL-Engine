@@ -286,5 +286,10 @@ def runTests(test_repetitions = 0):
     for log in test_log:
         print(log)
 
+    if tests_failed > 0:
+        exit(1)
+    else:
+        exit(0)
+
 
 runTests()
