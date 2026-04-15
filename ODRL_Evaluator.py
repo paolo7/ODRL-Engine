@@ -210,7 +210,7 @@ def eval_constraint(row, constraint, OPS_MAP, FEATURE_TYPE_MAP):
 
 # i.e. match(tau,e) from our paper
 def eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
-    return all(eval_constraint(row, c, OPS_MAP, FEATURE_TYPE_MAP) for c in rule)
+    return all(eval_constraint(row, c, OPS_MAP, FEATURE_TYPE_MAP) for c in rule["conditions"])
 
 # Unused?
 def eval_ruleset(row, rules, OPS_MAP, FEATURE_TYPE_MAP):
