@@ -97,7 +97,7 @@ def evaluate_ODRL_on_dataframe(policies, data_frame, FEATURE_TYPE_MAP):
     prohibited_count = len(prohibited)
     unfulfilled_obligations_count = len(unfulfilled_obligations)
 
-    overall_compliant = (compliant_count == total_rows and unfulfilled_obligations_count == 0)
+    overall_compliant = (not_permitted_count == 0 and prohibited_count == 0 and unfulfilled_obligations_count == 0)
     verdict = "YES" if overall_compliant else "NO"
 
     # --- Build message ---
