@@ -77,8 +77,159 @@ def run_SotW_tests(test_repetitions, test_cases, test_name ):
 
 
 
+def run_folder_evaluation_tests():
+    global tests_passed
+    global tests_failed
+    global test_log
 
-def runTests(test_repetitions = 2):
+    base_dirs = {
+        "valid": "test_cases/evaluation/valid",
+        "invalid": "test_cases/evaluation/invalid"
+    }
+
+    # Category statistics
+    category_stats = {}
+    # Format:
+    # {
+    #   "category_name": {"passed": int, "total": int}
+    # }
+
+    def get_category(txt_path):
+        """Return category from second line of txt file."""
+        if not os.path.exists(txt_path):
+            return "other"
+
+        try:
+            with open(txt_path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+
+            if len(lines) >= 2:
+                category = lines[1].strip()
+                if category:
+                    return category
+
+        except Exception:
+            pass
+
+        return "other"
+
+    def get_first_line(txt_path):
+        """Return first line if exists."""
+        if not os.path.exists(txt_path):
+            return None
+
+        try:
+            with open(txt_path, "r", encoding="utf-8") as f:
+                line = f.readline().strip()
+
+            if line:
+                return line
+
+        except Exception:
+            pass
+
+        return None
+
+    for expected_type, folder in base_dirs.items():
+
+        if not os.path.exists(folder):
+            continue
+
+        files = os.listdir(folder)
+
+        base_names = set(
+            os.path.splitext(f)[0]
+            for f in files
+            if f.endswith(".ttl")
+        )
+
+        for base in base_names:
+
+            ttl_path = os.path.join(folder, base + ".ttl")
+            csv_path = os.path.join(folder, base + ".csv")
+            txt_path = os.path.join(folder, base + ".txt")
+
+            display_name = os.path.join(folder, base)
+
+            if not os.path.exists(csv_path):
+                print(f"Skipping {display_name}: missing CSV file")
+                continue
+
+            # Determine category
+            category = get_category(txt_path)
+
+            if category not in category_stats:
+                category_stats[category] = {"passed": 0, "total": 0}
+
+            category_stats[category]["total"] += 1
+
+            try:
+                result = ODRL_Evaluator.evaluate_ODRL_from_files(
+                    ttl_path,
+                    csv_path
+                )[0]
+
+            except Exception as e:
+
+                tests_failed += 1
+
+                print(f"\nEvaluation test of {display_name} failed due to exception:")
+                print(str(e))
+
+                continue
+
+            expected_valid = (expected_type == "valid")
+
+            test_ok = (
+                (result and expected_valid)
+                or
+                ((not result) and (not expected_valid))
+            )
+
+            if test_ok:
+
+                tests_passed += 1
+                category_stats[category]["passed"] += 1
+
+            else:
+
+                tests_failed += 1
+
+                expectation_str = (
+                    "valid"
+                    if expected_valid
+                    else "invalid"
+                )
+
+                print(
+                    f"Evaluation test of {base} failed "
+                    f"(was expected to be {expectation_str})"
+                )
+
+                # Print first line if exists
+                first_line = get_first_line(txt_path)
+
+                if first_line:
+                    print(first_line)
+
+                test_log.append(
+                    f"Failed evaluation test {base} "
+                    f"(expected {expectation_str})"
+                )
+
+    # ---- CATEGORY SUMMARY ----
+
+    print("\nFolder tests category summary:")
+
+    for category in sorted(category_stats.keys()):
+
+        passed = category_stats[category]["passed"]
+        total = category_stats[category]["total"]
+
+        print(f"- Tests: {category} {passed}/{total}")
+
+
+def runTests(test_repetitions = 0):
     global tests_passed
     global tests_failed
     global test_log
@@ -105,18 +256,18 @@ def runTests(test_repetitions = 2):
 
     # EVALUATION TESTS
 
-    # evluation with datetime
-    #if ODRL_Evaluator.evaluate_ODRL_from_files("example_policies/example_valid3.json", "example_policies/sotw_ex3_valid.csv")[0]:
-    #    tests_passed += 1
-    #else:
-    #    tests_failed += 1
-    #    test_log.append("Failed to evaluate datetime example example_policies/example_valid3.json3 as valid on SotW example_policies/sotw_ex3_valid.csv")
+    # evaluation with datetime
+    if ODRL_Evaluator.evaluate_ODRL_from_files("example_policies/example_valid3.ttl", "example_policies/sotw_ex3_valid.csv")[0]:
+        tests_passed += 1
+    else:
+        tests_failed += 1
+        test_log.append("Failed to evaluate datetime example example_policies/example_valid3.ttl as valid on SotW example_policies/sotw_ex3_valid.csv")
 
-    #if not ODRL_Evaluator.evaluate_ODRL_from_files("example_policies/example_valid3.json", "example_policies/sotw_ex3_invalid.csv")[0]:
-    #    tests_passed += 1
-    #else:
-    #    tests_failed += 1
-    #    test_log.append("Failed to evaluate datetime example example_policies/example_valid3.json as invalid on SotW example_policies/sotw_ex3_invalid.csv")
+    if not ODRL_Evaluator.evaluate_ODRL_from_files("example_policies/example_valid3.ttl", "example_policies/sotw_ex3_invalid.csv")[0]:
+        tests_passed += 1
+    else:
+        tests_failed += 1
+        test_log.append("Failed to evaluate datetime example example_policies/example_valid3.ttl as invalid on SotW example_policies/sotw_ex3_invalid.csv")
 
     run_SotW_tests(test_repetitions,
                    test_utils.generate_permission_test_cases(test_n = test_repetitions,
@@ -125,9 +276,12 @@ def runTests(test_repetitions = 2):
                    "Test of SotW Evaluation for Permissions Only"
                    )
 
+    # Folder-based evaluation tests
+    run_folder_evaluation_tests()
+
     # PRINT SUMMARY
 
-    print(f"TESTS PASSED {tests_passed}/{tests_passed + tests_failed}")
+    print(f"\nTOTAL TESTS PASSED {tests_passed}/{tests_passed + tests_failed}")
 
     for log in test_log:
         print(log)
