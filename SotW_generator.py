@@ -495,19 +495,19 @@ def generate_state_of_the_world_from_policies_from_file(
     g = rdf_utils.load(file_path)[0]
     return generate_state_of_the_world_from_policies(g, number_of_records, valid, chance_feature_empty, csv_file)
 
-# Example usage
-g = rdf_utils.load("example_policies/ODRL_perm_duty_conseq.json")[0]
-file_path = "example_policies/ODRL_perm_duty_conseq.json"
-print(*extract_features_list_from_policy_from_file(file_path), sep ="\n")
-print("\nPolicies with rules:")
-#print(*extract_rule_list_from_policy_from_file(file_path), sep="\n")
-from pprint import pprint
-pprint(
-    extract_rule_list_from_policy_from_file(file_path),
-    sort_dicts=False,
-    width=120
-)
+## Example usage
+#g = rdf_utils.load("example_policies/ODRL_perm_duty_conseq.json")[0]
+#file_path = "example_policies/ODRL_perm_duty_conseq.json"
+#print(*extract_features_list_from_policy_from_file(file_path), sep ="\n")
+#print("\nPolicies with rules:")
+##print(*extract_rule_list_from_policy_from_file(file_path), sep="\n")
+#from pprint import pprint
+#pprint(
+#    extract_rule_list_from_policy_from_file(file_path),
+#    sort_dicts=False,
+#    width=120
+#)
 
-csv = generate_state_of_the_world_from_policies_from_file(file_path, number_of_records=50, chance_feature_empty=0.3)
+#csv = generate_state_of_the_world_from_policies_from_file(file_path, number_of_records=50, chance_feature_empty=0.3)
 
-print(csv)
+#print(csv)
