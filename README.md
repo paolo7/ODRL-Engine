@@ -67,11 +67,12 @@ To test, run the `test.py` script. After the tests are run, the output of the te
 
 To add an evaluation test, create the following files, where X is a filename of your choosing 
 (make sure this name is unique in the folder you will copy them in):
-* X.ttl
-* X.csv
-* X.txt (optional)
+* `X.ttl` (a Turtle file containing a single ODRL policy)
+* `X.csv` (a State of the World)
+* `X.txt` (optional file, with information about the test)
 
-If this is a test that should result in a "valid" output place the files under `test_cases\evaluation\valid`, 
+If this is a test that should result in a "valid" output (if the ODRL policy in X.ttl is valid in State of the World X.csv) 
+place the files under `test_cases\evaluation\valid`, 
 otherwise under `test_cases\evaluation\invalid`.
 
 Tests placed here will be run automatically when `test.py` is run.
