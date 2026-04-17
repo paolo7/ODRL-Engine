@@ -248,27 +248,81 @@ def extract_rule_list(odrl_graph, rule_node, features):
 def extract_rule_list_from_policy(odrl_graph: rdflib.Graph):
     policy_list = []
 
+    def build_rule_structure(rule_node):
+        """
+        Recursively build a rule structure in case there are nested duties, consequences or remedies
+        """
+
+        rule_dict = {
+            "conditions": extract_rule_list(
+                odrl_graph,
+                rule_node,
+                last_seen_list_of_features
+            )
+        }
+
+        # ---- DUTIES (permission → duty) ----
+        duties = []
+        for duty in odrl_graph.objects(rule_node, ODRL.duty):
+            duties.append(build_rule_structure(duty))
+
+        if duties:
+            rule_dict["duties"] = duties
+
+        # ---- CONSEQUENCES (duty or obligation → consequence) ----
+        consequences = []
+        for consequence in odrl_graph.objects(rule_node, ODRL.consequence):
+            consequences.append(build_rule_structure(consequence))
+
+        if consequences:
+            rule_dict["consequences"] = consequences
+
+        # ---- REMEDIES (prohibition → remedy) ----
+        remedies = []
+        for remedy in odrl_graph.objects(rule_node, ODRL.remedy):
+            remedies.append(build_rule_structure(remedy))
+
+        if remedies:
+            rule_dict["remedies"] = remedies
+
+        return rule_dict
+
+    # ----------------------------------------------------
+
     # Find all policies in the graph
-    for policy in set(s for p in policy_predicates for s in odrl_graph.subjects(predicate=p)):
+    for policy in set(
+        s for p in policy_predicates
+        for s in odrl_graph.subjects(predicate=p)
+    ):
+
         permissions = []
         prohibitions = []
         obligations = []
 
-        # Permissions
+        # ---- PERMISSIONS ----
         for perm in odrl_graph.objects(policy, ODRL.permission):
-            permissions.append(extract_rule_list(odrl_graph, perm, last_seen_list_of_features))
+            permissions.append(
+                build_rule_structure(perm)
+            )
 
-        # Prohibitions
+        # ---- PROHIBITIONS ----
         for prohib in odrl_graph.objects(policy, ODRL.prohibition):
-            prohibitions.append(extract_rule_list(odrl_graph, prohib, last_seen_list_of_features))
+            prohibitions.append(
+                build_rule_structure(prohib)
+            )
 
-        # Obligations
+        # ---- OBLIGATIONS ----
         for oblig in odrl_graph.objects(policy, ODRL.obligation):
-            obligations.append(extract_rule_list(odrl_graph, oblig, last_seen_list_of_features))
+            obligations.append(
+                build_rule_structure(oblig)
+            )
 
-        policy_list.append({"policy_iri": str(policy), "permissions": permissions, "prohibitions": prohibitions,
-                            "obligations": obligations})
-
+        policy_list.append({
+            "policy_iri": str(policy),
+            "permissions": permissions,
+            "prohibitions": prohibitions,
+            "obligations": obligations
+        })
 
     return policy_list
 
@@ -304,7 +358,8 @@ def generate_pd_state_of_the_world_from_policies(
         if not policy["permissions"]:
             continue
 
-        permission_triplets_lists = random.choice(policy["permissions"])
+        permission_rule = random.choice(policy["permissions"])
+        permission_triplets_lists = permission_rule["conditions"]
 
         # Features that appear in permission rules
         features_with_triplets = [
@@ -501,7 +556,13 @@ def translate_csv_to_solid_syntax(csv_file, destination_file="translated_sotw.tt
 #file_path = "example_policies/example_valid3.ttl"
 #print(*extract_features_list_from_policy_from_file(file_path), sep ="\n")
 #print("\nPolicies with rules:")
-#print(*extract_rule_list_from_policy_from_file(file_path), sep="\n")
+##print(*extract_rule_list_from_policy_from_file(file_path), sep="\n")
+#from pprint import pprint
+#pprint(
+#    extract_rule_list_from_policy_from_file(file_path),
+#    sort_dicts=False,
+#    width=120
+#)
 
 #csv = generate_state_of_the_world_from_policies_from_file(file_path, number_of_records=50, chance_feature_empty=0.3)
 

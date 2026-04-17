@@ -115,7 +115,7 @@ class ODRLEvaluator:
         }
 
     def _eval_rule(self, row, rule):
-        return all(self._eval_constraint(row, c) for c in rule)
+        return all(self._eval_constraint(row, c) for c in rule["conditions"])
 
     def _eval_constraint(self, row, constraint):
         left, op_symbol, right = constraint

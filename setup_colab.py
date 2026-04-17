@@ -728,55 +728,60 @@ def show_interface():
 
                                 def pretty_print_rules(rule_list):
                                     out_lines = []
-                                    for rule in rule_list:
+
+                                    def format_rule_dict(rd, indent_level=2):
+                                        indent = "    " * indent_level
+                                        sub_indent = "    " * (indent_level + 1)
+                                        
+                                        if rd.get("conditions"):
+                                            out_lines.append(f"{indent}Rule conditions:")
+                                            for cond in rd["conditions"]:
+                                                subj, op, obj = cond
+                                                out_lines.append(f"{sub_indent}{subj} {op} {obj}")
+                                        
+                                        if rd.get("duties"):
+                                            out_lines.append(f"{indent}Duties:")
+                                            for duty in rd["duties"]:
+                                                format_rule_dict(duty, indent_level + 1)
+
+                                        if rd.get("consequences"):
+                                            out_lines.append(f"{indent}Consequences:")
+                                            for cons in rd["consequences"]:
+                                                format_rule_dict(cons, indent_level + 1)
+
+                                        if rd.get("remedies"):
+                                            out_lines.append(f"{indent}Remedies:")
+                                            for rem in rd["remedies"]:
+                                                format_rule_dict(rem, indent_level + 1)
+
+                                    for policy in rule_list:
                                         out_lines.append(
-                                            f"Policy IRI: {rule['policy_iri']}\n"
+                                            f"Policy IRI: {policy['policy_iri']}\n"
                                         )
 
                                         # permissions
                                         out_lines.append("    Permissions:")
-                                        if rule["permissions"]:
-                                            for cond_group in rule["permissions"]:
-                                                out_lines.append(
-                                                    "        Rule conditions:"
-                                                )
-                                                for cond in cond_group:
-                                                    subj, op, obj = cond
-                                                    out_lines.append(
-                                                        f"            {subj} {op} {obj}"
-                                                    )
+                                        if policy["permissions"]:
+                                            for perm in policy["permissions"]:
+                                                format_rule_dict(perm, 2)
                                         else:
                                             out_lines.append("        (none)")
                                         out_lines.append("")  # blank line
 
                                         # prohibitions
                                         out_lines.append("    Prohibitions:")
-                                        if rule["prohibitions"]:
-                                            for cond_group in rule["prohibitions"]:
-                                                out_lines.append(
-                                                    "        Rule conditions:"
-                                                )
-                                                for cond in cond_group:
-                                                    subj, op, obj = cond
-                                                    out_lines.append(
-                                                        f"            {subj} {op} {obj}"
-                                                    )
+                                        if policy["prohibitions"]:
+                                            for prohib in policy["prohibitions"]:
+                                                format_rule_dict(prohib, 2)
                                         else:
                                             out_lines.append("        (none)")
                                         out_lines.append("")  # blank line
 
                                         # obligations
                                         out_lines.append("    Obligations:")
-                                        if rule["obligations"]:
-                                            for cond_group in rule["obligations"]:
-                                                out_lines.append(
-                                                    "        Rule conditions:"
-                                                )
-                                                for cond in cond_group:
-                                                    subj, op, obj = cond
-                                                    out_lines.append(
-                                                        f"            {subj} {op} {obj}"
-                                                    )
+                                        if policy["obligations"]:
+                                            for oblig in policy["obligations"]:
+                                                format_rule_dict(oblig, 2)
                                         else:
                                             out_lines.append("        (none)")
                                         out_lines.append("")  # blank line
