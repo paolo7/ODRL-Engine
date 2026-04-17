@@ -19,6 +19,7 @@ base_features = [
 ]
 
 ODRL = rdflib.Namespace("http://www.w3.org/ns/odrl/2/")
+SOTW = rdflib.Namespace("https://w3id.org/force/sotw#")
 
 refinement_contexts_incoming = {
     "http://www.w3.org/ns/odrl/2/Party": ODRL.assignee,  # Party if something has an :assignee -> node
@@ -440,6 +441,61 @@ def generate_state_of_the_world_from_policies_from_file(
     g = rdf_utils.load(file_path)[0]
     return generate_state_of_the_world_from_policies(g, number_of_records, valid, chance_feature_empty, csv_file)
 
+def translate_csv_to_solid_syntax(csv_file, destination_file="translated_sotw.ttl"):
+    df = pd.read_csv(csv_file)
+    rdf_graph = rdflib.Graph()
+    sotw_node = rdflib.URIRef("https://example.com/iri/sotw")
+    rdf_graph.add((sotw_node, RDF.type, SOTW.SotW))
+    for i, row in df.iterrows():
+        evaluation_node = rdflib.URIRef(f"https://example.com/iri/sotw#{i}")
+        rdf_graph.add((sotw_node, SOTW.context, evaluation_node))
+        rdf_graph.add((rdflib.URIRef(evaluation_node), RDF.type, SOTW.EvaluationRequest))
+        for col, val in zip(df.columns, row):
+            if not pd.isnull(val):
+                if col == "http://www.w3.org/ns/odrl/2/dateTime":
+                    rdf_graph.add((rdflib.URIRef(evaluation_node), rdflib.URIRef("http://purl.org/dc/terms/issued"), rdflib.Literal(val, datatype=rdflib.XSD.dateTime)))
+                elif col == "http://www.w3.org/ns/odrl/2/Party":
+                    rdf_graph.add((rdflib.URIRef(evaluation_node), SOTW.evaluatedParty, rdflib.URIRef(val)))
+                elif col == "http://www.w3.org/ns/odrl/2/Action": 
+                    rdf_graph.add((rdflib.URIRef(evaluation_node), SOTW.evaluatedAction, rdflib.URIRef(val)))
+                elif col == "http://www.w3.org/ns/odrl/2/Asset":
+                    rdf_graph.add((rdflib.URIRef(evaluation_node), SOTW.evaluatedTarget, rdflib.URIRef(val)))
+                else:
+                    blank_node = rdflib.BNode()
+                    rdf_graph.add((rdflib.URIRef(evaluation_node), SOTW.requestParameter, blank_node))
+                    rdf_graph.add((blank_node, RDF.type, SOTW.RequestParameter))
+                    if len(col.split()) > 1:
+                        prefix, feature_iri = col.split(" ", 1)
+                        if prefix in ["http://www.w3.org/ns/odrl/2/Party", "http://www.w3.org/ns/odrl/2/Action", "http://www.w3.org/ns/odrl/2/Asset"]:
+                            rdf_graph.add((blank_node, SOTW.describesFeature, rdflib.URIRef(feature_iri)))
+                            rdf_graph.add((blank_node, SOTW.value, rdflib.Literal(val)))
+                        else:
+                            rdf_graph.add((blank_node, SOTW.describesFeature, rdflib.URIRef(feature_iri)))
+                            rdf_graph.add((blank_node, SOTW.value, rdflib.Literal(val)))
+                    else:
+                        rdf_graph.add((blank_node, SOTW.describesFeature, rdflib.URIRef(col)))
+                        rdf_graph.add((blank_node, SOTW.value, rdflib.Literal(val)))
+    rdf_graph.serialize(destination=destination_file, format="turtle")
+
+# def extract_sotw_from_solid_syntax(file_path):
+#     g = rdf_utils.load(file_path)[0]
+#     sotw_data = []
+#     for evaluation in g.subjects(RDF.type, SOTW.EvaluationRequest):
+#         record = {}
+#         for param in g.objects(evaluation, SOTW.requestParameter):
+#             feature_iri = None
+#             for feature in g.objects(param, SOTW.describesFeature):
+#                 feature_iri = str(feature)
+#                 break
+#             value = None
+#             for val in g.objects(param, SOTW.value):
+#                 value = str(val)
+#                 break
+#             if feature_iri and value is not None:
+#                 record[feature_iri] = value
+#         sotw_data.append(record)
+#     return sotw_data
+
 # Example usage
 #g = rdf_utils.load("example_policies/example_valid3.ttl")[0]
 #file_path = "example_policies/example_valid3.ttl"
@@ -450,3 +506,4 @@ def generate_state_of_the_world_from_policies_from_file(
 #csv = generate_state_of_the_world_from_policies_from_file(file_path, number_of_records=50, chance_feature_empty=0.3)
 
 #print(csv)
+translate_csv_to_solid_syntax("test_cases/evaluation/valid/test1.csv")

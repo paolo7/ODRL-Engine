@@ -1,0 +1,2 @@
+should be allowed as the events all happen before the deadline
+datetime and the duty to pay has been fulfilled before John prints
