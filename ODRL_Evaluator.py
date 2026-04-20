@@ -325,3 +325,133 @@ def compute_statistics_from_files(policy_file, SotW_file):
 
     return compute_policy_statistics_rowwise(df, policies, OPS_MAP, FEATURE_TYPE_MAP)
 # print("Evaluation: "+str(evaluate_ODRL_from_files("example_policies/exampleEvaluationPolicy.ttl","example_policies/exampleSotW.csv")))
+# Compute temporal tracking per rule (matches count, earliest/latest match, required status) keep track of time
+def compute_rule_temporal_tracking(df, policies, OPS_MAP, FEATURE_TYPE_MAP):
+    """
+    Tracks per rule:
+    - matches_count
+    - earliestMatch
+    - latestMatch
+    - required (1 → 0 when first matched)
+    - stores full rule for readable output
+    """
+
+    all_tracking = []
+
+    for policy_idx, policy in enumerate(policies):
+        policy_iri = policy.get("policy_iri", f"policy_{policy_idx}")
+
+        rule_tracking = {}
+
+        # --- Initialize permissions ---
+        for i, rule in enumerate(policy.get("permissions", [])):
+            rule_tracking[f"perm_{i}"] = {
+                "type": "permission",
+                "rule": rule,
+                "matches_count": 0,
+                "earliestMatch": None,
+                "latestMatch": None,
+                "required": 1
+            }
+
+        # --- Initialize prohibitions ---
+        for i, rule in enumerate(policy.get("prohibitions", [])):
+            rule_tracking[f"prohib_{i}"] = {
+                "type": "prohibition",
+                "rule": rule,
+                "matches_count": 0,
+                "earliestMatch": None,
+                "latestMatch": None,
+                "required": 1
+            }
+
+        # --- Iterate over rows ---
+        for idx, row in df.iterrows():
+            row_time = row.get("time")  # ⚠️ adjust if your column name differs
+
+            # --- Check permissions ---
+            for i, rule in enumerate(policy.get("permissions", [])):
+                if eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
+                    key = f"perm_{i}"
+                    rule_tracking[key]["matches_count"] += 1
+
+                    if rule_tracking[key]["earliestMatch"] is None:
+                        rule_tracking[key]["earliestMatch"] = row_time
+
+                    rule_tracking[key]["latestMatch"] = row_time
+
+                    if rule_tracking[key]["required"] == 1:
+                        rule_tracking[key]["required"] = 0
+
+            # --- Check prohibitions ---
+            for i, rule in enumerate(policy.get("prohibitions", [])):
+                if eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
+                    key = f"prohib_{i}"
+                    rule_tracking[key]["matches_count"] += 1
+
+                    if rule_tracking[key]["earliestMatch"] is None:
+                        rule_tracking[key]["earliestMatch"] = row_time
+
+                    rule_tracking[key]["latestMatch"] = row_time
+
+                    if rule_tracking[key]["required"] == 1:
+                        rule_tracking[key]["required"] = 0
+
+        all_tracking.append({
+            "policy_iri": policy_iri,
+            "rule_tracking": rule_tracking
+        })
+
+    return all_tracking
+
+# Compute temporal tracking from files
+def compute_temporal_tracking_from_files(policy_file, SotW_file):
+    graph = rdf_utils.load(policy_file)[0]
+    policies = SotW_generator.extract_rule_list_from_policy(graph)
+    features = SotW_generator.extract_features_list_from_policy(graph)
+
+    FEATURE_TYPE_MAP = {f["iri"]: f["type"] for f in features}
+    df = pd.read_csv(SotW_file)
+
+    return compute_rule_temporal_tracking(df, policies, OPS_MAP, FEATURE_TYPE_MAP)
+# ODRL Style Formating 
+def format_rule_as_text(rule):
+    """
+    Example:
+    [('age', '>', 18), ('country', '=', 'UK')]
+    → "age > 18 AND country = UK"
+    """
+    return " AND ".join([f"{left} {op} {right}" for (left, op, right) in rule])
+# Build stats
+def build_tracking_report(tracking_results):
+    lines = []
+
+    for policy in tracking_results:
+        lines.append(f"Policy: {policy['policy_iri']}")
+        lines.append("")
+
+        for key, data in policy["rule_tracking"].items():
+            rule_text = format_rule_as_text(data["rule"])
+
+            lines.append(f"{data['type'].upper()} RULE:")
+            lines.append(f"  Conditions: {rule_text}")
+            lines.append(f"  Matches count: {data['matches_count']}")
+            lines.append(f"  First matched at: {data['earliestMatch']}")
+            lines.append(f"  Last matched at: {data['latestMatch']}")
+            lines.append(
+                f"  Required satisfied: {'YES' if data['required'] == 0 else 'NO'}"
+            )
+            lines.append("")
+
+        lines.append("-" * 50)
+
+    return "\n".join(lines)
+
+# tracking = compute_temporal_tracking_from_files(
+#     "example_policies/exampleEvaluationPolicy.ttl",
+#     "example_policies/exampleSotW.csv"
+# )
+
+# report = build_tracking_report(tracking)
+
+# print(report)
