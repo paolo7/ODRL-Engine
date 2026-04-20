@@ -367,7 +367,7 @@ def compute_rule_temporal_tracking(df, policies, OPS_MAP, FEATURE_TYPE_MAP):
 
         # --- Iterate over rows ---
         for idx, row in df.iterrows():
-            row_time = row.get("time")  # ⚠️ adjust if your column name differs
+            row_time = row.get("http://www.w3.org/ns/odrl/2/dateTime")  # ⚠️ adjust if your column name differs
 
             # --- Check permissions ---
             for i, rule in enumerate(policy.get("permissions", [])):
