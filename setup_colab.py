@@ -517,13 +517,13 @@ def show_interface():
                             return
 
                         try:
-                            # 🔥 CALL YOUR NEW BACKEND FUNCTION
+                            #  CALL YOUR NEW BACKEND FUNCTION
                             tracking_results = Evaluator.compute_temporal_tracking_from_files(
                                 UploadState.filename,
                                 SotWUploadState.filename
                             )
 
-                             # 🔥 FORMAT OUTPUT
+                             #  FORMAT OUTPUT
                             report = Evaluator.build_tracking_report(tracking_results)
 
                             tracking_box.value = report

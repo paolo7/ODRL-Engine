@@ -5,6 +5,8 @@ import SotW_generator
 import pandas as pd
 import validate
 import operator
+import sys
+
 # if dateutil is not install then install it using (!pip install python-dateutil)
 from dateutil import parser
 
@@ -31,8 +33,7 @@ def evaluate_ODRL_on_dataframe(policies, data_frame, FEATURE_TYPE_MAP):
     results = evaluate_all_policies_rowwise(
         data_frame, policies, OPS_MAP, FEATURE_TYPE_MAP
     )
-    print("DEBUG TYPE:", type(results))
-    print("DEBUG SAMPLE:", results[:2])
+  
     total_rows = len(data_frame)
     compliant_count = 0
     not_permitted = []
@@ -109,8 +110,10 @@ def evaluate_ODRL_on_dataframe(policies, data_frame, FEATURE_TYPE_MAP):
 
 
 def eval_constraint(row, constraint, OPS_MAP, FEATURE_TYPE_MAP):
-    left, op_symbol, right = constraint
-
+   
+    
+    left, op_symbol, right = constraint    
+  
     if left not in row:
         return False
 
@@ -153,8 +156,24 @@ def eval_constraint(row, constraint, OPS_MAP, FEATURE_TYPE_MAP):
 
 
 
+# def eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
+#     return all(eval_constraint(row, c, OPS_MAP, FEATURE_TYPE_MAP) for c in rule)
+
 def eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
-    return all(eval_constraint(row, c, OPS_MAP, FEATURE_TYPE_MAP) for c in rule)
+
+    # 🔒 ensure rule is dict and has conditions
+    if not isinstance(rule, dict):
+        return False
+
+    conditions = rule.get("conditions", [])
+
+    if not isinstance(conditions, list):
+        return False
+
+    return all(
+        eval_constraint(row, c, OPS_MAP, FEATURE_TYPE_MAP)
+        for c in conditions
+    )
 
 
 def eval_ruleset(row, rules, OPS_MAP, FEATURE_TYPE_MAP):
@@ -172,13 +191,14 @@ def evaluate_row_policy_verbose(row, policy, OPS_MAP, FEATURE_TYPE_MAP):
     satisfied_permissions = []
     prohibition_matches = []
     violated_prohibitions = []
-
+   
     # check permissions
     for i, rule in enumerate(policy["permissions"]):
+        print("Checking permission rule:", rule)  # 👈 debug print
         if eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
             permission_matches.append(i)
             satisfied_permissions.append(rule)
-
+        print("Checking permission after rule:", rule)  # 👈 debug print
     # check prohibitions
     for i, rule in enumerate(policy["prohibitions"]):
         if eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
@@ -208,9 +228,10 @@ def evaluate_row_policy_verbose(row, policy, OPS_MAP, FEATURE_TYPE_MAP):
 
 def evaluate_policy_df_rowwise(df, policy, OPS_MAP, FEATURE_TYPE_MAP):
     results = []
-
+    
     for idx, row in df.iterrows():
         row_result = evaluate_row_policy_verbose(row, policy, OPS_MAP, FEATURE_TYPE_MAP)
+        
         row_result.update(
             {
                 "row_index": idx,
@@ -225,11 +246,11 @@ def evaluate_policy_df_rowwise(df, policy, OPS_MAP, FEATURE_TYPE_MAP):
 
 def evaluate_all_policies_rowwise(df, policies, OPS_MAP, FEATURE_TYPE_MAP):
     all_results = []
-
+    
     for policy in policies:
         row_results = evaluate_policy_df_rowwise(df, policy, OPS_MAP, FEATURE_TYPE_MAP)
         all_results.extend(row_results)
-
+    print("\n Results....")
     return all_results
 
 
