@@ -194,11 +194,11 @@ def evaluate_row_policy_verbose(row, policy, OPS_MAP, FEATURE_TYPE_MAP):
    
     # check permissions
     for i, rule in enumerate(policy["permissions"]):
-        print("Checking permission rule:", rule)  # 👈 debug print
+       
         if eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
             permission_matches.append(i)
             satisfied_permissions.append(rule)
-        print("Checking permission after rule:", rule)  # 👈 debug print
+        
     # check prohibitions
     for i, rule in enumerate(policy["prohibitions"]):
         if eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
