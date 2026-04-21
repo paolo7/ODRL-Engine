@@ -28,7 +28,7 @@
             odrl:refinement [
                 odrl:leftOperand odrl:payAmount ;
                 odrl:operator odrl:eq ;
-                odrl:rightOperand "50"^^xsd:decimal
+                odrl:rightOperand 50 ;
             ]
         ] ;
     ]
