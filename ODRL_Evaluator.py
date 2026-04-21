@@ -31,7 +31,8 @@ def evaluate_ODRL_on_dataframe(policies, data_frame, FEATURE_TYPE_MAP):
     results = evaluate_all_policies_rowwise(
         data_frame, policies, OPS_MAP, FEATURE_TYPE_MAP
     )
-
+    print("DEBUG TYPE:", type(results))
+    print("DEBUG SAMPLE:", results[:2])
     total_rows = len(data_frame)
     compliant_count = 0
     not_permitted = []
