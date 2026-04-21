@@ -325,133 +325,275 @@ def compute_statistics_from_files(policy_file, SotW_file):
 
     return compute_policy_statistics_rowwise(df, policies, OPS_MAP, FEATURE_TYPE_MAP)
 # print("Evaluation: "+str(evaluate_ODRL_from_files("example_policies/exampleEvaluationPolicy.ttl","example_policies/exampleSotW.csv")))
-# Compute temporal tracking per rule (matches count, earliest/latest match, required status) keep track of time
-def compute_rule_temporal_tracking(df, policies, OPS_MAP, FEATURE_TYPE_MAP):
-    """
-    Tracks per rule:
-    - matches_count
-    - earliestMatch
-    - latestMatch
-    - required (1 → 0 when first matched)
-    - stores full rule for readable output
-    """
 
-    all_tracking = []
-
-    for policy_idx, policy in enumerate(policies):
-        policy_iri = policy.get("policy_iri", f"policy_{policy_idx}")
-
-        rule_tracking = {}
-
-        # --- Initialize permissions ---
-        for i, rule in enumerate(policy.get("permissions", [])):
-            rule_tracking[f"perm_{i}"] = {
-                "type": "permission",
-                "rule": rule,
-                "matches_count": 0,
-                "earliestMatch": None,
-                "latestMatch": None,
-                "required": 1
-            }
-
-        # --- Initialize prohibitions ---
-        for i, rule in enumerate(policy.get("prohibitions", [])):
-            rule_tracking[f"prohib_{i}"] = {
-                "type": "prohibition",
-                "rule": rule,
-                "matches_count": 0,
-                "earliestMatch": None,
-                "latestMatch": None,
-                "required": 1
-            }
-
-        # --- Iterate over rows ---
-        for idx, row in df.iterrows():
-            row_time = row.get("http://www.w3.org/ns/odrl/2/dateTime")  # ⚠️ adjust if your column name differs
-
-            # --- Check permissions ---
-            for i, rule in enumerate(policy.get("permissions", [])):
-                if eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
-                    key = f"perm_{i}"
-                    rule_tracking[key]["matches_count"] += 1
-
-                    if rule_tracking[key]["earliestMatch"] is None:
-                        rule_tracking[key]["earliestMatch"] = row_time
-
-                    rule_tracking[key]["latestMatch"] = row_time
-
-                    if rule_tracking[key]["required"] == 1:
-                        rule_tracking[key]["required"] = 0
-
-            # --- Check prohibitions ---
-            for i, rule in enumerate(policy.get("prohibitions", [])):
-                if eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
-                    key = f"prohib_{i}"
-                    rule_tracking[key]["matches_count"] += 1
-
-                    if rule_tracking[key]["earliestMatch"] is None:
-                        rule_tracking[key]["earliestMatch"] = row_time
-
-                    rule_tracking[key]["latestMatch"] = row_time
-
-                    if rule_tracking[key]["required"] == 1:
-                        rule_tracking[key]["required"] = 0
-
-        all_tracking.append({
-            "policy_iri": policy_iri,
-            "rule_tracking": rule_tracking
-        })
-
-    return all_tracking
-
-# Compute temporal tracking from files
 def compute_temporal_tracking_from_files(policy_file, SotW_file):
+
+    # 1. Load RDF policy graph
     graph = rdf_utils.load(policy_file)[0]
+
+    # 2. Extract policies
     policies = SotW_generator.extract_rule_list_from_policy(graph)
+
+    # 3. Extract feature metadata
     features = SotW_generator.extract_features_list_from_policy(graph)
 
-    FEATURE_TYPE_MAP = {f["iri"]: f["type"] for f in features}
+    FEATURE_TYPE_MAP = {
+        f["iri"]: f["type"] for f in features
+    }
+
+    # 4. Load CSV data (state of the world)
     df = pd.read_csv(SotW_file)
 
-    return compute_rule_temporal_tracking(df, policies, OPS_MAP, FEATURE_TYPE_MAP)
-# ODRL Style Formating 
-def format_rule_as_text(rule):
+    # 5. Call core evaluation engine
+    return evaluate_policy_with_tracking(
+        df,
+        policies,
+        OPS_MAP,
+        FEATURE_TYPE_MAP
+    )
+
+# Compute temporal tracking per rule (matches count, earliest/latest match, required status) keep track of time
+def evaluate_policy_with_tracking(df, policies, OPS_MAP, FEATURE_TYPE_MAP):
     """
-    Example:
-    [('age', '>', 18), ('country', '=', 'UK')]
-    → "age > 18 AND country = UK"
+    Full row-by-row evaluation with temporal tracking + validity report
     """
-    return " AND ".join([f"{left} {op} {right}" for (left, op, right) in rule])
-# Build stats
-def build_tracking_report(tracking_results):
-    lines = []
 
-    for policy in tracking_results:
-        lines.append(f"Policy: {policy['policy_iri']}")
-        lines.append("")
+    def init_tracking(rule, rule_type, parent=None):
+        return {
+            "type": rule_type,
+            "parent": parent,
+            "rule": rule,
+            "matches_count": 0,
+            "earliestMatch": None,
+            "latestMatch": None,
+            "required": 1
+        }
 
-        for key, data in policy["rule_tracking"].items():
-            rule_text = format_rule_as_text(data["rule"])
+    # ---------- HELPERS ----------
+    def check_match(row, entry, OPS_MAP, FEATURE_TYPE_MAP):
+        if eval_rule(row, entry["rule"], OPS_MAP, FEATURE_TYPE_MAP):
+            entry["matches_count"] += 1
 
-            lines.append(f"{data['type'].upper()} RULE:")
-            lines.append(f"  Conditions: {rule_text}")
-            lines.append(f"  Matches count: {data['matches_count']}")
-            lines.append(f"  First matched at: {data['earliestMatch']}")
-            lines.append(f"  Last matched at: {data['latestMatch']}")
+            row_time = row.get("http://www.w3.org/ns/odrl/2/dateTime")
+
+            if entry["earliestMatch"] is None:
+                entry["earliestMatch"] = row_time
+
+            entry["latestMatch"] = row_time
+            entry["required"] = 0
+            return True
+        return False
+
+    def extract_all(rule, parent_key, tracking, prefix, key_name):
+        for j, r in enumerate(rule.get(key_name, [])):
+            key = f"{prefix}_{key_name}_{j}"
+            tracking[key] = init_tracking(r, key_name[:-1], parent=parent_key)
+            extract_all(r, key, tracking, key, key_name)
+
+    # ---------- MAIN ----------
+    results = []
+
+    for policy_idx, policy in enumerate(policies):
+
+        policy_iri = policy.get("policy_iri", f"policy_{policy_idx}")
+
+        rule_tracking_permissions = {}
+        rule_tracking_duties = {}
+        rule_tracking_prohibitions = {}
+        rule_tracking_consequences = {}
+        rule_tracking_remedies = {}
+
+        # ---------- INIT ----------
+        for i, rule in enumerate(policy.get("permissions", [])):
+            perm_key = f"perm_{i}"
+            rule_tracking_permissions[perm_key] = init_tracking(rule, "permission")
+
+            extract_all(rule, perm_key, rule_tracking_duties, perm_key, "duties")
+            extract_all(rule, perm_key, rule_tracking_consequences, perm_key, "consequences")
+
+        for i, rule in enumerate(policy.get("prohibitions", [])):
+            prohib_key = f"prohib_{i}"
+            rule_tracking_prohibitions[prohib_key] = init_tracking(rule, "prohibition")
+
+            extract_all(rule, prohib_key, rule_tracking_remedies, prohib_key, "remedies")
+
+        # ---------- STATE ----------
+        rows_violating_permissions = []
+        rows_violating_prohibitions = []
+        validity = 1
+
+        # ---------- ROW LOOP ----------
+        for _, row in df.iterrows():
+
+            matched_permissions = []
+            matched_prohibitions = []
+
+            # ---- PERMISSIONS ----
+            for key, entry in rule_tracking_permissions.items():
+                if check_match(row, entry, OPS_MAP, FEATURE_TYPE_MAP):
+                    matched_permissions.append(key)
+
+                    # check duties
+                    related_duties = [
+                        d for d in rule_tracking_duties.values()
+                        if d["parent"] == key
+                    ]
+
+                    for duty in related_duties:
+                        duty_match = check_match(row, duty, OPS_MAP, FEATURE_TYPE_MAP)
+
+                        if not duty_match:
+                            # check consequences
+                            related_cons = [
+                                c for c in rule_tracking_consequences.values()
+                                if c["parent"] == duty
+                            ]
+
+                            if not related_cons:
+                                rows_violating_permissions.append(row)
+                                validity = 0
+                            else:
+                                duty["required"] = 1
+                                for c in related_cons:
+                                    c["required"] = 1
+
+            if not matched_permissions:
+                rows_violating_permissions.append(row)
+                validity = 0
+
+            # ---- DUTIES (independent tracking) ----
+            for duty in rule_tracking_duties.values():
+                check_match(row, duty, OPS_MAP, FEATURE_TYPE_MAP)
+
+            # ---- PROHIBITIONS ----
+            for key, entry in rule_tracking_prohibitions.items():
+                if check_match(row, entry, OPS_MAP, FEATURE_TYPE_MAP):
+                    matched_prohibitions.append(key)
+
+            # ---- PROHIBITION VIOLATIONS ----
+            for key in matched_prohibitions:
+                related_remedies = [
+                    r for r in rule_tracking_remedies.values()
+                    if r["parent"] == key
+                ]
+
+                if not related_remedies:
+                    rows_violating_prohibitions.append(row)
+                    validity = 0
+                else:
+                    for r in related_remedies:
+                        r["required"] = 1
+
+        # ---------- FINAL CHECK ----------
+        temporary_validity = validity
+
+        obligations_not_satisfied = []
+        unfulfilled_duties_with_consequences = []
+        unfulfilled_consequences = []
+        unfulfilled_remedies = []
+
+        # obligations = duties without parent
+        for duty in rule_tracking_duties.values():
+            if duty["parent"] is None and duty["matches_count"] < 1:
+                obligations_not_satisfied.append(duty)
+                temporary_validity = 0
+
+        for duty in rule_tracking_duties.values():
+            if duty["required"] == 1:
+                unfulfilled_duties_with_consequences.append(duty)
+                temporary_validity = 0
+
+        for c in rule_tracking_consequences.values():
+            if c["required"] == 1:
+                unfulfilled_consequences.append(c)
+                temporary_validity = 0
+
+        for r in rule_tracking_remedies.values():
+            if r["required"] == 1:
+                unfulfilled_remedies.append(r)
+                temporary_validity = 0
+
+        # ---------- RESULT ----------
+        results.append({
+            "policy_iri": policy_iri,
+            "evaluation_state": {
+                "permissions": rule_tracking_permissions,
+                "duties": rule_tracking_duties,
+                "prohibitions": rule_tracking_prohibitions,
+                "consequences": rule_tracking_consequences,
+                "remedies": rule_tracking_remedies
+            },
+            "temporary_validity": temporary_validity,
+            "rows_violating_permissions": rows_violating_permissions,
+            "rows_violating_prohibitions": rows_violating_prohibitions,
+            "obligations_not_satisfied": obligations_not_satisfied,
+            "unfulfilled_duties_with_consequences": unfulfilled_duties_with_consequences,
+            "unfulfilled_consequences": unfulfilled_consequences,
+            "unfulfilled_remedies": unfulfilled_remedies
+        })
+
+    return results
+def build_tracking_report(results):
+    report = []
+
+    for r in results:
+        policy_id = r["policy_iri"]
+        state = r["evaluation_state"]
+
+        permissions = state["permissions"]
+        duties = state["duties"]
+        prohibitions = state["prohibitions"]
+        consequences = state["consequences"]
+        remedies = state["remedies"]
+
+        lines = []
+        lines.append(f"\n==============================")
+        lines.append(f" POLICY: {policy_id}")
+        lines.append(f"Validity: {' VALID' if r['temporary_validity'] else '❌ INVALID'}")
+        lines.append(f"==============================\n")
+
+        # ---------- PERMISSIONS ----------
+        lines.append(" PERMISSIONS")
+        for k, v in permissions.items():
             lines.append(
-                f"  Required satisfied: {'YES' if data['required'] == 0 else 'NO'}"
+                f"  • {k} | matches={v['matches_count']} | "
+                f"first={v['earliestMatch']} | last={v['latestMatch']}"
             )
-            lines.append("")
 
-        lines.append("-" * 50)
+        # ---------- PROHIBITIONS ----------
+        lines.append("\n PROHIBITIONS")
+        for k, v in prohibitions.items():
+            lines.append(
+                f"  • {k} | matches={v['matches_count']} | "
+                f"required={v['required']}"
+            )
 
-    return "\n".join(lines)
+        # ---------- DUTIES ----------
+        lines.append("\n DUTIES")
+        for k, v in duties.items():
+            status = "DONE" if v["matches_count"] > 0 else "MISSING"
+            lines.append(
+                f"  • {k} | {status} | matches={v['matches_count']}"
+            )
 
-# tracking = compute_temporal_tracking_from_files(
-#     "example_policies/exampleEvaluationPolicy.ttl",
-#     "example_policies/exampleSotW.csv"
-# )
+        # ---------- CONSEQUENCES ----------
+        lines.append("\n CONSEQUENCES (required ones)")
+        for c in consequences.values():
+            if c["required"] == 1:
+                lines.append(f"  • {c['rule']}")
 
-# report = build_tracking_report(tracking)
+        # ---------- REMEDIES ----------
+        lines.append("\n REMEDIES (required ones)")
+        for r2 in remedies.values():
+            if r2["required"] == 1:
+                lines.append(f"  • {r2['rule']}")
 
-# print(report)
+        # ---------- VIOLATIONS ----------
+        lines.append("\n VIOLATIONS")
+
+        lines.append(f"  Permissions violations: {len(r['rows_violating_permissions'])}")
+        lines.append(f"  Prohibitions violations: {len(r['rows_violating_prohibitions'])}")
+
+        report.append("\n".join(lines))
+
+    return "\n\n".join(report)
