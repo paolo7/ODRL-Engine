@@ -567,4 +567,4 @@ def translate_csv_to_solid_syntax(csv_file, destination_file="translated_sotw.tt
 #csv = generate_state_of_the_world_from_policies_from_file(file_path, number_of_records=50, chance_feature_empty=0.3)
 
 #print(csv)
-translate_csv_to_solid_syntax("test_cases/evaluation/valid/test1.csv")
+#translate_csv_to_solid_syntax("test_cases/evaluation/valid/test1.csv")
