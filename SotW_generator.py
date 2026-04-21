@@ -19,6 +19,7 @@ base_features = [
 ]
 
 ODRL = rdflib.Namespace("http://www.w3.org/ns/odrl/2/")
+SOTW = rdflib.Namespace("https://w3id.org/force/sotw#")
 
 refinement_contexts_incoming = {
     "http://www.w3.org/ns/odrl/2/Party": ODRL.assignee,  # Party if something has an :assignee -> node
@@ -119,7 +120,9 @@ sample_assets = [
 # from constraints.
 # all lists contain datetime, party, action and asset by default
 def extract_features_list_from_policy(odrl_graph: rdflib.Graph):
-    features = []
+
+    features = list(base_features)
+    seen_iris = {f["iri"] for f in base_features}
 
     # Predicates used to decide top-level policy-like nodes
     policy_predicates = {ODRL.permission, ODRL.prohibition, ODRL.obligation}
@@ -136,20 +139,18 @@ def extract_features_list_from_policy(odrl_graph: rdflib.Graph):
             continue
         left_operand = str(lefts[0])
 
-        added_as_direct = False
-
         # Find any parent that references this constraint via odrl:constraint
         for parent in odrl_graph.subjects(predicate=ODRL.constraint, object=constraint):
             has_policy_like = any(
                 next(odrl_graph.subjects(predicate=p, object=parent), None) is not None
                 for p in policy_predicates
             )
-            if has_policy_like:
+            if has_policy_like and left_operand not in seen_iris:
                 features.append({
                     "iri": left_operand,
                     "type": "http://www.w3.org/ns/shacl#Literal"
                 })
-                added_as_direct = True
+                seen_iris.add(left_operand)
 
         # If constraint was not attached directly to a policy-like parent, check for refinement attachments.
         # A refinement is modeled as some node R having odrl:refinement -> constraint.
@@ -159,34 +160,20 @@ def extract_features_list_from_policy(odrl_graph: rdflib.Graph):
             for iri_prefix, incoming_pred in refinement_contexts_incoming.items():
                 # If there exists any triple (?s, incoming_pred, referrer), then referrer is of that context
                 if any(odrl_graph.subjects(predicate=incoming_pred, object=referrer)):
-                    features.append({
-                        "iri": f"{iri_prefix} {left_operand}",
-                        "type": "http://www.w3.org/ns/shacl#Literal"
-                    })
+                    iri = f"{iri_prefix} {left_operand}"
+                    if iri not in seen_iris:
+                        features.append({
+                            "iri": iri,
+                            "type": "http://www.w3.org/ns/shacl#Literal"
+                        })
+                        seen_iris.add(iri)
                     matched = True
                     # could be multiple context types, don't break; allow multiple if RDF encodes them
             # If referrer is attached to something that itself is a node used in permission/prohibition/obligation,
             # it's possible the referrer is nested under a rule — the above incoming-edge checks cover the requested detection.
 
-
-
-    # 1. Sort features alphabetically by iri, to have deterministic lists of features
     features = sorted(features, key=lambda f: f["iri"])
-
-    # 2. Prepend the base features
-    all_features = base_features + features
-
-    # 3. Deduplicate by (iri, type)
-    seen = set()
-    unique_features = []
-    for f in all_features:
-        key = f["iri"]  # only compare by IRI
-        if key not in seen:
-            seen.add(key)
-            unique_features.append(f)
-
-    last_seen_list_of_features = unique_features
-    return unique_features
+    return features
 
 def extract_rule_list(odrl_graph, rule_node, features):
     """
@@ -197,6 +184,7 @@ def extract_rule_list(odrl_graph, rule_node, features):
     triplets = []
 
     # Map ODRL operators to standard symbols
+    # This may be unnecessary. We could keep the original IRIs and handle them in the evaluator.
     operator_map = {
         ODRL.eq: "=",
         ODRL.neq: "!=",
@@ -204,6 +192,7 @@ def extract_rule_list(odrl_graph, rule_node, features):
         ODRL.gt: ">",
         ODRL.lteq: "<=",
         ODRL.gteq: ">="
+        # We need to extract set operators, membership operators, etc.
     }
 
     # Helper to extract values from a node (URI, literal, or complex node with rdf:value/odrl:source)
@@ -259,27 +248,81 @@ def extract_rule_list(odrl_graph, rule_node, features):
 def extract_rule_list_from_policy(odrl_graph: rdflib.Graph):
     policy_list = []
 
+    def build_rule_structure(rule_node):
+        """
+        Recursively build a rule structure in case there are nested duties, consequences or remedies
+        """
+
+        rule_dict = {
+            "conditions": extract_rule_list(
+                odrl_graph,
+                rule_node,
+                last_seen_list_of_features
+            )
+        }
+
+        # ---- DUTIES (permission → duty) ----
+        duties = []
+        for duty in odrl_graph.objects(rule_node, ODRL.duty):
+            duties.append(build_rule_structure(duty))
+
+        if duties:
+            rule_dict["duties"] = duties
+
+        # ---- CONSEQUENCES (duty or obligation → consequence) ----
+        consequences = []
+        for consequence in odrl_graph.objects(rule_node, ODRL.consequence):
+            consequences.append(build_rule_structure(consequence))
+
+        if consequences:
+            rule_dict["consequences"] = consequences
+
+        # ---- REMEDIES (prohibition → remedy) ----
+        remedies = []
+        for remedy in odrl_graph.objects(rule_node, ODRL.remedy):
+            remedies.append(build_rule_structure(remedy))
+
+        if remedies:
+            rule_dict["remedies"] = remedies
+
+        return rule_dict
+
+    # ----------------------------------------------------
+
     # Find all policies in the graph
-    for policy in set(s for p in policy_predicates for s in odrl_graph.subjects(predicate=p)):
+    for policy in set(
+        s for p in policy_predicates
+        for s in odrl_graph.subjects(predicate=p)
+    ):
+
         permissions = []
         prohibitions = []
         obligations = []
 
-        # Permissions
+        # ---- PERMISSIONS ----
         for perm in odrl_graph.objects(policy, ODRL.permission):
-            permissions.append(extract_rule_list(odrl_graph, perm, last_seen_list_of_features))
+            permissions.append(
+                build_rule_structure(perm)
+            )
 
-        # Prohibitions
+        # ---- PROHIBITIONS ----
         for prohib in odrl_graph.objects(policy, ODRL.prohibition):
-            prohibitions.append(extract_rule_list(odrl_graph, prohib, last_seen_list_of_features))
+            prohibitions.append(
+                build_rule_structure(prohib)
+            )
 
-        # Obligations
+        # ---- OBLIGATIONS ----
         for oblig in odrl_graph.objects(policy, ODRL.obligation):
-            obligations.append(extract_rule_list(odrl_graph, oblig, last_seen_list_of_features))
+            obligations.append(
+                build_rule_structure(oblig)
+            )
 
-        policy_list.append({"policy_iri": str(policy), "permissions": permissions, "prohibitions": prohibitions,
-                            "obligations": obligations})
-
+        policy_list.append({
+            "policy_iri": str(policy),
+            "permissions": permissions,
+            "prohibitions": prohibitions,
+            "obligations": obligations
+        })
 
     return policy_list
 
@@ -315,7 +358,8 @@ def generate_pd_state_of_the_world_from_policies(
         if not policy["permissions"]:
             continue
 
-        permission_triplets_lists = random.choice(policy["permissions"])
+        permission_rule = random.choice(policy["permissions"])
+        permission_triplets_lists = permission_rule["conditions"]
 
         # Features that appear in permission rules
         features_with_triplets = [
@@ -452,13 +496,75 @@ def generate_state_of_the_world_from_policies_from_file(
     g = rdf_utils.load(file_path)[0]
     return generate_state_of_the_world_from_policies(g, number_of_records, valid, chance_feature_empty, csv_file)
 
+def translate_csv_to_solid_syntax(csv_file, destination_file="translated_sotw.ttl"):
+    df = pd.read_csv(csv_file)
+    rdf_graph = rdflib.Graph()
+    sotw_node = rdflib.URIRef("https://example.com/iri/sotw")
+    rdf_graph.add((sotw_node, RDF.type, SOTW.SotW))
+    for i, row in df.iterrows():
+        evaluation_node = rdflib.URIRef(f"https://example.com/iri/sotw#{i}")
+        rdf_graph.add((sotw_node, SOTW.context, evaluation_node))
+        rdf_graph.add((rdflib.URIRef(evaluation_node), RDF.type, SOTW.EvaluationRequest))
+        for col, val in zip(df.columns, row):
+            if not pd.isnull(val):
+                if col == "http://www.w3.org/ns/odrl/2/dateTime":
+                    rdf_graph.add((rdflib.URIRef(evaluation_node), rdflib.URIRef("http://purl.org/dc/terms/issued"), rdflib.Literal(val, datatype=rdflib.XSD.dateTime)))
+                elif col == "http://www.w3.org/ns/odrl/2/Party":
+                    rdf_graph.add((rdflib.URIRef(evaluation_node), SOTW.evaluatedParty, rdflib.URIRef(val)))
+                elif col == "http://www.w3.org/ns/odrl/2/Action": 
+                    rdf_graph.add((rdflib.URIRef(evaluation_node), SOTW.evaluatedAction, rdflib.URIRef(val)))
+                elif col == "http://www.w3.org/ns/odrl/2/Asset":
+                    rdf_graph.add((rdflib.URIRef(evaluation_node), SOTW.evaluatedTarget, rdflib.URIRef(val)))
+                else:
+                    blank_node = rdflib.BNode()
+                    rdf_graph.add((rdflib.URIRef(evaluation_node), SOTW.requestParameter, blank_node))
+                    rdf_graph.add((blank_node, RDF.type, SOTW.RequestParameter))
+                    if len(col.split()) > 1:
+                        prefix, feature_iri = col.split(" ", 1)
+                        if prefix in ["http://www.w3.org/ns/odrl/2/Party", "http://www.w3.org/ns/odrl/2/Action", "http://www.w3.org/ns/odrl/2/Asset"]:
+                            rdf_graph.add((blank_node, SOTW.describesFeature, rdflib.URIRef(feature_iri)))
+                            rdf_graph.add((blank_node, SOTW.value, rdflib.Literal(val)))
+                        else:
+                            rdf_graph.add((blank_node, SOTW.describesFeature, rdflib.URIRef(feature_iri)))
+                            rdf_graph.add((blank_node, SOTW.value, rdflib.Literal(val)))
+                    else:
+                        rdf_graph.add((blank_node, SOTW.describesFeature, rdflib.URIRef(col)))
+                        rdf_graph.add((blank_node, SOTW.value, rdflib.Literal(val)))
+    rdf_graph.serialize(destination=destination_file, format="turtle")
+
+# def extract_sotw_from_solid_syntax(file_path):
+#     g = rdf_utils.load(file_path)[0]
+#     sotw_data = []
+#     for evaluation in g.subjects(RDF.type, SOTW.EvaluationRequest):
+#         record = {}
+#         for param in g.objects(evaluation, SOTW.requestParameter):
+#             feature_iri = None
+#             for feature in g.objects(param, SOTW.describesFeature):
+#                 feature_iri = str(feature)
+#                 break
+#             value = None
+#             for val in g.objects(param, SOTW.value):
+#                 value = str(val)
+#                 break
+#             if feature_iri and value is not None:
+#                 record[feature_iri] = value
+#         sotw_data.append(record)
+#     return sotw_data
+
 # Example usage
-#g = rdf_utils.load("example_policies/example_valid2.ttl")[0]
-#file_path = "example_policies/example_valid2.ttl"
+#g = rdf_utils.load("example_policies/example_valid3.ttl")[0]
+#file_path = "example_policies/example_valid3.ttl"
 #print(*extract_features_list_from_policy_from_file(file_path), sep ="\n")
 #print("\nPolicies with rules:")
-#print(*extract_rule_list_from_policy_from_file(file_path), sep="\n")
+##print(*extract_rule_list_from_policy_from_file(file_path), sep="\n")
+#from pprint import pprint
+#pprint(
+#    extract_rule_list_from_policy_from_file(file_path),
+#    sort_dicts=False,
+#    width=120
+#)
 
 #csv = generate_state_of_the_world_from_policies_from_file(file_path, number_of_records=50, chance_feature_empty=0.3)
 
 #print(csv)
+translate_csv_to_solid_syntax("test_cases/evaluation/valid/test1.csv")
