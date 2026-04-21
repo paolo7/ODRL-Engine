@@ -9,4 +9,4 @@ http://www.w3.org/ns/odrl/2/dateTime,http://www.w3.org/ns/odrl/2/Party,http://ww
 2026-01-11T10:33:10.665638,http://example.com/org:AccountManager,http://www.w3.org/ns/odrl/2/create,http://example.com/document:1234,4,57,24,
 2026-01-11T10:23:10.665638,http://example.com/org:AccountManager,http://www.w3.org/ns/odrl/2/create,http://example.com/document:1234,-22,63,26,
 2026-01-11T10:13:10.665638,http://example.com/org:AccountManager,http://www.w3.org/ns/odrl/2/create,http://example.com/document:1234,29,58,93,
-2026-01-11T11:03:10.665638,http://example.com/org:John,http://www.w3.org/ns/odrl/2/compensate,http://example.com/document:1234,0,,50
+2026-01-11T11:03:10.665638,http://example.com/org:John,http://www.w3.org/ns/odrl/2/compensate,http://example.com/document:1234,0,,,50
