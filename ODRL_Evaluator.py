@@ -464,6 +464,7 @@ def compute_temporal_tracking_from_files(policy_file, SotW_file):
             "row_permission_prohibitions": permission_prohabation_results
         })
         
+    #result=build_tracking_report(all_results)
     return all_results
        
         
@@ -578,3 +579,128 @@ def evaluate_row_policy_permission_prohabition(idx, row, policy, OPS_MAP, FEATUR
         "prohibition_stats": prohibition_stats,
     }
 
+
+def build_tracking_report(tracking_results):
+
+    if not isinstance(tracking_results, list):
+        return f"ERROR: expected list, got {type(tracking_results)}"
+
+    lines = []
+
+    lines.append("\n" + "🧭" * 30)
+    lines.append("      ODRL TEMPORAL TRACKING REPORT")
+    lines.append("🧭" * 30)
+
+    for p_idx, policy in enumerate(tracking_results):
+
+        if not isinstance(policy, dict):
+            continue
+
+        lines.append("\n" + "═" * 80)
+        lines.append(f"📘 POLICY {p_idx}")
+        lines.append(f"IRI: {policy.get('policy_iri', 'unknown')}")
+        lines.append("═" * 80)
+
+        # ---------------- DUTIES ----------------
+        lines.append("\n🟦 DUTIES SUMMARY")
+
+        permissions = policy.get("permissions_duties", [])
+
+        if not permissions:
+            lines.append("  ⚠️ No permissions found")
+        else:
+            for perm in permissions:
+
+                if not isinstance(perm, dict):
+                    continue
+
+                perm_id = perm.get("permission_id")
+
+                lines.append(f"\n🔹 Permission {perm_id}")
+
+                duties = perm.get("duties", {})
+
+                if not duties:
+                    lines.append("   • No duties satisfied")
+                    continue
+
+                for duty_id, rows in duties.items():
+
+                    row_ids = [r.get("row_index") for r in rows if isinstance(r, dict)]
+                    times = [r.get("time") for r in rows if isinstance(r, dict) and r.get("time")]
+
+                    start = min(times) if times else "N/A"
+                    end = max(times) if times else "N/A"
+
+                    lines.append(
+                        f"   • Duty {duty_id}: "
+                        f"Rows={row_ids} | Time={start} → {end}"
+                    )
+
+                stats = perm.get("stats", {})
+
+                lines.append(
+                    f"   📊 Duties={stats.get('total_duties_satisfied', 0)} | "
+                    f"Rows={stats.get('total_rows_matched', 0)} | "
+                    f"{stats.get('earliest_time')} → {stats.get('latest_time')}"
+                )
+
+        # ---------------- ROW LEVEL ----------------
+        lines.append("\n🟥 ROW LEVEL DECISIONS")
+
+        rows = policy.get("row_permission_prohibitions", [])
+
+        if not rows:
+            lines.append("  ⚠️ No row evaluations found")
+
+        for r in rows:
+
+            if not isinstance(r, dict):
+                continue
+
+            decision = r.get("decision")
+            reason = r.get("reason")
+            row_id = r.get("Row_ID")
+
+            emoji = "🟢" if decision == "ALLOW" else "🔴"
+
+            lines.append(f"\n{emoji} Row {row_id} → {decision}")
+            lines.append(f"   Reason: {reason}")
+
+            perm_stats = r.get("permission_stats", {})
+            proh_stats = r.get("prohibition_stats", {})
+
+            lines.append(
+                f"   Permissions: {perm_stats.get('count', 0)} | "
+                f"{perm_stats.get('earliest_time')} → {perm_stats.get('latest_time')}"
+            )
+
+            lines.append(
+                f"   Prohibitions: {proh_stats.get('count', 0)} | "
+                f"{proh_stats.get('earliest_time')} → {proh_stats.get('latest_time')}"
+            )
+
+    lines.append("\n" + "🧭" * 30)
+    lines.append("          END OF REPORT")
+    lines.append("🧭" * 30)
+
+    return "\n".join(lines)
+# import json
+# if __name__ == "__main__":
+#     policy_file = "your_policy_file.ttl"
+#     sotw_file = "your_sotw_file.csv"
+#     print("\n=== RAW RESULT Files ===")
+#     result = compute_temporal_tracking_from_files("/home/aa5f25/ODRL/ODRL-Engine/test_cases/evaluation/valid/duty1.ttl", "/home/aa5f25/ODRL/ODRL-Engine/test_cases/evaluation/valid/duty1.csv")
+#     print(result)
+    # for policy in result:
+
+    #     print("\n==============================")
+    #     #print("POLICY:", policy["policy_iri"])
+
+    #     print("\n--- DUTIES ---")
+    #     for perm in policy["permissions_duties"]:
+    #         print(format_duties(perm))
+
+    # print("\n--- PERMISSION / PROHIBITION ---")
+    # print(format_permission_prohibition(policy["row_permission_prohibitions"]))
+ 
