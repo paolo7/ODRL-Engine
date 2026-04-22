@@ -364,7 +364,52 @@ def compute_statistics_from_files(policy_file, SotW_file):
 
     return compute_policy_statistics_rowwise(df, policies, OPS_MAP, FEATURE_TYPE_MAP)
 
+# def compute_temporal_tracking_from_files(policy_file, SotW_file):
 
+#     graph = rdf_utils.load(policy_file)[0]
+#     policies = SotW_generator.extract_rule_list_from_policy(graph)
+#     features = SotW_generator.extract_features_list_from_policy(graph)
+
+#     FEATURE_TYPE_MAP = {f["iri"]: f["type"] for f in features}
+
+#     df = pd.read_csv(SotW_file)
+
+#     if "dateTime" in df.columns:
+#         df["dateTime"] = pd.to_datetime(df["dateTime"], errors="coerce")
+
+#     duties_results = []
+
+#     for policy_idx, policy in enumerate(policies):
+
+#         permissions = policy.get("permissions", [])
+#         permission_duties_results = []   # ✅ list
+#         permission_prohabation_results=[]
+
+#         for perm_idx, permission in enumerate(permissions):
+
+#             permission_duties = evaluate_permission_duties(
+#                 permission_id=permission.get("id", perm_idx),
+#                 df=df,
+#                 duties=permission.get("duties", []),
+#                 policy=policy,
+#                 OPS_MAP=OPS_MAP,
+#                 FEATURE_TYPE_MAP=FEATURE_TYPE_MAP
+#             )
+
+#             # ✅ FIX: append to the list
+#             permission_duties_results.append(permission_duties)
+
+#         # ✅ FIX: use the correct variable
+        
+#          duties_results.append({
+#             "policy_id": policy_idx,
+#             "policy_iri": policy.get("policy_iri", "unknown_policy"),
+#             "permissions_duties": permission_duties_results
+#         })
+       
+#         for idx, row in df.iterrows():
+#             permission_prohabation_results = evaluate_row_policy_permission_prohabition(idx, row, policy, OPS_MAP, FEATURE_TYPE_MAP)
+            
 def compute_temporal_tracking_from_files(policy_file, SotW_file):
 
     graph = rdf_utils.load(policy_file)[0]
@@ -422,7 +467,9 @@ def compute_temporal_tracking_from_files(policy_file, SotW_file):
     result=build_tracking_report(all_results)
     return result
        
+        
 
+    
 def evaluate_permission_duties(permission_id, df, duties, policy, OPS_MAP, FEATURE_TYPE_MAP):
     from collections import defaultdict
     if not isinstance(duties, list):
@@ -596,21 +643,3 @@ def build_tracking_report(tracking_results):
             )
 
     return "\n".join(lines)
-# import json
-# if __name__ == "__main__":
-#     policy_file = "your_policy_file.ttl"
-#     sotw_file = "your_sotw_file.csv"
-#     print("\n=== RAW RESULT Files ===")
-#     result = compute_temporal_tracking_from_files("/home/aa5f25/ODRL/ODRL-Engine/test_cases/evaluation/valid/duty1.ttl", "/home/aa5f25/ODRL/ODRL-Engine/test_cases/evaluation/valid/duty1.csv")
-#     for policy in result:
-
-#         print("\n==============================")
-#         print("POLICY:", policy["policy_iri"])
-
-#         print("\n--- DUTIES ---")
-#         for perm in policy["permissions_duties"]:
-#             print(format_duties(perm))
-
-#     print("\n--- PERMISSION / PROHIBITION ---")
-#     print(format_permission_prohibition(policy["row_permission_prohibitions"]))
- 
