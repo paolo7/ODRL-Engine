@@ -464,8 +464,8 @@ def compute_temporal_tracking_from_files(policy_file, SotW_file):
             "row_permission_prohibitions": permission_prohabation_results
         })
         
-    #result=build_tracking_report(all_results)
-    return all_results
+    result=build_tracking_report(all_results, policy_idx)
+    return result
        
         
 
@@ -580,14 +580,14 @@ def evaluate_row_policy_permission_prohabition(idx, row, policy, OPS_MAP, FEATUR
     }
 
 
-def build_tracking_report(tracking_results):
+def build_tracking_report(tracking_results, policy_idx=None):
 
     lines = []
 
     for policy in tracking_results:
 
         lines.append("\n" + "=" * 60)
-        #lines.append(f"POLICY:")
+        lines.append(f"POLICY:{policy_idx}")
         lines.append("=" * 60)
 
         # ---------------- DUTIES ----------------
