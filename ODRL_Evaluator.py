@@ -535,7 +535,7 @@ def evaluate_row_policy_permission_prohabition(idx, row, policy,duties, OPS_MAP,
                 if perm_duty["permission_id"] != i:
                     continue
                 duty_map = perm_duty.get("duties", {})
-                print(duty_map)
+                
                 if any(len(rows) > 0 for rows in duty_map.values()):
                     earliest = perm_duty.get("stats", {}).get("earliest_time")
                     if earliest is None or time_val is None or time_val >= earliest:
