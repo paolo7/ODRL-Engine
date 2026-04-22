@@ -464,12 +464,12 @@ def compute_temporal_tracking_from_files(policy_file, SotW_file):
             "row_permission_prohibitions": permission_prohabation_results
         })
         
-    #result=build_tracking_report(all_results)
-    return all_results
+    result=build_tracking_report(all_results)
+    return result
        
         
 
-    
+    # return all_results
 def evaluate_permission_duties(permission_id, df, duties, policy, OPS_MAP, FEATURE_TYPE_MAP):
     from collections import defaultdict
     if not isinstance(duties, list):
@@ -586,6 +586,9 @@ def build_tracking_report(tracking_results):
 
     for policy in tracking_results:
 
+        lines.append("\n" + "=" * 60)
+        # lines.append(f"POLICY: {policy['policy_iri']}")
+        lines.append("=" * 60)
 
         # ---------------- DUTIES ----------------
         lines.append("\n🔵 DUTIES")
@@ -640,4 +643,3 @@ def build_tracking_report(tracking_results):
             )
 
     return "\n".join(lines)
-# import json
