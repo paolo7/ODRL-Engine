@@ -524,9 +524,9 @@ def show_interface():
                             )
 
                              #  FORMAT OUTPUT
-                            report = Evaluator.build_tracking_report(tracking_results)
+                            # report = Evaluator.build_tracking_report(tracking_results)
 
-                            tracking_box.value = report
+                            tracking_box.value = tracking_results
 
                             print("✅ Temporal tracking computed successfully.")
 
