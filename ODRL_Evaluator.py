@@ -181,6 +181,7 @@ def eval_constraint(row, constraint, OPS_MAP, FEATURE_TYPE_MAP):
 def eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
 
     # 🔒 ensure rule is dict and has conditions
+    
     if not isinstance(rule, dict):
         return False
 
@@ -446,11 +447,11 @@ def compute_temporal_tracking_from_files(policy_file, SotW_file):
 
             permission_duties_results.append(permission_duties)
 
-        # ---- PROHIBITION / ROW LEVEL ----
+        # ---- PERMISSION PROHIBITION / ROW LEVEL ----
         for idx, row in df.iterrows():
 
             result = evaluate_row_policy_permission_prohabition(
-                idx, row, policy, OPS_MAP, FEATURE_TYPE_MAP
+                idx, row, policy, permission_duties_results,OPS_MAP, FEATURE_TYPE_MAP
             )
 
             permission_prohabation_results.append(result)  # ✅ FIXED
@@ -464,7 +465,7 @@ def compute_temporal_tracking_from_files(policy_file, SotW_file):
             "row_permission_prohibitions": permission_prohabation_results
         })
         
-    #result=build_tracking_report(all_results)
+   # result=build_tracking_report(all_results)
     return all_results
        
         
@@ -472,6 +473,7 @@ def compute_temporal_tracking_from_files(policy_file, SotW_file):
     # return all_results
 def evaluate_permission_duties(permission_id, df, duties, policy, OPS_MAP, FEATURE_TYPE_MAP):
     from collections import defaultdict
+
     if not isinstance(duties, list):
         duties = [duties]
 
@@ -484,8 +486,7 @@ def evaluate_permission_duties(permission_id, df, duties, policy, OPS_MAP, FEATU
 
             if eval_rule(row, duty, OPS_MAP, FEATURE_TYPE_MAP):
 
-                time_val = row.get("http://www.w3.org/ns/odrl/2/dateTime", None) # Date Time is passed statically
-               
+                time_val = row.get("http://www.w3.org/ns/odrl/2/dateTime", None)
 
                 duty_map[duty_idx].append({
                     "row_index": row_idx,
@@ -495,19 +496,23 @@ def evaluate_permission_duties(permission_id, df, duties, policy, OPS_MAP, FEATU
                 if time_val is not None:
                     all_times.append(time_val)
 
+        # ✅ If duty never satisfied → explicitly mark it
+        if duty_idx not in duty_map:
+            duty_map[duty_idx] = []   # empty = not satisfied
+
     return {
         "permission_id": permission_id,
         "policy_iri": policy.get("policy_iri", "unknown_policy"),
         "duties": dict(duty_map),
         "stats": {
-            "total_duties_satisfied": len(duty_map),
+            "total_duties_satisfied": sum(1 for v in duty_map.values() if len(v) > 0),
             "total_rows_matched": sum(len(v) for v in duty_map.values()),
             "earliest_time": min(all_times) if all_times else None,
             "latest_time": max(all_times) if all_times else None
         }
     }
 
-def evaluate_row_policy_permission_prohabition(idx, row, policy, OPS_MAP, FEATURE_TYPE_MAP):
+def evaluate_row_policy_permission_prohabition(idx, row, policy,duties, OPS_MAP, FEATURE_TYPE_MAP):
 
     permission_matches = []
     satisfied_permissions = []
@@ -523,10 +528,21 @@ def evaluate_row_policy_permission_prohabition(idx, row, policy, OPS_MAP, FEATUR
     # ---- check permissions ----
     for i, rule in enumerate(policy.get("permissions", [])):
         if eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
-            permission_matches.append(i)
-            satisfied_permissions.append(rule)
-           
-
+            duty_evaluated = False
+            if len(duties) > 0:
+                duty_evaluated = True
+            for perm_duty in duties:
+                if perm_duty["permission_id"] != i:
+                    continue
+                duty_map = perm_duty.get("duties", {})
+                print(duty_map)
+                if any(len(rows) > 0 for rows in duty_map.values()):
+                    earliest = perm_duty.get("stats", {}).get("earliest_time")
+                    if earliest is None or time_val is None or time_val >= earliest:
+                        duty_evaluated = True
+            if(duty_evaluated):
+                permission_matches.append(i)
+                satisfied_permissions.append(rule)
             if time_val is not None:
                 permission_times.append(time_val)
         
@@ -536,7 +552,6 @@ def evaluate_row_policy_permission_prohabition(idx, row, policy, OPS_MAP, FEATUR
         if eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
             prohibition_matches.append(i)
             violated_prohibitions.append(rule)
-
             if time_val is not None:
                 prohibition_times.append(time_val)
 
@@ -685,22 +700,3 @@ def build_tracking_report(tracking_results):
     lines.append("🧭" * 30)
 
     return "\n".join(lines)
-# import json
-# if __name__ == "__main__":
-#     policy_file = "your_policy_file.ttl"
-#     sotw_file = "your_sotw_file.csv"
-#     print("\n=== RAW RESULT Files ===")
-#     result = compute_temporal_tracking_from_files("/home/aa5f25/ODRL/ODRL-Engine/test_cases/evaluation/valid/duty1.ttl", "/home/aa5f25/ODRL/ODRL-Engine/test_cases/evaluation/valid/duty1.csv")
-#     print(result)
-    # for policy in result:
-
-    #     print("\n==============================")
-    #     #print("POLICY:", policy["policy_iri"])
-
-    #     print("\n--- DUTIES ---")
-    #     for perm in policy["permissions_duties"]:
-    #         print(format_duties(perm))
-
-    # print("\n--- PERMISSION / PROHIBITION ---")
-    # print(format_permission_prohibition(policy["row_permission_prohibitions"]))
- 
