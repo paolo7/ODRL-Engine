@@ -586,9 +586,6 @@ def build_tracking_report(tracking_results):
 
     for policy in tracking_results:
 
-        lines.append("\n" + "=" * 60)
-        #lines.append(f"POLICY:")
-        lines.append("=" * 60)
 
         # ---------------- DUTIES ----------------
         lines.append("\n🔵 DUTIES")
@@ -643,3 +640,4 @@ def build_tracking_report(tracking_results):
             )
 
     return "\n".join(lines)
+# import json
