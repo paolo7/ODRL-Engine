@@ -464,8 +464,8 @@ def compute_temporal_tracking_from_files(policy_file, SotW_file):
             "row_permission_prohibitions": permission_prohabation_results
         })
         
-    result=build_tracking_report(all_results)
-    return result
+   # result=build_tracking_report(all_results)
+    return all_results
        
         
 
@@ -580,66 +580,85 @@ def evaluate_row_policy_permission_prohabition(idx, row, policy, OPS_MAP, FEATUR
     }
 
 
-def build_tracking_report(tracking_results):
+# def build_tracking_report(tracking_results):
 
-    lines = []
+#     lines = []
 
-    for policy in tracking_results:
+#     for policy in tracking_results:
 
-        lines.append("\n" + "=" * 60)
-        # lines.append(f"POLICY: {policy['policy_iri']}")
-        lines.append("=" * 60)
+#         lines.append("\n" + "=" * 60)
+#         # lines.append(f"POLICY: {policy['policy_iri']}")
+#         lines.append("=" * 60)
 
-        # ---------------- DUTIES ----------------
-        lines.append("\n🔵 DUTIES")
+#         # ---------------- DUTIES ----------------
+#         lines.append("\n🔵 DUTIES")
 
-        for perm in policy.get("permissions_duties", []):
+#         for perm in policy.get("permissions_duties", []):
 
-            perm_id = perm.get("permission_id")
-            duties = perm.get("duties", {})
+#             perm_id = perm.get("permission_id")
+#             duties = perm.get("duties", {})
 
-            lines.append(f"\nPermission {perm_id}:")
-            lines.append(f"  Duties satisfied: {list(duties.keys())}")
+#             lines.append(f"\nPermission {perm_id}:")
+#             lines.append(f"  Duties satisfied: {list(duties.keys())}")
 
-            for duty_id, rows in duties.items():
+#             for duty_id, rows in duties.items():
 
-                row_ids = [r["row_index"] for r in rows]
-                times = [r["time"] for r in rows if r["time"] is not None]
+#                 row_ids = [r["row_index"] for r in rows]
+#                 times = [r["time"] for r in rows if r["time"] is not None]
 
-                start = min(times) if times else None
-                end = max(times) if times else None
+#                 start = min(times) if times else None
+#                 end = max(times) if times else None
 
-                lines.append(
-                    f"  - Duty {duty_id}: Rows {row_ids} ({start} → {end})"
-                )
+#                 lines.append(
+#                     f"  - Duty {duty_id}: Rows {row_ids} ({start} → {end})"
+#                 )
 
-            stats = perm.get("stats", {})
-            lines.append(
-                f"  Total duties: {stats.get('total_duties_satisfied')} | "
-                f"Rows: {stats.get('total_rows_matched')} | "
-                f"{stats.get('earliest_time')} → {stats.get('latest_time')}"
-            )
+#             stats = perm.get("stats", {})
+#             lines.append(
+#                 f"  Total duties: {stats.get('total_duties_satisfied')} | "
+#                 f"Rows: {stats.get('total_rows_matched')} | "
+#                 f"{stats.get('earliest_time')} → {stats.get('latest_time')}"
+#             )
 
-        # ---------------- ROW LEVEL ----------------
-        lines.append("\n🟠 PERMISSION / PROHIBITION")
+#         # ---------------- ROW LEVEL ----------------
+#         lines.append("\n🟠 PERMISSION / PROHIBITION")
 
-        for row in policy.get("row_permission_prohibitions", []):
+#         for row in policy.get("row_permission_prohibitions", []):
 
-            lines.append(
-                f"\nRow {row.get('Row_ID')}: {row.get('decision')} - {row.get('reason')}"
-            )
+#             lines.append(
+#                 f"\nRow {row.get('Row_ID')}: {row.get('decision')} - {row.get('reason')}"
+#             )
 
-            perm_stats = row.get("permission_stats", {})
-            proh_stats = row.get("prohibition_stats", {})
+#             perm_stats = row.get("permission_stats", {})
+#             proh_stats = row.get("prohibition_stats", {})
 
-            lines.append(
-                f"  Permission → {perm_stats.get('count')} matches | "
-                f"{perm_stats.get('earliest_time')} → {perm_stats.get('latest_time')}"
-            )
+#             lines.append(
+#                 f"  Permission → {perm_stats.get('count')} matches | "
+#                 f"{perm_stats.get('earliest_time')} → {perm_stats.get('latest_time')}"
+#             )
 
-            lines.append(
-                f"  Prohibition → {proh_stats.get('count')} matches | "
-                f"{proh_stats.get('earliest_time')} → {proh_stats.get('latest_time')}"
-            )
+#             lines.append(
+#                 f"  Prohibition → {proh_stats.get('count')} matches | "
+#                 f"{proh_stats.get('earliest_time')} → {proh_stats.get('latest_time')}"
+#             )
 
-    return "\n".join(lines)
+#     return "\n".join(lines)
+# import json
+# if __name__ == "__main__":
+#     policy_file = "your_policy_file.ttl"
+#     sotw_file = "your_sotw_file.csv"
+#     print("\n=== RAW RESULT Files ===")
+#     result = compute_temporal_tracking_from_files("/home/aa5f25/ODRL/ODRL-Engine/test_cases/evaluation/valid/duty1.ttl", "/home/aa5f25/ODRL/ODRL-Engine/test_cases/evaluation/valid/duty1.csv")
+#     print(result)
+#     # for policy in result:
+
+#     #     print("\n==============================")
+#     #     #print("POLICY:", policy["policy_iri"])
+
+#     #     print("\n--- DUTIES ---")
+#     #     for perm in policy["permissions_duties"]:
+#     #         print(format_duties(perm))
+
+#     # print("\n--- PERMISSION / PROHIBITION ---")
+#     # print(format_permission_prohibition(policy["row_permission_prohibitions"]))
+ 
