@@ -464,8 +464,8 @@ def compute_temporal_tracking_from_files(policy_file, SotW_file):
             "row_permission_prohibitions": permission_prohabation_results
         })
         
-    #result=build_tracking_report(all_results)
-    return all_results
+    result=build_tracking_report(all_results)
+    return result
        
         
 
