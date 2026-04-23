@@ -311,7 +311,8 @@ def show_interface():
                 eval_out = widgets.Output()
                 detail_eval_out = widgets.Output()
                 stats_out = widgets.Output()
-                policy_list_box = widgets.Output()
+                tracking_out = widgets.Output()
+
                 result_box = widgets.Textarea(
                     layout=widgets.Layout(width="100%", height="250px"), disabled=True
                 )
@@ -320,6 +321,11 @@ def show_interface():
                 )
                 stats_box = widgets.Textarea(
                     layout=widgets.Layout(width="100%", height="250px"), disabled=True
+                )
+                
+                tracking_box = widgets.Textarea(
+                    layout=widgets.Layout(width="100%", height="300px"),
+                    disabled=True
                 )
 
                 # ----------------------------
@@ -536,7 +542,38 @@ def show_interface():
                         except Exception as e:
                             stats_box.value = ""
                             print(f"⚠️ Statistics computation error: {e}")
+                
+                def on_tracking_evaluation_clicked(b):
+                    with tracking_out:
+                        tracking_out.clear_output()
 
+                        if not UploadState.filename:
+                            print("⚠️ No ODRL policy uploaded.")
+                            return
+
+                        if not SotWUploadState.filename:
+                            print("⚠️ No SotW CSV uploaded.")
+                            return
+
+                        try:
+                            #  CALL YOUR NEW BACKEND FUNCTION
+                            tracking_results = Evaluator.compute_temporal_tracking_from_files(
+                                UploadState.filename,
+                                SotWUploadState.filename
+                            )
+
+                             #  FORMAT OUTPUT
+                            report = Evaluator.build_tracking_report(tracking_results)
+
+                            tracking_box.value = report
+
+                            print("✅ Temporal tracking computed successfully.")
+
+                        except Exception as e:
+                            tracking_box.value = ""
+                            print(f"⚠️ Tracking computation error: {e}")
+                
+                
 
                 # ----------------------------
                 # Widgets
@@ -556,43 +593,88 @@ def show_interface():
                 stats_eval_btn = widgets.Button(
                     description="Statistics", button_style="info"
                 )
+                # Temporal statisitics
+                tracking_eval_btn = widgets.Button(
+                    description="Temporal Tracking", button_style="info"
+                )
 
                 odrl_btn.on_click(upload_odrl_clicked)
                 sotw_btn.on_click(upload_sotw_clicked)
                 eval_btn.on_click(on_evaluate_clicked)
                 detail_eval_btn.on_click(on_detail_evaluation_clicked)
                 stats_eval_btn.on_click(on_stats_evaluation_clicked)
+                tracking_eval_btn.on_click(on_tracking_evaluation_clicked)
 
                 # ----------------------------
                 # Layout (upload widget appears RIGHT BELOW button)
                 # ----------------------------
+                # display(
+                #     widgets.VBox(
+                #         [
+                #             widgets.HTML(
+                #                 "<b>Please upload an ODRL policy (if you haven't already)</b>"
+                #             ),
+                #             odrl_btn,
+                #             odrl_upload_out,
+                #             widgets.HTML(
+                #                 "<br><b>Please upload a State of the World (SotW) file in CSV format.</b>"
+                #             ),
+                #             sotw_btn,
+                #             sotw_upload_out,
+                #             widgets.HTML("<br>"),
+                #             eval_btn,
+                #             eval_out,
+                #             widgets.HTML("<b>Evaluation Result:</b>"),
+                #             result_box,
+                #             widgets.HTML("<br>"),
+                #             detail_eval_btn,
+                #             detail_eval_out,
+                #             widgets.HTML("<b>Details of Non Compliance SoTWs:</b>"),
+                #             detail_result_box,
+                #             widgets.HTML("<br>"),
+                #             stats_eval_btn,
+                #             stats_out,
+                #             stats_box
+                #         ]
+                #     )
+                # )
                 display(
                     widgets.VBox(
                         [
-                            widgets.HTML("<b>Upload one or more ODRL policies</b>"),
+                            widgets.HTML("<b>Please upload an ODRL policy (if you haven't already)</b>"),
                             odrl_btn,
                             odrl_upload_out,
-                            widgets.HTML("<b>Uploaded Policies:</b>"),
-                            policy_list_box,
-                            widgets.HTML(
-                                "<br><b>Please upload a State of the World (SotW) file in CSV format.</b>"
-                            ),
+
+                            widgets.HTML("<br><b>Please upload a State of the World (SotW) file in CSV format.</b>"),
                             sotw_btn,
                             sotw_upload_out,
+
                             widgets.HTML("<br>"),
+
                             eval_btn,
                             eval_out,
                             widgets.HTML("<b>Evaluation Result:</b>"),
                             result_box,
+
                             widgets.HTML("<br>"),
+
                             detail_eval_btn,
                             detail_eval_out,
                             widgets.HTML("<b>Details of Non Compliance SoTWs:</b>"),
                             detail_result_box,
+
                             widgets.HTML("<br>"),
+
                             stats_eval_btn,
                             stats_out,
-                            stats_box
+                            stats_box,
+
+                            widgets.HTML("<br>"),
+
+                            tracking_eval_btn,            # ✅ NEW BUTTON
+                            tracking_out,
+                            widgets.HTML("<b>Temporal Rule Tracking:</b>"),
+                            tracking_box                # ✅ NEW OUTPUT
                         ]
                     )
                 )
