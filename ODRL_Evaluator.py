@@ -430,7 +430,7 @@ def compute_temporal_tracking_from_files(policy_file, SotW_file):
 
         permissions = policy.get("permissions", [])
         
-        print(permissions)
+       # print(permissions)
 
         permission_duties_results = []
         permission_prohabation_results = []   # ✅ FIXED
