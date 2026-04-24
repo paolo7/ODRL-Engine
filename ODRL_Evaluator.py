@@ -520,7 +520,7 @@ def compute_temporal_tracking_from_files(policy_file, SotW_file):
         permissions = policy.get("permissions", [])
 
         permission_duties_results = []
-        permission_prohabation_results = []   # ✅ FIXED
+        permission_prohibition_results = []   # ✅ FIXED
 
         # ---- DUTIES ----
         for perm_idx, permission in enumerate(permissions):
@@ -539,11 +539,11 @@ def compute_temporal_tracking_from_files(policy_file, SotW_file):
         # ---- PERMISSION PROHIBITION / ROW LEVEL ----
         for idx, row in df.iterrows():
 
-            result = evaluate_row_policy_permission_prohabition(
+            result = evaluate_row_policy_permission_prohibition(
                 idx, row, policy,OPS_MAP, FEATURE_TYPE_MAP, permission_duties_results
             )
 
-            permission_prohabation_results.append(result)  # ✅ FIXED
+            permission_prohibition_results.append(result)  # ✅ FIXED
 
         # ---- FINAL STORE ----
         all_results.append({
@@ -551,7 +551,7 @@ def compute_temporal_tracking_from_files(policy_file, SotW_file):
             "policy_iri": policy.get("policy_iri", "unknown_policy"),
 
             "permissions_duties": permission_duties_results,
-            "row_permission_prohibitions": permission_prohabation_results
+            "row_permission_prohibitions": permission_prohibition_results
         })
         
     # result=build_tracking_report(all_results)
@@ -590,7 +590,7 @@ def evaluate_permission_duties(permission_id, df, duties, policy, OPS_MAP, FEATU
                 if time_val is not None:
                     all_times.append(time_val)
 
-        # ✅ If duty never satisfied → explicitly mark it
+        # If duty never satisfied → explicitly mark it
         if duty_idx not in duty_map:
             duty_map[duty_idx] = []   # empty = not satisfied
 
@@ -606,14 +606,14 @@ def evaluate_permission_duties(permission_id, df, duties, policy, OPS_MAP, FEATU
         }
     }
 
-def evaluate_row_policy_permission_prohabition(idx, row, policy, OPS_MAP, FEATURE_TYPE_MAP, duties):
+def evaluate_row_policy_permission_prohibition(idx, row, policy, OPS_MAP, FEATURE_TYPE_MAP, duties):
 
     permission_matches = []
     satisfied_permissions = []
     prohibition_matches = []
     violated_prohibitions = []
 
-    # 🔹 get time once
+    # get the timestamp of this event
     time_val = row.get("http://www.w3.org/ns/odrl/2/dateTime", None)
 
     permission_times = []
@@ -621,34 +621,28 @@ def evaluate_row_policy_permission_prohabition(idx, row, policy, OPS_MAP, FEATUR
     
     # ---- check permissions ----
     for i, rule in enumerate(policy.get("permissions", [])):
-        
-     
-        
-        if eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
-           
-              duty_evaluated = False
-              if duties is None: # if no duty is associated with it 
-                  duty_evaluated=True
-              for perm_duty in duties: #  iterate all duties which contains permision ID -Rows which satisfying the duty 
+        if eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):           
+            duty_evaluated = False
+            if len(duties) == 0 or duties is None: # if no duty is associated with it, then it's satisfied.
+                permission_matches.append(i)
+                satisfied_permissions.append(rule)
+                break
+            match = False
+            for perm_duty in duties: #  iterate over all duties associated.
                 if perm_duty["permission_id"] == i: # If current permission and duty permission is same 
                     duty_map = perm_duty.get("duties", {}) # Fetch the map of the duty
-                    #print(duty_map)
-                    duty_evaluated = check_duty_map(duty_map, time_val) # Look to this method here we first check the if any duty has not satified than false ; again we check time form map checked indiviually against time_val if earliest time of duty_map<time 
-                    # if all(len(rows) > 0 for rows in duty_map.values()): # is it checking all of the have length greater than 1 
-                    #     earliest = perm_duty.get("stats", {}).get("earliest_time") #
-                    #     if earliest is None or time_val is None or time_val >= earliest:
-                    #         duty_evaluated = True
-                else:
-                    duty_evaluated=True
-                if(duty_evaluated):
-                    permission_matches.append(i)
-                    satisfied_permissions.append(rule)
-                if time_val is not None:
-                    permission_times.append(time_val)
-        # else:
-        #     permission_matches.append(i)
-        #     satisfied_permissions.append(rule)
-        
+                    # Look to this method here we first check the if any duty has not satified than false ; again we check time form map checked indiviually against time_val if earliest time of duty_map < time 
+                    duty_evaluated = check_duty_map(duty_map, time_val)
+                    match = True
+                    break
+            if not match:
+                duty_evaluated = True # if no duty is associated with this permission then we can consider it as satisfied.
+            
+            if duty_evaluated:
+                permission_matches.append(i)
+                satisfied_permissions.append(rule)
+            if time_val is not None:
+                permission_times.append(time_val)
 
     # ---- check prohibitions ----
     for i, rule in enumerate(policy.get("prohibitions", [])):
@@ -701,11 +695,11 @@ def check_duty_map(duty_map, time_val):
     
     for duty_idx, rows in duty_map.items():
 
-        # ❌ rule 1: duty must have at least one match
+        # rule 1: duty must have at least one match
         if len(rows) == 0:
             return False
 
-        # ❌ rule 2: check time constraint per duty
+        # rule 2: check time constraint per duty
         times = [r["time"] for r in rows if r["time"] is not None]
 
         if not times:
@@ -716,7 +710,7 @@ def check_duty_map(duty_map, time_val):
         if time_val is not None and time_val < earliest:
             return False
 
-    # ✅ if ALL duties pass
+    # if ALL duties pass
     return True
 
 def build_tracking_report(tracking_results):
@@ -824,3 +818,5 @@ def build_tracking_report(tracking_results):
     lines.append("🧭" * 30)
 
     return "\n".join(lines)
+
+print(compute_temporal_tracking_from_files("test_cases/evaluation/force/extracted_testcase-049-alice-read-x-past.ttl", "test_cases/evaluation/force/extracted_testcase-049-alice-read-x-past.csv"))

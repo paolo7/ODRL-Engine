@@ -1,0 +1,1 @@
+for file in ../ODRL-Test-Suite/data/documentation/*; do python3 FORCE_translator.py $file; done

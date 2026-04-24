@@ -1,0 +1,69 @@
+description,label,result
+0: Any request results into yes (Alice Request).,true,allowed
+1: Any request results into yes (Bob Request).,true,allowed
+2: Any request results into yes (Bob Request Write).,true,allowed
+3: Any request results into no (Alice Request).,false,not allowed
+4: Any request results into no (Bob Request).,false,not allowed
+5: Any request results into no (Bob Request Write).,false,not allowed
+6: Any request to use results into yes (Alice Request).,true,allowed
+7: Any request to use results into yes (Bob Request).,true,allowed
+8: Any request to use results into yes (Bob Request Write).,true,allowed
+9: Any request to use results into yes (Alice Request Sell).,true,not allowed
+10: Any request to use results into no (Alice Request).,false,not allowed
+11: Any request to use results into no (Bob Request).,false,not allowed
+12: Any request to use results into no (Bob Request Write).,false,not allowed
+13: Any request to use results into no (Alice Request Sell).,false,not enough information
+14: Any request from Alice to use returns into yes (Alice Request).,true,allowed
+15: Any request from Alice to use returns into yes (Bob Request).,true,not allowed
+16: Any request from Alice to use returns into yes (Alice Request Sell).,true,not allowed
+17: Any request from Bob to use returns into no (Alice Request).,false,not enough information
+18: Any request from Bob to use returns into no (Bob Request).,false,not allowed
+19: Any request from Bob to use returns into no (Bob Request Sell).,false,not enough information
+20: Read request from Alice returns into yes (Alice Request).,true,allowed
+21: Read request from Alice returns into yes (Alice Request Sell).,true,not allowed
+22: Read request from Alice returns into yes (Alice Request Read Y).,true,allowed
+23: Read request from Alice returns into yes (Alice Request Write X).,true,not allowed
+24: Read request from Alice returns into yes (Bob Request Read X).,true,not allowed
+25: Read request from Alice to resource X returns into yes (Alice Request Read X).,true,allowed
+26: Read request from Alice to resource X returns into yes (Alice Request Write X).,true,not allowed
+27: Read request from Alice to resource X returns into yes (Alice Request Read Y).,true,not allowed
+28: Read request from Alice to resource X returns into yes (Bob Request Write Y).,true,not allowed
+29: Read request from Alice to resource X returns into yes (temporal eq) (Alice Request Read X).,true,allowed
+30: Read request from Alice to resource X returns into yes (temporal eq - past) (Alice Request Read X).,true,not allowed
+31: Read request from Alice to resource X returns into yes (temporal eq - future) (Alice Request Read X).,true,not allowed
+32: Read request from Alice to resource X returns into yes (temporal neq) (Alice Request Read X).,true,not allowed
+33: Read request from Alice to resource X returns into yes (temporal neq - past) (Alice Request Read X).,true,allowed
+34: Read request from Alice to resource X returns into yes (temporal neq - future) (Alice Request Read X).,true,allowed
+35: Read request from Alice to resource X returns into yes (temporal lt) (Alice Request Read X).,true,not allowed
+36: Read request from Alice to resource X returns into yes (temporal lt - past) (Alice Request Read X).,true,allowed
+37: Read request from Alice to resource X returns into yes (temporal lt - future) (Alice Request Read X).,true,not allowed
+38: Read request from Alice to resource X returns into yes (temporal lteq) (Alice Request Read X).,true,allowed
+39: Read request from Alice to resource X returns into yes (temporal lteq - past) (Alice Request Read X).,true,allowed
+40: Read request from Alice to resource X returns into yes (temporal lteq - future) (Alice Request Read X).,true,not allowed
+41: Read request from Alice to resource X returns into yes (temporal gt) (Alice Request Read X).,true,not allowed
+42: Read request from Alice to resource X returns into yes (temporal gt - past) (Alice Request Read X).,true,not allowed
+43: Read request from Alice to resource X returns into yes (temporal gt - future) (Alice Request Read X).,true,allowed
+44: Read request from Alice to resource X returns into yes (temporal gteq) (Alice Request Read X).,true,allowed
+45: Read request from Alice to resource X returns into yes (temporal gteq - past) (Alice Request Read X).,true,not allowed
+46: Read request from Alice to resource X returns into yes (temporal gteq - future) (Alice Request Read X).,true,allowed
+47: Read request from Alice to resource X returns into yes (temporal + And (year 2024)) (Alice Request Read X).,true,allowed
+48: Read request from Alice to resource X returns into yes (temporal + And (year 2024)) (Alice Request Read X - past).,true,not allowed
+49: Read request from Alice to resource X returns into yes (temporal + And (year 2024)) (Alice Request Read X - future).,true,not allowed
+50: Read request from people in party collection to resource X returns into yes (Alice Request Read X).,true,allowed
+51: Read request from people in party collection to resource X returns into yes (Bob Request Read X).,true,not allowed
+52: Read request from Alice to resource in asset collection returns into yes (Alice Request Read X).,true,allowed
+53: Read request from Alice to resource in asset collection returns into yes (Alice Request Read Y).,true,not allowed
+54: Read request from people in party collection to resource in asset collection returns into yes (Alice Request Read X).,true,allowed
+55: Read request from people in party collection to resource in asset collection returns into yes (Alice Request Read Y).,true,not allowed
+56: Read request from people in party collection to resource in asset collection returns into yes (Bob Request Read X).,true,not allowed
+57: Read request from people in party collection to resource in asset collection returns into yes (Bob Request Write Y).,true,not allowed
+58: Read request from Alice to resource X returns into yes if duty is not violated (Alice Request Read X - duty unknown).,true,allowed
+59: Read request from Alice to resource X returns into yes if duty is not violated (Alice Request Read X- duty fulfilled).,true,allowed
+60: Read request from Alice to resource X returns into yes if duty is not violated (Alice Request Read X - duty violated).,true,allowed
+61: Read request from Alice to resource X on weekdays from 9-17 in 2024 returns into yes (Alice Request Read X).,true,allowed
+62: Read request from Alice to resource X on weekdays from 9-17 in 2024 returns into yes (Alice Request Read X - out of office).,true,not allowed
+63: Read request from Alice to resource X on weekdays from 9-17 in 2024 returns into yes (Alice Request Read X - past).,true,not allowed
+64: Read request from people in party collection to resource X in 2024 returns into yes (Alice Request Read X).,true,allowed
+65: Read request from people in party collection to resource X in 2024 returns into yes (Alice Request Read X - past).,true,not allowed
+66: Read request from people in party collection to resource X in 2024 returns into yes (Alice Request Read X - past).,true,not allowed
+67: Read request from people in party collection to resource X in 2024 returns into yes (Bob Request Write Y - past).,true,not allowed
