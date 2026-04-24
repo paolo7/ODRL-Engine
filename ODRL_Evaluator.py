@@ -429,6 +429,8 @@ def compute_temporal_tracking_from_files(policy_file, SotW_file):
     for policy_idx, policy in enumerate(policies):
 
         permissions = policy.get("permissions", [])
+        
+        print(permissions)
 
         permission_duties_results = []
         permission_prohabation_results = []   # ✅ FIXED
@@ -465,7 +467,7 @@ def compute_temporal_tracking_from_files(policy_file, SotW_file):
             "row_permission_prohibitions": permission_prohabation_results
         })
         
-    # result=build_tracking_report(all_results)
+   # result=build_tracking_report(all_results)
     return all_results
        
         
@@ -483,13 +485,14 @@ def evaluate_permission_duties(permission_id, df, duties, policy, OPS_MAP, FEATU
     duty_map = defaultdict(list)
     all_times = []
     
-
+    
 
     for duty_idx, duty in enumerate(duties):
 
         for row_idx, row in df.iterrows():
-
+           
             if eval_rule(row, duty, OPS_MAP, FEATURE_TYPE_MAP):
+               
 
                 time_val = row.get("http://www.w3.org/ns/odrl/2/dateTime", None)
 
@@ -532,34 +535,118 @@ def evaluate_row_policy_permission_prohabition(idx, row, policy, OPS_MAP, FEATUR
     
     # ---- check permissions ----
     for i, rule in enumerate(policy.get("permissions", [])):
+
+        # Step 1: basic rule check
+        if not eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
+            continue
         
-     
+
+        # Step 2: get time
+        time_val = row.get("http://www.w3.org/ns/odrl/2/dateTime", None)
+
+        # Step 3: if no duties → automatically allow
+        if not duties:
+            permission_matches.append(i)
+            satisfied_permissions.append(rule)
+
+            if time_val is not None:
+                permission_times.append(time_val)
+            continue
+
+        # Step 4: check matching duty for this permission
+        duty_found = False
+        duty_allowed = False
+       
+
+        for perm_duty in duties:
+            if perm_duty["permission_id"] == i:
+                
+                duty_found = True
+                duty_map = perm_duty.get("duties", {})
+                duty_allowed = check_duty_map(duty_map, time_val)
+                
+                break
+
+        # Step 5: apply decision
+        if duty_found and duty_allowed:
+            permission_matches.append(i)
+            satisfied_permissions.append(rule)
+
+        elif not duty_found:
+            # no duty defined for this permission → allow
+            permission_matches.append(i)
+            satisfied_permissions.append(rule)
+
+        if time_val is not None:
+            permission_times.append(time_val)
+    
+    # # ---- check permissions ----
+    # for i, rule in enumerate(policy.get("permissions", [])):
         
-        if eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
+    #     if eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
+         
+    #         duty_evaluated = False
+    #         found=False
+    #         if not duties:
+    #             duty_evaluated = True
+    #             found = True
+
+    #         for perm_duty in duties:
+                
+    #             if perm_duty["permission_id"] == i:
+                    
+    #                 found = True
+    #                 duty_map = perm_duty.get("duties", {})
+                    
+    #                 duty_evaluated = check_duty_map(duty_map, time_val)
+
+    #                 if duty_evaluated:
+    #                     permission_matches.append(i)
+    #                     satisfied_permissions.append(rule)
+
+    #                 break  # stop after match
+
+    #         if not found:
+    #             # no duty exists for this permission
+    #             permission_matches.append(i)
+    #             satisfied_permissions.append(rule)
+
+    #         if time_val is not None:
+    #             permission_times.append(time_val)
+                
+    
+        
+        # if eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
            
-              duty_evaluated = False
-              if duties is None: # if no duty is associated with it 
-                  duty_evaluated=True
-              for perm_duty in duties: #  iterate all duties which contains permision ID -Rows which satisfying the duty 
-                if perm_duty["permission_id"] == i: # If current permission and duty permission is same 
-                    duty_map = perm_duty.get("duties", {}) # Fetch the map of the duty
-                    #print(duty_map)
-                    duty_evaluated = check_duty_map(duty_map, time_val) # Look to this method here we first check the if any duty has not satified than false ; again we check time form map checked indiviually against time_val if earliest time of duty_map<time 
-                    # if all(len(rows) > 0 for rows in duty_map.values()): # is it checking all of the have length greater than 1 
-                    #     earliest = perm_duty.get("stats", {}).get("earliest_time") #
-                    #     if earliest is None or time_val is None or time_val >= earliest:
-                    #         duty_evaluated = True
-                else:
-                    duty_evaluated=True
-                if(duty_evaluated):
-                    permission_matches.append(i)
-                    satisfied_permissions.append(rule)
-                if time_val is not None:
-                    permission_times.append(time_val)
-        # else:
-        #     permission_matches.append(i)
-        #     satisfied_permissions.append(rule)
-        
+        #       duty_evaluated = False
+        #       if duties is None: # if no duty is associated with it 
+        #           duty_evaluated=True
+        #       else:
+        #           found=False
+        #       for perm_duty in duties: #  iterate all duties which contains permision ID -Rows which satisfying the duty 
+        #         if perm_duty["permission_id"] == i: # If current permission and duty permission is same 
+        #             duty_map = perm_duty.get("duties", {}) # Fetch the map of the duty
+        #             #print(duty_map)
+        #             duty_evaluated = check_duty_map(duty_map, time_val) # Look to this method here we first check the if any duty has not satified than false ; again we check time form map checked indiviually against time_val if earliest time of duty_map<time 
+        #             if(duty_evaluated):
+        #                 permission_matches.append(i)
+        #                 satisfied_permissions.append(rule)
+        #             # if all(len(rows) > 0 for rows in duty_map.values()): # is it checking all of the have length greater than 1 
+        #             #     earliest = perm_duty.get("stats", {}).get("earliest_time") #
+        #             #     if earliest is None or time_val is None or time_val >= earliest:
+        #             #         duty_evaluated = True
+        #             break
+        #     if not found:
+        #         permission_matches.append(i)
+        #         satisfied_permissions.append(rule)
+        #     if time_val is not None:
+        #         permission_times.append(time_val)
+        # # else:
+        # #     permission_matches.append(i)
+        # #     satisfied_permissions.append(rule)
+    
+    
+    
 
     # ---- check prohibitions ----
     for i, rule in enumerate(policy.get("prohibitions", [])):
