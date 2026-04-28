@@ -10,9 +10,7 @@ from datetime import datetime, timedelta, timezone
 import pandas as pd
 import sys
 
-# This works only if policy-normalisation-comparison is in the same parent directory as this file, which is the case in the current repository structure. If the structure changes, this may need to be updated.
-sys.path.insert(1, "/".join(os.path.realpath(__file__).split("/")[0:-2]) + "/policy-normalisation-comparison")
-from Policy import Permission, Prohibition, Obligation, Duty, Rule, Policy
+import policy_normalisation_comparison
 
 base_features = [
     {"iri": "http://www.w3.org/ns/odrl/2/dateTime",
@@ -373,7 +371,7 @@ def extract_rule_list_from_policy_object(policy):
 
         # ---- DUTIES (permission → duty) ----
         duties = []
-        if isinstance(rule_object, Permission):
+        if isinstance(rule_object, policy_normalisation_comparison.Policy.Permission):
             if rule_object.duty is not None:
                 for duty in rule_object.duty:
                     duties.append(build_rule_structure(duty))
@@ -384,7 +382,7 @@ def extract_rule_list_from_policy_object(policy):
         # ---- CONSEQUENCES (duty or obligation → consequence) ----
         
         consequences = []
-        if isinstance(rule_object, Obligation):
+        if isinstance(rule_object, policy_normalisation_comparison.Policy.Obligation):
             if rule_object.consequence is not None:
                 for consequence in rule_object.consequence:
                     consequences.append(build_rule_structure(consequence))
@@ -394,7 +392,7 @@ def extract_rule_list_from_policy_object(policy):
 
         # ---- REMEDIES (prohibition → remedy) ----
         remedies = []
-        if isinstance(rule_object, Prohibition):
+        if isinstance(rule_object, policy_normalisation_comparison.Policy.Prohibition):
             if rule_object.remedy is not None:
                 for remedy in rule_object.remedy:
                     remedies.append(build_rule_structure(remedy))
