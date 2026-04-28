@@ -1,0 +1,149 @@
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix ns1: <https://w3id.org/force/sotw#> .
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://example.com/iri/sotw> a ns1:SotW ;
+    ns1:context <https://example.com/iri/sotw#0>,
+        <https://example.com/iri/sotw#1>,
+        <https://example.com/iri/sotw#2>,
+        <https://example.com/iri/sotw#3>,
+        <https://example.com/iri/sotw#4>,
+        <https://example.com/iri/sotw#5>,
+        <https://example.com/iri/sotw#6>,
+        <https://example.com/iri/sotw#7>,
+        <https://example.com/iri/sotw#8>,
+        <https://example.com/iri/sotw#9> .
+
+<https://example.com/iri/sotw#0> a ns1:EvaluationRequest ;
+    dcterms:issued "2026-01-11T11:43:10.665638"^^xsd:dateTime ;
+    ns1:evaluatedAction odrl:create ;
+    ns1:evaluatedParty <http://example.com/org:AccountManager> ;
+    ns1:evaluatedTarget <http://example.com/document:1234> ;
+    ns1:requestParameter [ a ns1:RequestParameter ;
+            ns1:describesFeature odrl:resolution ;
+            ns1:value 5.3e+01 ],
+        [ a ns1:RequestParameter ;
+            ns1:describesFeature odrl:adminLevel ;
+            ns1:value 1.2e+01 ],
+        [ a ns1:RequestParameter ;
+            ns1:describesFeature <http://www.example.com/age> ;
+            ns1:value 2.4e+01 ] .
+
+<https://example.com/iri/sotw#1> a ns1:EvaluationRequest ;
+    dcterms:issued "2026-01-11T11:33:10.665638"^^xsd:dateTime ;
+    ns1:evaluatedAction odrl:print ;
+    ns1:evaluatedParty <http://example.com/org:John> ;
+    ns1:evaluatedTarget <http://example.com/document:1234> ;
+    ns1:requestParameter [ a ns1:RequestParameter ;
+            ns1:describesFeature odrl:resolution ;
+            ns1:value 1.19e+03 ],
+        [ a ns1:RequestParameter ;
+            ns1:describesFeature <http://www.example.com/age> ;
+            ns1:value 0e+00 ] .
+
+<https://example.com/iri/sotw#2> a ns1:EvaluationRequest ;
+    dcterms:issued "2026-01-11T11:23:10.665638"^^xsd:dateTime ;
+    ns1:evaluatedAction odrl:create ;
+    ns1:evaluatedParty <http://example.com/org:AccountManager> ;
+    ns1:evaluatedTarget <http://example.com/document:1234> ;
+    ns1:requestParameter [ a ns1:RequestParameter ;
+            ns1:describesFeature odrl:adminLevel ;
+            ns1:value 8.6e+01 ],
+        [ a ns1:RequestParameter ;
+            ns1:describesFeature <http://www.example.com/age> ;
+            ns1:value -2.4e+01 ] .
+
+<https://example.com/iri/sotw#3> a ns1:EvaluationRequest ;
+    dcterms:issued "2026-01-11T11:13:10.665638"^^xsd:dateTime ;
+    ns1:evaluatedAction odrl:print ;
+    ns1:evaluatedParty <http://example.com/org:John> ;
+    ns1:evaluatedTarget <http://example.com/document:1234> ;
+    ns1:requestParameter [ a ns1:RequestParameter ;
+            ns1:describesFeature odrl:resolution ;
+            ns1:value 1.142e+03 ] .
+
+<https://example.com/iri/sotw#4> a ns1:EvaluationRequest ;
+    dcterms:issued "2026-01-11T11:03:10.665638"^^xsd:dateTime ;
+    ns1:evaluatedAction odrl:create ;
+    ns1:evaluatedParty <http://example.com/org:AccountManager> ;
+    ns1:evaluatedTarget <http://example.com/document:1234> ;
+    ns1:requestParameter [ a ns1:RequestParameter ;
+            ns1:describesFeature odrl:adminLevel ;
+            ns1:value 6.8e+01 ],
+        [ a ns1:RequestParameter ;
+            ns1:describesFeature odrl:resolution ;
+            ns1:value 4.9e+01 ],
+        [ a ns1:RequestParameter ;
+            ns1:describesFeature <http://www.example.com/age> ;
+            ns1:value 1.5e+01 ] .
+
+<https://example.com/iri/sotw#5> a ns1:EvaluationRequest ;
+    dcterms:issued "2026-01-11T10:53:10.665638"^^xsd:dateTime ;
+    ns1:evaluatedAction odrl:create ;
+    ns1:evaluatedParty <http://example.com/org:AccountManager> ;
+    ns1:evaluatedTarget <http://example.com/document:1234> ;
+    ns1:requestParameter [ a ns1:RequestParameter ;
+            ns1:describesFeature odrl:adminLevel ;
+            ns1:value 7.2e+01 ],
+        [ a ns1:RequestParameter ;
+            ns1:describesFeature <http://www.example.com/age> ;
+            ns1:value -2.4e+01 ] .
+
+<https://example.com/iri/sotw#6> a ns1:EvaluationRequest ;
+    dcterms:issued "2026-01-11T10:43:10.665638"^^xsd:dateTime ;
+    ns1:evaluatedAction odrl:create ;
+    ns1:evaluatedParty <http://example.com/org:AccountManager> ;
+    ns1:evaluatedTarget <http://example.com/document:1234> ;
+    ns1:requestParameter [ a ns1:RequestParameter ;
+            ns1:describesFeature odrl:adminLevel ;
+            ns1:value 6.1e+01 ],
+        [ a ns1:RequestParameter ;
+            ns1:describesFeature <http://www.example.com/age> ;
+            ns1:value 6.6e+01 ] .
+
+<https://example.com/iri/sotw#7> a ns1:EvaluationRequest ;
+    dcterms:issued "2026-01-11T10:33:10.665638"^^xsd:dateTime ;
+    ns1:evaluatedAction odrl:create ;
+    ns1:evaluatedParty <http://example.com/org:AccountManager> ;
+    ns1:evaluatedTarget <http://example.com/document:1234> ;
+    ns1:requestParameter [ a ns1:RequestParameter ;
+            ns1:describesFeature <http://www.example.com/age> ;
+            ns1:value 4e+00 ],
+        [ a ns1:RequestParameter ;
+            ns1:describesFeature odrl:resolution ;
+            ns1:value 5.7e+01 ],
+        [ a ns1:RequestParameter ;
+            ns1:describesFeature odrl:adminLevel ;
+            ns1:value 2.4e+01 ] .
+
+<https://example.com/iri/sotw#8> a ns1:EvaluationRequest ;
+    dcterms:issued "2026-01-11T10:23:10.665638"^^xsd:dateTime ;
+    ns1:evaluatedAction odrl:create ;
+    ns1:evaluatedParty <http://example.com/org:AccountManager> ;
+    ns1:evaluatedTarget <http://example.com/document:1234> ;
+    ns1:requestParameter [ a ns1:RequestParameter ;
+            ns1:describesFeature odrl:resolution ;
+            ns1:value 6.3e+01 ],
+        [ a ns1:RequestParameter ;
+            ns1:describesFeature <http://www.example.com/age> ;
+            ns1:value -2.2e+01 ],
+        [ a ns1:RequestParameter ;
+            ns1:describesFeature odrl:adminLevel ;
+            ns1:value 2.6e+01 ] .
+
+<https://example.com/iri/sotw#9> a ns1:EvaluationRequest ;
+    dcterms:issued "2026-01-11T10:13:10.665638"^^xsd:dateTime ;
+    ns1:evaluatedAction odrl:create ;
+    ns1:evaluatedParty <http://example.com/org:AccountManager> ;
+    ns1:evaluatedTarget <http://example.com/document:1234> ;
+    ns1:requestParameter [ a ns1:RequestParameter ;
+            ns1:describesFeature odrl:adminLevel ;
+            ns1:value 9.3e+01 ],
+        [ a ns1:RequestParameter ;
+            ns1:describesFeature odrl:resolution ;
+            ns1:value 5.8e+01 ],
+        [ a ns1:RequestParameter ;
+            ns1:describesFeature <http://www.example.com/age> ;
+            ns1:value 2.9e+01 ] .
+

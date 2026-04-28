@@ -557,7 +557,7 @@ def show_interface():
 
                         try:
                             #  CALL YOUR NEW BACKEND FUNCTION
-                            tracking_results = Evaluator.compute_temporal_tracking_from_files(
+                            tracking_results = Evaluator.evaluate_files(
                                 UploadState.filename,
                                 SotWUploadState.filename
                             )

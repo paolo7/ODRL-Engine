@@ -1,11 +1,18 @@
+import os
+
 from rdflib.namespace import RDF
 import rdflib
 from rdflib.collection import Collection
 import rdf_utils
 import csv
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pandas as pd
+import sys
+
+# This works only if policy-normalisation-comparison is in the same parent directory as this file, which is the case in the current repository structure. If the structure changes, this may need to be updated.
+sys.path.insert(1, "/".join(os.path.realpath(__file__).split("/")[0:-2]) + "/policy-normalisation-comparison")
+from Policy import Permission, Prohibition, Obligation, Duty, Rule, Policy
 
 base_features = [
     {"iri": "http://www.w3.org/ns/odrl/2/dateTime",
@@ -191,7 +198,7 @@ def extract_rule_list(odrl_graph, rule_node, features):
         ODRL.lt: "<",
         ODRL.gt: ">",
         ODRL.lteq: "<=",
-        ODRL.gteq: ">="
+        ODRL.gteq: ">=",
         # We need to extract set operators, membership operators, etc.
     }
 
@@ -325,6 +332,111 @@ def extract_rule_list_from_policy(odrl_graph: rdflib.Graph):
         })
 
     return policy_list
+
+def extract_rule_list_from_policy_object(policy):
+    policy_list = []
+    features = list(base_features)
+
+    def extract_rule_params(rule_object):
+        params = []
+        if len(rule_object.action) == 1:
+            params.append([str(ODRL.Action), str(ODRL.eq), str(rule_object.action[0].value)])
+        else:
+            params.append([str(ODRL.Action), str(ODRL.eq), str([a.value for a in rule_object.action])])
+        if len(rule_object.target) == 1:
+            params.append([str(ODRL.Asset), str(ODRL.eq), str(rule_object.target[0].value)])
+        else:
+            params.append([str(ODRL.Asset), str(ODRL.eq), str([t.value for t in rule_object.target])])
+        if len(rule_object.assignee) == 1:
+            params.append([str(ODRL.Party), str(ODRL.eq), str(rule_object.assignee[0].value)])
+        else:
+            params.append([str(ODRL.Party), str(ODRL.eq), str([a.value for a in rule_object.assignee])])
+        for param in rule_object.constraint:
+            if param.leftOperand in ["http://www.w3.org/ns/odrl/2/dateTime", "http://www.w3.org/2001/XMLSchema#dateTime"]:
+                features.append({"iri": param.leftOperand, "type": "http://www.w3.org/2001/XMLSchema#dateTime"})
+                params.append([param.leftOperand, param.operator, datetime.fromtimestamp(param.rightOperand, timezone.utc).isoformat(timespec="microseconds")])
+            else:
+                params.append([param.leftOperand, param.operator, param.rightOperand])
+        return params
+
+    def build_rule_structure(rule_object):
+        """
+        Recursively build a rule structure in case there are nested duties, consequences or remedies
+        """
+
+        rule_dict = {
+            "conditions": extract_rule_params(
+                rule_object,
+            )
+        }
+
+        # ---- DUTIES (permission → duty) ----
+        duties = []
+        if isinstance(rule_object, Permission):
+            if rule_object.duty is not None:
+                for duty in rule_object.duty:
+                    duties.append(build_rule_structure(duty))
+
+        if duties:
+            rule_dict["duties"] = duties
+
+        # ---- CONSEQUENCES (duty or obligation → consequence) ----
+        
+        consequences = []
+        if isinstance(rule_object, Obligation):
+            if rule_object.consequence is not None:
+                for consequence in rule_object.consequence:
+                    consequences.append(build_rule_structure(consequence))
+
+        if consequences:
+            rule_dict["consequences"] = consequences
+
+        # ---- REMEDIES (prohibition → remedy) ----
+        remedies = []
+        if isinstance(rule_object, Prohibition):
+            if rule_object.remedy is not None:
+                for remedy in rule_object.remedy:
+                    remedies.append(build_rule_structure(remedy))
+
+        if remedies:
+            rule_dict["remedies"] = remedies
+
+        return rule_dict
+
+    # ----------------------------------------------------
+
+    permissions = []
+    prohibitions = []
+    obligations = []
+
+    # ---- PERMISSIONS ----
+    for perm in policy.permission:
+        permissions.append(
+            build_rule_structure(perm)
+        )
+
+    # ---- PROHIBITIONS ----
+    for prohib in policy.prohibition:
+        prohibitions.append(
+            build_rule_structure(prohib)
+        )
+
+    # ---- OBLIGATIONS ----
+    for oblig in policy.obligation:
+        obligations.append(
+            build_rule_structure(oblig)
+        )
+
+    policy_list.append({
+        "policy_iri": str(policy.uid),
+        "permissions": permissions,
+        "prohibitions": prohibitions,
+        "obligations": obligations
+    })
+
+    return policy_list, features
+
+
 
 def generate_pd_state_of_the_world_from_policies(
     odrl_graph: rdflib.Graph,

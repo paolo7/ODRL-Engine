@@ -2,7 +2,11 @@ from rdflib import Graph
 from typing import Union
 import json
 import pyshacl
-import os
+import os, sys
+
+# This works only if policy-normalisation-comparison is in the same parent directory as this file, which is the case in the current repository structure. If the structure changes, this may need to be updated.
+sys.path.insert(1, "/".join(os.path.realpath(__file__).split("/")[0:-2]) + "/policy-normalisation-comparison")
+import GraphParser
 
 def parse_string_to_graph(data: Union[str, bytes]) -> tuple[Graph, str] | None:
     """
@@ -72,7 +76,9 @@ def load(file_path):
             g = Graph()
             g.parse(file_path, format=rdf_format)
             if not(g is None or len(g) == 0):
-                return g, rdf_format
+                graph_parser = GraphParser.GraphParser(g)
+                normal_graph = graph_parser.parse().normalise()
+                return normal_graph, rdf_format
             break
         except Exception as e:
             last_exception = e
@@ -88,7 +94,9 @@ def load(file_path):
                         g = Graph()
                         g.parse(data=data, format=rdf_format)
                         if not (g is None or len(g) == 0):
-                            return g, rdf_format
+                            graph_parser = GraphParser.GraphParser(g)
+                            normal_graph = graph_parser.parse().normalise()
+                            return normal_graph, rdf_format
                         break
                     except Exception:
                         continue

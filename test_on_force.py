@@ -21,7 +21,7 @@ if __name__ == "__main__":
     for base in base_names:
         ttl_path = os.path.join(folder, base + ".ttl")
         csv_path = os.path.join(folder, base + ".csv")
-        result = ODRL_Evaluator.compute_temporal_tracking_from_files(ttl_path, csv_path)
+        result = ODRL_Evaluator.evaluate_files(ttl_path, csv_path)
         result_row = result[0]
 
         ans = all(row["decision"] == "ALLOW" for row in result_row["row_permission_prohibitions"])

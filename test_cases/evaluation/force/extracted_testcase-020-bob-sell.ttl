@@ -1,0 +1,14 @@
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix ex: <http://example.org/> .
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+
+<urn:uuid:9477c997-adc1-4d64-a12c-fa9e0f6b80f0> a odrl:Prohibition ;
+    odrl:action odrl:use ;
+    odrl:assignee ex:bob .
+
+<urn:uuid:e4b538e6-2613-4de4-8930-48fee524aa40> a odrl:Set ;
+    dct:description "Bob explicitely use nothing." ;
+    dct:source <https://github.com/SolidLabResearch/ODRL-Test-Suite/> ;
+    odrl:prohibition <urn:uuid:9477c997-adc1-4d64-a12c-fa9e0f6b80f0> ;
+    odrl:uid <urn:uuid:e4b538e6-2613-4de4-8930-48fee524aa40> .
+

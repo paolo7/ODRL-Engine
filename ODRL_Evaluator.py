@@ -6,18 +6,19 @@ import pandas as pd
 import validate
 import operator
 import sys
+from datetime import datetime
 
 # if dateutil is not install then install it using (!pip install python-dateutil)
 from dateutil import parser
 import uuid
 
 OPS_MAP = {
-    "=": operator.eq,
-    "!=": operator.ne,
-    "<": operator.lt,
-    "<=": operator.le,
-    ">": operator.gt,
-    ">=": operator.ge,
+    str(SotW_generator.ODRL.eq): operator.eq,
+    str(SotW_generator.ODRL.ne): operator.ne,
+    str(SotW_generator.ODRL.lt): operator.lt,
+    str(SotW_generator.ODRL.le): operator.le,
+    str(SotW_generator.ODRL.gt): operator.gt,
+    str(SotW_generator.ODRL.ge): operator.ge,
     # Missing operators:
     # odrl.isAnyOf: lambda a, b: a in b,
     # odrl.isNoneOf: lambda a, b: a not in b,
@@ -164,13 +165,28 @@ def evaluate_ODRL_on_dataframe(policies, data_frame, FEATURE_TYPE_MAP):
 
     return overall_compliant, {}, message_str
 
+def eval_count(value, constraint, OPS_MAP):
+    left, op_symbol, right = constraint
 
+    if left != "http://www.w3.org/ns/odrl/2/count":
+        return False
+
+    if op_symbol not in OPS_MAP:
+        return False
+
+    try:
+        return OPS_MAP[op_symbol](float(value), float(right))
+    except Exception:
+        return False
 
 def eval_constraint(row, constraint, OPS_MAP, FEATURE_TYPE_MAP):
    
     
     left, op_symbol, right = constraint  
     # Split it for spaces
+    if left == "http://www.w3.org/ns/odrl/2/count":
+        # Count will be handled separately.
+        return True
     
     if left in row:
         resolved_left = left
@@ -188,7 +204,6 @@ def eval_constraint(row, constraint, OPS_MAP, FEATURE_TYPE_MAP):
                 return False
     left = resolved_left
 
-
     value = row[left]
 
    
@@ -200,25 +215,31 @@ def eval_constraint(row, constraint, OPS_MAP, FEATURE_TYPE_MAP):
 
     column_type = FEATURE_TYPE_MAP.get(left)
 
+    # TODO: fix issues with timezones.
     # --- 1️⃣ DateTime handling ---
-    if column_type == "http://www.w3.org/2001/XMLSchema#dateTime":
+    if column_type == "http://www.w3.org/2001/XMLSchema#dateTime" or left == "http://www.w3.org/ns/odrl/2/dateTime":
         try:
             left_date = parser.parse(str(value)).date()
             right_date = parser.parse(str(right)).date()
+
+            left_date = datetime.fromisoformat(str(value))
+            right_date = datetime.fromisoformat(str(right))
 
             # Normalize timezone (avoid naive vs aware errors)
             # if left_date.tzinfo and not right_date.tzinfo:
             #     right_date = right_date.replace(tzinfo=left_date.tzinfo)
             # elif right_date.tzinfo and not left_date.tzinfo:
             #     left_date = left_date.replace(tzinfo=right_date.tzinfo)
-
-            return OPS_MAP[op_symbol](left_date, right_date)
+            ans = OPS_MAP[op_symbol](left_date, right_date)
+            if ans:
+                print(f"DateTime constraint satisfied: {value} {op_symbol} {right}")
+            return ans
 
         except Exception:
             return False
 
     # --- 2️⃣ Equality / inequality → string compare ---
-    if op_symbol in ("=", "!="):
+    if op_symbol in ("http://www.w3.org/ns/odrl/2/eq", "http://www.w3.org/ns/odrl/2/ne"):
         try:
             return OPS_MAP[op_symbol](float(value), float(right))
         except Exception:
@@ -246,6 +267,8 @@ def eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
  
     if not isinstance(conditions, list):
         return False
+    
+    print(conditions[-2][2], "---", conditions[-1][2], "---", row.get("http://www.w3.org/ns/odrl/2/dateTime", None))
 
     return all(
         eval_constraint(row, c, OPS_MAP, FEATURE_TYPE_MAP)
@@ -500,11 +523,11 @@ def compute_statistics_from_files(policy_file, SotW_file):
 #         for idx, row in df.iterrows():
 #             permission_prohabation_results = evaluate_row_policy_permission_prohabition(idx, row, policy, OPS_MAP, FEATURE_TYPE_MAP)
             
-def compute_temporal_tracking_from_files(policy_file, SotW_file):
+def evaluate_files(policy_file, SotW_file):
 
     graph = rdf_utils.load(policy_file)[0]
-    policies = SotW_generator.extract_rule_list_from_policy(graph)
-    features = SotW_generator.extract_features_list_from_policy(graph)
+    policies, features = SotW_generator.extract_rule_list_from_policy_object(graph)
+    # features = SotW_generator.extract_features_list_from_policy(graph)
 
     FEATURE_TYPE_MAP = {f["iri"]: f["type"] for f in features}
 
@@ -518,9 +541,12 @@ def compute_temporal_tracking_from_files(policy_file, SotW_file):
     for policy_idx, policy in enumerate(policies):
 
         permissions = policy.get("permissions", [])
+        prohibitions = policy.get("prohibitions", [])
 
         permission_duties_results = []
-        permission_prohibition_results = []   # ✅ FIXED
+        permission_prohibition_results = []
+
+        permission_count_map = dict()
 
         # ---- DUTIES ----
         for perm_idx, permission in enumerate(permissions):
@@ -536,14 +562,79 @@ def compute_temporal_tracking_from_files(policy_file, SotW_file):
             if permission_duties is not None:
                 permission_duties_results.append(permission_duties)
 
+            # Check if the current permission has count constraints.
+            count_constraints = [c for c in permission.get("conditions", []) if c[0] == "http://www.w3.org/ns/odrl/2/count"]
+
+            if len(count_constraints) > 0:
+                permission_count_map[permission.get("id", perm_idx)] = count_constraints
+
+        prohibition_count_map = dict()
+        for prh_idx, prohibition in enumerate(policy.get("prohibitions", [])):
+            # Check if the current prohibition has count constraints.
+            count_constraints = [c for c in prohibition.get("conditions", []) if c[0] == "http://www.w3.org/ns/odrl/2/count"]
+
+            if len(count_constraints) > 0:
+                prohibition_count_map[prohibition.get("id", prh_idx)] = count_constraints
+
         # ---- PERMISSION PROHIBITION / ROW LEVEL ----
         for idx, row in df.iterrows():
 
             result = evaluate_row_policy_permission_prohibition(
-                idx, row, policy,OPS_MAP, FEATURE_TYPE_MAP, permission_duties_results
+                idx, row, policy, OPS_MAP, FEATURE_TYPE_MAP, permission_duties_results
             )
 
-            permission_prohibition_results.append(result)  # ✅ FIXED
+            permission_prohibition_results.append(result)
+
+        count_results = []
+
+        # Check all permissions with count constraints and evaluate them against the recorded match_count. Do the same for prohibitions.
+        for permission_id, count_constraints in permission_count_map.items():
+            if permissions[permission_id].get("match_count"):
+                match_count = permissions[permission_id]["match_count"]
+                all_satisfied = all(eval_count(match_count, c, OPS_MAP) for c in count_constraints)
+                if all_satisfied:
+                    count_results.append({
+                        "policy_id": policy_idx,
+                        "policy_iri": policy.get("policy_iri", "unknown_policy"),
+                        "permission_id": permission_id,
+                        "match_count": match_count,
+                        "count_constraints": count_constraints,
+                        "decision" : "ALLOW",
+                    })
+                else:
+                    count_results.append({
+                        "policy_id": policy_idx,
+                        "policy_iri": policy.get("policy_iri", "unknown_policy"),
+                        "permission_id": permission_id,
+                        "match_count": match_count,
+                        "count_constraints": count_constraints,
+                        "decision" : "DENY",
+                    })
+
+        for prohibition_id, count_constraints in prohibition_count_map.items():
+            if prohibitions[prohibition_id].get("match_count"):
+                match_count = prohibitions[prohibition_id]["match_count"]
+                all_satisfied = all(eval_count(match_count, c, OPS_MAP) for c in count_constraints)
+                if all_satisfied:
+                    count_results.append({
+                        "policy_id": policy_idx,
+                        "policy_iri": policy.get("policy_iri", "unknown_policy"),
+                        "prohibition_id": prohibition_id,
+                        "match_count": match_count,
+                        "count_constraints": count_constraints,
+                        "decision" : "DENY",
+                    })
+                else:
+                    count_results.append({
+                        "policy_id": policy_idx,
+                        "policy_iri": policy.get("policy_iri", "unknown_policy"),
+                        "prohibition_id": prohibition_id,
+                        "match_count": match_count,
+                        "count_constraints": count_constraints,
+                        "decision" : "ALLOW",
+                    })
+
+        decision = "ALLOW" if all(r["decision"] == "ALLOW" for r in permission_prohibition_results) and all(cr["decision"] == "ALLOW" for cr in count_results) else "DENY"
 
         # ---- FINAL STORE ----
         all_results.append({
@@ -551,7 +642,9 @@ def compute_temporal_tracking_from_files(policy_file, SotW_file):
             "policy_iri": policy.get("policy_iri", "unknown_policy"),
 
             "permissions_duties": permission_duties_results,
-            "row_permission_prohibitions": permission_prohibition_results
+            "row_permission_prohibitions": permission_prohibition_results,
+            "count_results": count_results,
+            "decision": decision
         })
         
     # result=build_tracking_report(all_results)
@@ -614,7 +707,7 @@ def evaluate_row_policy_permission_prohibition(idx, row, policy, OPS_MAP, FEATUR
     violated_prohibitions = []
 
     # get the timestamp of this event
-    time_val = row.get("http://www.w3.org/ns/odrl/2/dateTime", None)
+    time_val = datetime.fromisoformat(row.get("http://www.w3.org/ns/odrl/2/dateTime", None))
 
     permission_times = []
     prohibition_times = []
@@ -623,14 +716,16 @@ def evaluate_row_policy_permission_prohibition(idx, row, policy, OPS_MAP, FEATUR
     for i, rule in enumerate(policy.get("permissions", [])):
         if eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):           
             duty_evaluated = False
-            if len(duties) == 0 or duties is None: # if no duty is associated with it, then it's satisfied.
+            if len(duties) == 0 or duties is None: # if there are no duties, then it's satisfied.
                 permission_matches.append(i)
                 satisfied_permissions.append(rule)
+                rule["match_count"] = rule.get("match_count", 0) + 1
                 break
+            
             match = False
             for perm_duty in duties: #  iterate over all duties associated.
                 if perm_duty["permission_id"] == i: # If current permission and duty permission is same 
-                    duty_map = perm_duty.get("duties", {}) # Fetch the map of the duty
+                    duty_map = perm_duty.get("duties", {}) # Get the duties associated to this permission.
                     # Look to this method here we first check the if any duty has not satified than false ; again we check time form map checked indiviually against time_val if earliest time of duty_map < time 
                     duty_evaluated = check_duty_map(duty_map, time_val)
                     match = True
@@ -641,6 +736,7 @@ def evaluate_row_policy_permission_prohibition(idx, row, policy, OPS_MAP, FEATUR
             if duty_evaluated:
                 permission_matches.append(i)
                 satisfied_permissions.append(rule)
+                rule["match_count"] = rule.get("match_count", 0) + 1
             if time_val is not None:
                 permission_times.append(time_val)
 
@@ -819,4 +915,4 @@ def build_tracking_report(tracking_results):
 
     return "\n".join(lines)
 
-print(compute_temporal_tracking_from_files("test_cases/evaluation/force/extracted_testcase-049-alice-read-x-past.ttl", "test_cases/evaluation/force/extracted_testcase-049-alice-read-x-past.csv"))
+print(evaluate_files("test_cases/evaluation/force/extracted_testcase-062-big-policy.ttl", "test_cases/evaluation/force/extracted_testcase-062-big-policy.csv"))
