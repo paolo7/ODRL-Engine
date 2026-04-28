@@ -215,7 +215,8 @@ def extract_rule_list(odrl_graph, rule_node, features):
         operators = list(odrl_graph.objects(node, ODRL.operator))
         if lefts:
             left = f"{prefix} {str(lefts[0])}" if prefix else str(lefts[0])
-            op = operator_map.get(operators[0], str(operators[0])) if operators else str(operators[0])
+            # op = operator_map.get(operators[0], str(operators[0])) if operators else str(operators[0])
+            op = str(operators[0]) if operators else ""
             right = str(rights[0]) if rights else ""
             triplets.append([left, op, right])
 
@@ -224,7 +225,7 @@ def extract_rule_list(odrl_graph, rule_node, features):
         for comp_node in odrl_graph.objects(rule_node, predicate):
             # Add the component itself
             for val in extract_values(comp_node):
-                triplets.append([component_type, "=", val])
+                triplets.append([component_type, "http://www.w3.org/ns/odrl/2/eq", val])
             # Nested refinements inside component
             for refinement in odrl_graph.objects(comp_node, ODRL.refinement):
                 append_triplet(refinement, prefix=component_type)

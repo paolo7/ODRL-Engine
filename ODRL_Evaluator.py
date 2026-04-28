@@ -13,12 +13,12 @@ from dateutil import parser
 import uuid
 
 OPS_MAP = {
-    str(SotW_generator.ODRL.eq): operator.eq,
-    str(SotW_generator.ODRL.ne): operator.ne,
-    str(SotW_generator.ODRL.lt): operator.lt,
-    str(SotW_generator.ODRL.le): operator.le,
-    str(SotW_generator.ODRL.gt): operator.gt,
-    str(SotW_generator.ODRL.ge): operator.ge,
+    "http://www.w3.org/ns/odrl/2/eq": operator.eq,
+    "http://www.w3.org/ns/odrl/2/neq": operator.ne,
+    "http://www.w3.org/ns/odrl/2/lt": operator.lt,
+    "http://www.w3.org/ns/odrl/2/lteq": operator.le,
+    "http://www.w3.org/ns/odrl/2/gt": operator.gt,
+    "http://www.w3.org/ns/odrl/2/gteq": operator.ge,
     # Missing operators:
     # odrl.isAnyOf: lambda a, b: a in b,
     # odrl.isNoneOf: lambda a, b: a not in b,
@@ -222,8 +222,9 @@ def eval_constraint(row, constraint, OPS_MAP, FEATURE_TYPE_MAP):
             left_date = parser.parse(str(value)).date()
             right_date = parser.parse(str(right)).date()
 
-            left_date = datetime.fromisoformat(str(value))
-            right_date = datetime.fromisoformat(str(right))
+            # This is important in the case where we normalised.
+            # left_date = datetime.fromisoformat(str(value))
+            # right_date = datetime.fromisoformat(str(right))
 
             # Normalize timezone (avoid naive vs aware errors)
             # if left_date.tzinfo and not right_date.tzinfo:
@@ -231,15 +232,13 @@ def eval_constraint(row, constraint, OPS_MAP, FEATURE_TYPE_MAP):
             # elif right_date.tzinfo and not left_date.tzinfo:
             #     left_date = left_date.replace(tzinfo=right_date.tzinfo)
             ans = OPS_MAP[op_symbol](left_date, right_date)
-            if ans:
-                print(f"DateTime constraint satisfied: {value} {op_symbol} {right}")
             return ans
 
         except Exception:
             return False
 
     # --- 2️⃣ Equality / inequality → string compare ---
-    if op_symbol in ("http://www.w3.org/ns/odrl/2/eq", "http://www.w3.org/ns/odrl/2/ne"):
+    if op_symbol in ("http://www.w3.org/ns/odrl/2/eq", "http://www.w3.org/ns/odrl/2/neq"):
         try:
             return OPS_MAP[op_symbol](float(value), float(right))
         except Exception:
@@ -267,8 +266,8 @@ def eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
  
     if not isinstance(conditions, list):
         return False
-    
-    print(conditions[-2][2], "---", conditions[-1][2], "---", row.get("http://www.w3.org/ns/odrl/2/dateTime", None))
+
+    partial_results = [eval_constraint(row, c, OPS_MAP, FEATURE_TYPE_MAP) for c in conditions]
 
     return all(
         eval_constraint(row, c, OPS_MAP, FEATURE_TYPE_MAP)
@@ -638,7 +637,9 @@ def evaluate_files(policy_file, SotW_file, normalise=False):
                         "decision" : "ALLOW",
                     })
 
-        decision = "ALLOW" if all(r["decision"] == "ALLOW" for r in permission_prohibition_results) and all(cr["decision"] == "ALLOW" for cr in count_results) else "DENY"
+        obligation_results = evaluate_obligations_df_rowwise(df, policy, OPS_MAP, FEATURE_TYPE_MAP)
+
+        decision = "ALLOW" if all(r["decision"] == "ALLOW" for r in permission_prohibition_results) and all(cr["decision"] == "ALLOW" for cr in count_results) and all(ob["decision"] == "ALLOW" for ob in obligation_results) else "DENY"
 
         # ---- FINAL STORE ----
         all_results.append({
@@ -648,6 +649,7 @@ def evaluate_files(policy_file, SotW_file, normalise=False):
             "permissions_duties": permission_duties_results,
             "row_permission_prohibitions": permission_prohibition_results,
             "count_results": count_results,
+            "obligation_results": obligation_results,
             "decision": decision
         })
         
@@ -711,7 +713,9 @@ def evaluate_row_policy_permission_prohibition(idx, row, policy, OPS_MAP, FEATUR
     violated_prohibitions = []
 
     # get the timestamp of this event
-    time_val = datetime.fromisoformat(row.get("http://www.w3.org/ns/odrl/2/dateTime", None))
+    # time_val = datetime.fromisoformat(row.get("http://www.w3.org/ns/odrl/2/dateTime", None))
+
+    time_val = row.get("http://www.w3.org/ns/odrl/2/dateTime", None)
 
     permission_times = []
     prohibition_times = []
