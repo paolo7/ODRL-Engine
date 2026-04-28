@@ -523,11 +523,15 @@ def compute_statistics_from_files(policy_file, SotW_file):
 #         for idx, row in df.iterrows():
 #             permission_prohabation_results = evaluate_row_policy_permission_prohabition(idx, row, policy, OPS_MAP, FEATURE_TYPE_MAP)
             
-def evaluate_files(policy_file, SotW_file):
+def evaluate_files(policy_file, SotW_file, normalise=False):
 
-    graph = rdf_utils.load(policy_file)[0]
-    policies, features = SotW_generator.extract_rule_list_from_policy_object(graph)
-    # features = SotW_generator.extract_features_list_from_policy(graph)
+    if normalise:
+        graph = rdf_utils.load_normalise(policy_file)[0]
+        policies, features = SotW_generator.extract_rule_list_from_policy_object(graph)
+    else:
+        graph = rdf_utils.load(policy_file)[0]
+        policies = SotW_generator.extract_rule_list_from_policy(graph)
+        features = SotW_generator.extract_features_list_from_policy(graph)
 
     FEATURE_TYPE_MAP = {f["iri"]: f["type"] for f in features}
 
@@ -914,5 +918,3 @@ def build_tracking_report(tracking_results):
     lines.append("🧭" * 30)
 
     return "\n".join(lines)
-
-print(evaluate_files("test_cases/evaluation/force/extracted_testcase-062-big-policy.ttl", "test_cases/evaluation/force/extracted_testcase-062-big-policy.csv"))

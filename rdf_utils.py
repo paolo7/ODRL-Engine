@@ -51,8 +51,63 @@ def parse_string_to_graph(data: Union[str, bytes]) -> tuple[Graph, str] | None:
             continue
     return None
 
-
 def load(file_path):
+    """
+    Loads an RDF graph from the specified file path.
+    Tries multiple RDF serializations and encodings until one succeeds, or
+    all are exhausted.
+    """
+
+    rdf_formats = [
+        "xml",       # RDF/XML
+        "json-ld",   # JSON-LD
+        "turtle",    # Turtle / TTL
+        "nt",        # N-Triples
+        "n3",        # Notation3
+        "trig",      # TriG
+        "trix",      # TriX
+    ]
+
+    # Try parsing with each format
+    last_exception = None
+    for rdf_format in rdf_formats:
+        try:
+            g = Graph()
+            g.parse(file_path, format=rdf_format)
+            if not(g is None or len(g) == 0):
+                return g, rdf_format
+
+
+            break
+        except Exception as e:
+            last_exception = e
+    else:
+        # If no parser worked, try again by reading file contents with encodings
+        encodings = ["utf-8", "utf-16", "latin-1"]
+        for enc in encodings:
+            try:
+                with open(file_path, "r", encoding=enc) as f:
+                    data = f.read()
+                for rdf_format in rdf_formats:
+                    try:
+                        g = Graph()
+                        g.parse(data=data, format=rdf_format)
+                        if not (g is None or len(g) == 0):
+                            return g, rdf_format
+
+
+                        break
+                    except Exception:
+                        continue
+                else:
+                    continue
+                break
+            except Exception as e:
+                last_exception = e
+    return None
+
+
+def load_normalise(file_path):
     """
     Loads an RDF graph from the specified file path.
     Tries multiple RDF serializations and encodings until one succeeds, or
