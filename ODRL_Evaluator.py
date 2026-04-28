@@ -379,7 +379,7 @@ def evaluate_all_policies_rowwise(df, policies, OPS_MAP, FEATURE_TYPE_MAP):
         obligation_results = evaluate_obligations_df_rowwise(df, policy, OPS_MAP, FEATURE_TYPE_MAP)
         row_results.extend(obligation_results)
         all_results.extend(row_results)
-    print("\n Results....")
+    #print("\n Results....")
     return all_results
 
 
