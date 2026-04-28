@@ -1,11 +1,10 @@
 import rdflib
 from rdflib import Graph, RDF
 
-import Refinables
-import Utils
-from Refinables import Refinable
-from Constraint import Constraint, LogicalConstraint
-from Policy import Policy, Permission, Prohibition, Obligation
+from . import Refinables, Utils
+from .Refinables import Refinable
+from .Constraint import Constraint, LogicalConstraint
+from .Policy import Policy, Permission, Prohibition, Obligation
 
 ODRL = rdflib.Namespace("http://www.w3.org/ns/odrl/2/")
 ODRL_AND = rdflib.URIRef("http://www.w3.org/ns/odrl/2/and")

@@ -338,22 +338,27 @@ def extract_rule_list_from_policy_object(policy):
 
     def extract_rule_params(rule_object):
         params = []
-        if len(rule_object.action) == 1:
-            params.append([str(ODRL.Action), str(ODRL.eq), str(rule_object.action[0].value)])
-        else:
-            params.append([str(ODRL.Action), str(ODRL.eq), str([a.value for a in rule_object.action])])
-        if len(rule_object.target) == 1:
-            params.append([str(ODRL.Asset), str(ODRL.eq), str(rule_object.target[0].value)])
-        else:
-            params.append([str(ODRL.Asset), str(ODRL.eq), str([t.value for t in rule_object.target])])
-        if len(rule_object.assignee) == 1:
-            params.append([str(ODRL.Party), str(ODRL.eq), str(rule_object.assignee[0].value)])
-        else:
-            params.append([str(ODRL.Party), str(ODRL.eq), str([a.value for a in rule_object.assignee])])
+        if rule_object.action is not None:
+            if len(rule_object.action) == 1:
+                params.append([str(ODRL.Action), str(ODRL.eq), str(rule_object.action[0].value)])
+            else:
+                params.append([str(ODRL.Action), str(ODRL.eq), str([a.value for a in rule_object.action])])
+        if len(rule_object.target) > 0:
+            if len(rule_object.target) == 1:
+                params.append([str(ODRL.Asset), str(ODRL.eq), str(rule_object.target[0].value)])
+            else:
+                params.append([str(ODRL.Asset), str(ODRL.eq), str([t.value for t in rule_object.target])])
+        if len(rule_object.assignee) > 0:   
+            if len(rule_object.assignee) == 1:
+                    params.append([str(ODRL.Party), str(ODRL.eq), str(rule_object.assignee[0].value)])
+            else:
+                params.append([str(ODRL.Party), str(ODRL.eq), str([a.value for a in rule_object.assignee])])
+
         for param in rule_object.constraint:
             if param.leftOperand in ["http://www.w3.org/ns/odrl/2/dateTime", "http://www.w3.org/2001/XMLSchema#dateTime"]:
                 features.append({"iri": param.leftOperand, "type": "http://www.w3.org/2001/XMLSchema#dateTime"})
-                params.append([param.leftOperand, param.operator, datetime.fromtimestamp(param.rightOperand, timezone.utc).isoformat(timespec="microseconds")])
+                #params.append([param.leftOperand, param.operator, datetime.fromtimestamp(param.rightOperand, timezone.utc).isoformat(timespec="microseconds")])
+                params.append([param.leftOperand, param.operator, param.rightOperand])
             else:
                 params.append([param.leftOperand, param.operator, param.rightOperand])
         return params

@@ -9,7 +9,7 @@ Contributors:
 
 from abc import abstractmethod, ABC
 
-from Constraint import Constraint
+from .Constraint import Constraint
 
 
 class RefinableInterface(ABC):

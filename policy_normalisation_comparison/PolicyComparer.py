@@ -1,6 +1,6 @@
-from ContractParser import ContractParser
-from GraphParser import GraphParser
-import Utils
+from .ContractParser import ContractParser
+from .GraphParser import GraphParser
+from . import Utils
 
 
 class PolicyComparer:

@@ -4,7 +4,7 @@ import json
 import pyshacl
 import os, sys
 
-import policy_normalisation_comparison
+import policy_normalisation_comparison.GraphParser
 
 def parse_string_to_graph(data: Union[str, bytes]) -> tuple[Graph, str] | None:
     """
@@ -129,8 +129,8 @@ def load_normalise(file_path):
             g = Graph()
             g.parse(file_path, format=rdf_format)
             if not(g is None or len(g) == 0):
-                graph_parser = policy_normalisation_comparison.GraphParser(g)
-                normal_graph = graph_parser.parse().normalise()
+                graph_parser = policy_normalisation_comparison.GraphParser.GraphParser(g)
+                normal_graph = graph_parser.parse().normalise().to_rdflib_graph()
                 return normal_graph, rdf_format
             break
         except Exception as e:
@@ -147,8 +147,8 @@ def load_normalise(file_path):
                         g = Graph()
                         g.parse(data=data, format=rdf_format)
                         if not (g is None or len(g) == 0):
-                            graph_parser = policy_normalisation_comparison.GraphParser(g)
-                            normal_graph = graph_parser.parse().normalise()
+                            graph_parser = policy_normalisation_comparison.GraphParser.GraphParser(g)
+                            normal_graph = graph_parser.parse().normalise().to_rdflib_graph()
                             return normal_graph, rdf_format
                         break
                     except Exception:
