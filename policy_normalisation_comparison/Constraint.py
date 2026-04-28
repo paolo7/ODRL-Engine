@@ -12,7 +12,7 @@ import datetime
 
 import rdflib
 
-import Utils
+from . import Utils
 
 ODRL_IRI = "http://www.w3.org/ns/odrl/2/"
 ODRL = rdflib.Namespace(ODRL_IRI)
@@ -121,6 +121,15 @@ class ArithmeticConstraint(Constraint):
                 interval_2 = ArithmeticConstraint(self.leftOperand, ODRL_IRI + "lt", self.rightOperand)
                 or_constraint = LogicalConstraint(operator="or", constraints=[interval_1, interval_2])
                 return or_constraint
+            elif isinstance(self.rightOperand, str):
+                try:
+                    timestamp = datetime.datetime.fromisoformat(self.rightOperand).timestamp()
+                    interval_1 = ArithmeticConstraint(self.leftOperand, ODRL_IRI + "gt", timestamp)
+                    interval_2 = ArithmeticConstraint(self.leftOperand, ODRL_IRI + "lt", timestamp)
+                    or_constraint = LogicalConstraint(operator="or", constraints=[interval_1, interval_2])
+                    return or_constraint
+                except:
+                    return self
             else:
                 return self
         else:
@@ -246,7 +255,12 @@ class ArithmeticConstraint(Constraint):
         return Constraint.create(operator="or", constraints=final_intervals)
     
     def to_triples(self, subject):
-        return [(subject, ODRL.leftOperand, Utils.string_to_rdflib_node(self.leftOperand)), (subject, ODRL.operator, Utils.string_to_rdflib_node(self.operator)),
+        if self.leftOperand == ODRL_IRI + "dateTime":
+            proper_datetime = datetime.datetime.fromtimestamp(self.rightOperand, tz=datetime.timezone.utc).isoformat()
+            return [(subject, ODRL.leftOperand, Utils.string_to_rdflib_node(self.leftOperand)), (subject, ODRL.operator, Utils.string_to_rdflib_node(self.operator)),
+                (subject, ODRL.rightOperand, Utils.string_to_rdflib_node(proper_datetime))]
+        else:
+            return [(subject, ODRL.leftOperand, Utils.string_to_rdflib_node(self.leftOperand)), (subject, ODRL.operator, Utils.string_to_rdflib_node(self.operator)),
                 (subject, ODRL.rightOperand, Utils.string_to_rdflib_node(self.rightOperand))]
 
 

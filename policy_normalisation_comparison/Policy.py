@@ -11,11 +11,9 @@ from typing import Union, Optional
 
 from rdflib import BNode
 
-import Utils
-from Refinables import Action
-from Refinables import AssetCollection
-from Refinables import PartyCollection
-from Constraint import Constraint, LogicalConstraint, ArithmeticConstraint
+from . import Utils
+from .Refinables import Action, AssetCollection, PartyCollection
+from .Constraint import Constraint, LogicalConstraint, ArithmeticConstraint
 
 
 class Rule:
@@ -37,6 +35,8 @@ class Rule:
 
         if isinstance(action, dict):
             self.action = [Action(**action)]
+        elif action is None:
+            self.action = []
         else:
             self.action = action
 

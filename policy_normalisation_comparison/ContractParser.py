@@ -2,7 +2,7 @@ from rdflib import Graph, Namespace, URIRef
 from rdflib.namespace import RDF
 import sys
 
-import Utils
+from . import Utils
 
 if sys.version_info[0] < 3:
     raise Exception("Python 3.11 or higher is required.")

@@ -219,8 +219,8 @@ def eval_constraint(row, constraint, OPS_MAP, FEATURE_TYPE_MAP):
     # --- 1️⃣ DateTime handling ---
     if column_type == "http://www.w3.org/2001/XMLSchema#dateTime" or left == "http://www.w3.org/ns/odrl/2/dateTime":
         try:
-            left_date = parser.parse(str(value)).date()
-            right_date = parser.parse(str(right)).date()
+            left_date = parser.parse(str(value)).timestamp()
+            right_date = parser.parse(str(right)).timestamp()
 
             # This is important in the case where we normalised.
             # left_date = datetime.fromisoformat(str(value))
@@ -266,8 +266,6 @@ def eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
  
     if not isinstance(conditions, list):
         return False
-
-    partial_results = [eval_constraint(row, c, OPS_MAP, FEATURE_TYPE_MAP) for c in conditions]
 
     return all(
         eval_constraint(row, c, OPS_MAP, FEATURE_TYPE_MAP)
@@ -526,11 +524,11 @@ def evaluate_files(policy_file, SotW_file, normalise=False):
 
     if normalise:
         graph = rdf_utils.load_normalise(policy_file)[0]
-        policies, features = SotW_generator.extract_rule_list_from_policy_object(graph)
+        # policies, features = SotW_generator.extract_rule_list_from_policy_object(graph)
     else:
         graph = rdf_utils.load(policy_file)[0]
-        policies = SotW_generator.extract_rule_list_from_policy(graph)
-        features = SotW_generator.extract_features_list_from_policy(graph)
+    policies = SotW_generator.extract_rule_list_from_policy(graph)
+    features = SotW_generator.extract_features_list_from_policy(graph)
 
     FEATURE_TYPE_MAP = {f["iri"]: f["type"] for f in features}
 
