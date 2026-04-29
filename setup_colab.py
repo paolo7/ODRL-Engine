@@ -126,6 +126,10 @@ def show_interface():
                 p_rule_n_widget = widgets.IntText(value=2)
                 f_rule_n_widget = widgets.IntText(value=2)
                 o_rule_n_widget = widgets.IntText(value=1)
+                duties_per_p_n_widget = widgets.IntText(value=0)
+                p_with_duties_n_widget = widgets.IntText(value=0)
+                remedies_per_f_n_widget = widgets.IntText(value=0)
+                f_with_remedies_n_widget = widgets.IntText(value=0)
                 constants_per_feature_widget = widgets.IntText(value=4)
                 constraint_number_min_widget = widgets.IntText(value=0)
                 constraint_number_max_widget = widgets.IntText(value=4)
@@ -142,6 +146,18 @@ def show_interface():
                     labeled_widget("Number of Permission Rules:", p_rule_n_widget),
                     labeled_widget("Number of Prohibition Rules:", f_rule_n_widget),
                     labeled_widget("Number of Obligation Rules:", o_rule_n_widget),
+                    labeled_widget(
+                        "Permissions that will have Duties:", p_with_duties_n_widget
+                    ),
+                    labeled_widget(
+                        "N. of Duties each Permission with Duties has:", duties_per_p_n_widget
+                    ),
+                    labeled_widget(
+                        "Prohibitions that will have Remedies:", f_with_remedies_n_widget
+                    ),
+                    labeled_widget(
+                        "N. of Remedies each Prohibition with Remedies has:", remedies_per_f_n_widget
+                    ),
                     labeled_widget(
                         "Constants per Feature (Actions/Parties/Targets):",
                         constants_per_feature_widget,
@@ -193,6 +209,18 @@ def show_interface():
 
                         <p><b>Number of Obligation Rules:</b> How many duty (obligation) rules each policy imposes.<br>
                         Duties define actions that must be performed.</p>
+                        
+                        <p><b>N. of Duties each Permission with Duties has:</b> Number of duty rules attached to each permission that includes duties.<br>
+                        Defines how many actions must be fulfilled when a permission has associated obligations.</p>
+                        
+                        <p><b>Permissions that will have Duties:</b> Number of permissions that will include duties.<br>
+                        If this number exceeds the number of permissions, all permissions will include duties.</p>
+                        
+                        <p><b>N. of Remedies each Prohibition with Remedies has:</b> Number of remedy duties attached to each prohibition that includes remedies.<br>
+                        Remedies specify corrective actions that must be performed when a prohibition is violated.</p>
+                        
+                        <p><b>Prohibitions that will have Remedies:</b> Number of prohibitions that will include remedies.<br>
+                        If this number exceeds the number of prohibitions, all prohibitions will include remedies.</p>
 
                         <p><b>Constants per Feature:</b> Number of actions, parties, targets and left operands (for constraints) sampled for all policies.<br>
                         Controls the diversity of IRIs used across rules. All policies share the same sampled constants for consistency while allowing randomness in rule assignment.</p>
@@ -251,6 +279,10 @@ def show_interface():
                                 p_rule_n=p_rule_n_widget.value,
                                 f_rule_n=f_rule_n_widget.value,
                                 o_rule_n=o_rule_n_widget.value,
+                                duties_per_p_n=duties_per_p_n_widget.value,
+                                p_with_duties_n=p_with_duties_n_widget.value,
+                                remedies_per_f_n=remedies_per_f_n_widget.value,
+                                f_with_remedies_n=f_with_remedies_n_widget.value,
                                 constants_per_feature=constants_per_feature_widget.value,
                                 constraint_number_min=constraint_number_min_widget.value,
                                 constraint_number_max=constraint_number_max_widget.value,
