@@ -12,9 +12,14 @@ ODRL_operators = [
     "http://www.w3.org/ns/odrl/2/neq"
 ]
 
+
 def generate_ODRL(policy_number = 1, p_rule_n = 2, f_rule_n = 2, o_rule_n = 1,
+                  duties_per_p_n = 0, # number of duties each permission with duty has
+                  p_with_duties_n = 0, # number of permissions that have duties. If greater than p_rule_n, all permissions have duties
+                  remedies_per_f_n=0,  # number of remedies each prohibition with remedies has
+                  f_with_remedies_n=0, # number of prohibitions that have remedies. If greater than f_rule_n, all prohibitions have remedies
                   constants_per_feature = 4,
-                  constraint_number_min = 0, constraint_number_max = 4,
+                  constraint_number_min = 0, constraint_number_max = 1,
                   chance_feature_null = 0.5,
                   constraint_right_operand_min = 0,
                   constraint_right_operand_max = 100,
@@ -102,8 +107,28 @@ def generate_ODRL(policy_number = 1, p_rule_n = 2, f_rule_n = 2, o_rule_n = 1,
             g.add((constraint, ODRL.operator, operator))
             g.add((constraint, ODRL.rightOperand, right))
 
+    def clone_rule_as_permission(rule_node):
+        new_node = BNode()
+
+        for p, o in g.predicate_objects(rule_node):
+
+            # Replace rdf:type Duty with rdf:type Permission
+            if p == RDF.type:
+                g.add((new_node, RDF.type, ODRL.Permission))
+
+            elif isinstance(o, BNode):
+                new_o = BNode()
+                for p2, o2 in g.predicate_objects(o):
+                    g.add((new_o, p2, o2))
+                g.add((new_node, p, new_o))
+
+            else:
+                g.add((new_node, p, o))
+
+        return new_node
+
     # --- Unified rule creation
-    def add_rules(policy_node, rule_type, link_predicate, count):
+    def add_rules(policy_node, rule_type, link_predicate, count, n_with_subrule = 0, subrule_n = 0, subrule_relation = None, subrule_type = None):
         for i in range(count):
             rule = make_rule(rule_type, i)
             g.add((policy_node, link_predicate, rule))
@@ -111,18 +136,33 @@ def generate_ODRL(policy_number = 1, p_rule_n = 2, f_rule_n = 2, o_rule_n = 1,
             maybe_add_feature(rule, ODRL.assignee, selected_parties, required=False)
             maybe_add_feature(rule, ODRL.target, selected_targets, required=False)
             add_constraints(rule)
+            if rule_type == ODRL.Duty:  # make sure the duty action is explicitly permitted
+                perm_copy = clone_rule_as_permission(rule)
+                g.add((policy_node, ODRL.permission, perm_copy))
+            if i < n_with_subrule:
+                for i in range(subrule_n):
+                    subrule = make_rule(subrule_type, i)
+                    g.add((rule, subrule_relation, subrule))
+                    maybe_add_feature(subrule, ODRL.action, selected_actions, required=True)
+                    maybe_add_feature(subrule, ODRL.assignee, selected_parties, required=False)
+                    maybe_add_feature(subrule, ODRL.target, selected_targets, required=False)
+                    add_constraints(subrule)
+                    if subrule_type == ODRL.Duty:  # make sure the duty action is explicitly permitted
+                        perm_copy = clone_rule_as_permission(subrule)
+                        g.add((policy_node, ODRL.permission, perm_copy))
+
 
     # --- Generate multiple policies
     for _ in range(policy_number):
         policy = URIRef(base_uri + "policy/" + str(uuid.uuid4()))
         g.add((policy, RDF.type, ODRL.Policy))
-        add_rules(policy, ODRL.Permission, ODRL.permission, p_rule_n)
-        add_rules(policy, ODRL.Prohibition, ODRL.prohibition, f_rule_n)
+        add_rules(policy, ODRL.Permission, ODRL.permission, p_rule_n, n_with_subrule=p_with_duties_n, subrule_n=duties_per_p_n, subrule_relation = ODRL.duty, subrule_type = ODRL.Duty)
+        add_rules(policy, ODRL.Prohibition, ODRL.prohibition, f_rule_n, n_with_subrule=f_with_remedies_n, subrule_n=remedies_per_f_n, subrule_relation = ODRL.remedy, subrule_type = ODRL.Duty)
         add_rules(policy, ODRL.Duty, ODRL.obligation, o_rule_n)
 
     return g
 
 
 # --- Example usage
-#policy = generate_ODRL()
+#policy = generate_ODRL(p_rule_n = 1, f_rule_n = 1, o_rule_n = 1, duties_per_p_n = 1, p_with_duties_n = 1, f_with_remedies_n = 1, remedies_per_f_n = 1)
 #print(policy.serialize(format="turtle").decode("utf-8") if isinstance(policy.serialize(format="turtle"), bytes) else policy.serialize(format="turtle"))
