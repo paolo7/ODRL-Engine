@@ -31,13 +31,15 @@ import ODRL_Evaluator
 # ==========================================================
 
 # ---- plot 1 parameters ----
-STATE_SIZE_START = 25
-STATE_SIZE_END = 200
-STATE_SIZE_STEP = 25
+STATE_SIZE_START = 600
+STATE_SIZE_END = 6000
+STATE_SIZE_STEP = 600
 
-FIXED_PERMISSION_RULES = 10
-FIXED_PROHIBITION_RULES = 10
-FIXED_OBLIGATION_RULES = 10
+FIXED_PERMISSION_RULES = 100
+DUTIES_PER_P_N=80
+P_WITH_DUTIES_N=40
+FIXED_PROHIBITION_RULES = 100
+FIXED_OBLIGATION_RULES = 100
 
 
 # ---- plot 2 parameters ----
@@ -45,7 +47,7 @@ POLICY_SIZE_START = 10
 POLICY_SIZE_END = 50
 POLICY_SIZE_STEP = 10
 
-FIXED_STATE_SIZE = 200
+FIXED_STATE_SIZE = 2000
 
 
 # ---- general parameters ----
@@ -98,6 +100,8 @@ def evaluate_once(policy_graph, dataframe):
 
 def generate_valid_pair(
     permissions,
+    duties_per_pn,
+    p_with_dutiesn,
     prohibitions,
     obligations,
     sotw_size
@@ -108,6 +112,8 @@ def generate_valid_pair(
         p_rule_n=permissions,
         f_rule_n=prohibitions,
         o_rule_n=obligations,
+        duties_per_p_n =  p_with_dutiesn, # number of duties each permission with duty has
+        p_with_duties_n = p_with_dutiesn, # number of permissions that have duties. If greater than p_rule_n, all permissions have duties
         constants_per_feature=CONSTANTS_PER_FEATURE,
         constraint_number_min=CONSTRAINT_NUMBER_MIN,
         constraint_number_max=CONSTRAINT_NUMBER_MAX,
@@ -151,6 +157,8 @@ def benchmark_plot_1():
 
             policy, df = generate_valid_pair(
                 FIXED_PERMISSION_RULES,
+                DUTIES_PER_P_N,
+                P_WITH_DUTIES_N,
                 FIXED_PROHIBITION_RULES,
                 FIXED_OBLIGATION_RULES,
                 size
@@ -196,6 +204,8 @@ def benchmark_plot_2():
 
             policy, df = generate_valid_pair(
                 permissions=size,
+                duties_per_pn=DUTIES_PER_P_N,
+                p_with_dutiesn=P_WITH_DUTIES_N,
                 prohibitions=size,
                 obligations=0,
                 sotw_size=FIXED_STATE_SIZE
@@ -215,6 +225,8 @@ def benchmark_plot_2():
 
             policy, df = generate_valid_pair(
                 permissions=size,
+                 duties_per_pn=DUTIES_PER_P_N,
+                p_with_dutiesn=P_WITH_DUTIES_N,
                 prohibitions=0,
                 obligations=size,
                 sotw_size=FIXED_STATE_SIZE
