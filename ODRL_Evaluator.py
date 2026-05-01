@@ -64,106 +64,141 @@ def evaluate_ODRL_from_files_merge_policies(policy_files, SotW_file):
 
     return evaluate_ODRL_on_dataframe(merged_graph_rules , df, merged_feature_map )
 
-def evaluate_ODRL_from_files(policy_file, SotW_file):
-    graph = rdf_utils.load(policy_file)[0]
-    graph_rules = SotW_generator.extract_rule_list_from_policy(graph)
+def evaluate_ODRL_from_files(policy_file, SotW_file, normalise=False):
+    if normalise:
+        graph = rdf_utils.load_normalise(policy_file)[0]
+    else:
+        graph = rdf_utils.load(policy_file)[0]
+    policies = SotW_generator.extract_rule_list_from_policy(graph)
     features = SotW_generator.extract_features_list_from_policy(graph)
+
     FEATURE_TYPE_MAP = {f["iri"]: f["type"] for f in features}
+
     df = pd.read_csv(SotW_file)
-    return evaluate_ODRL_on_dataframe(graph_rules, df, FEATURE_TYPE_MAP)
+
+    return evaluate_ODRL_on_dataframe(policies=policies, data_frame=df, FEATURE_TYPE_MAP=FEATURE_TYPE_MAP)
 
 
 def evaluate_ODRL_on_dataframe(policies, data_frame, FEATURE_TYPE_MAP):
-    results = evaluate_all_policies_rowwise(
-        data_frame, policies, OPS_MAP, FEATURE_TYPE_MAP
-    )
-  
-    total_rows = len(data_frame)
-    compliant_count = 0
-    not_permitted = []
-    prohibited = []
-    unfulfilled_obligations = []
+    if "dateTime" in data_frame.columns:
+        data_frame["dateTime"] = pd.to_datetime(data_frame["dateTime"], errors="coerce")
 
-    # --- Classify results ---
-    for r in results:
-        if r["decision"] == "DENY":
-            if r["reason"] == "No permission satisfied":
-                not_permitted.append(r)
-            elif r["reason"] == "Prohibition violated":
-                prohibited.append(r)
-            elif r["reason"] == "Obligation not fulfilled":
-                unfulfilled_obligations.append(r)
-        else:
-            compliant_count += 1
+    all_results = []
 
-    not_permitted_count = len(not_permitted)
-    prohibited_count = len(prohibited)
-    unfulfilled_obligations_count = len(unfulfilled_obligations)
+    for policy_idx, policy in enumerate(policies):
 
-    overall_compliant = (not_permitted_count == 0 and prohibited_count == 0 and unfulfilled_obligations_count == 0)
-    verdict = "YES" if overall_compliant else "NO"
+        permissions = policy.get("permissions", [])
+        prohibitions = policy.get("prohibitions", [])
 
-    # --- Build message ---
-    message_lines = [
-        f"State of the World valid? {verdict}",
-        "",
-        "Evaluation report:",
-    ]
+        permission_duties_results = []
+        permission_prohibition_results = []
 
-    if overall_compliant:
-        message_lines.append(
-            f"Compliant log entries: {total_rows}/{total_rows} (100%)."
-        )
-    else:
-        compliant_percentage = round(compliant_count / total_rows * 100, 2)
-        message_lines.append(
-            f"Compliant log entries: {compliant_count}/{total_rows} ({compliant_percentage}%)."
-        )
+        permission_count_map = dict()
 
-        if not_permitted_count > 0:
-            np_pct = round(not_permitted_count / total_rows * 100, 2)
-            message_lines.append(
-                f" - {not_permitted_count}/{total_rows} ({np_pct}%) are non compliant "
-                f"because the logged event is not permitted"
+        # ---- DUTIES ----
+        for perm_idx, permission in enumerate(permissions):
+
+            permission_duties = evaluate_permission_duties(
+                permission_id=permission.get("id", perm_idx),
+                df=data_frame,
+                duties=permission.get("duties", []),
+                policy=policy,
+                OPS_MAP=OPS_MAP,
+                FEATURE_TYPE_MAP=FEATURE_TYPE_MAP
+            )
+            if permission_duties is not None:
+                permission_duties_results.append(permission_duties)
+
+            # Check if the current permission has count constraints.
+            count_constraints = [c for c in permission.get("conditions", []) if c[0] == "http://www.w3.org/ns/odrl/2/count"]
+
+            if len(count_constraints) > 0:
+                permission_count_map[permission.get("id", perm_idx)] = count_constraints
+
+        prohibition_count_map = dict()
+        for prh_idx, prohibition in enumerate(policy.get("prohibitions", [])):
+            # Check if the current prohibition has count constraints.
+            count_constraints = [c for c in prohibition.get("conditions", []) if c[0] == "http://www.w3.org/ns/odrl/2/count"]
+
+            if len(count_constraints) > 0:
+                prohibition_count_map[prohibition.get("id", prh_idx)] = count_constraints
+
+        # ---- PERMISSION PROHIBITION / ROW LEVEL ----
+        for idx, row in data_frame.iterrows():
+
+            result = evaluate_row_policy_permission_prohibition(
+                idx, row, policy, OPS_MAP, FEATURE_TYPE_MAP, permission_duties_results
             )
 
-        if prohibited_count > 0:
-            p_pct = round(prohibited_count / total_rows * 100, 2)
-            message_lines.append(
-                f" - {prohibited_count}/{total_rows} ({p_pct}%) are non compliant "
-                f"because the logged event is prohibited"
-            )
+            permission_prohibition_results.append(result)
 
-        if unfulfilled_obligations_count > 0:
-            message_lines.append(
-                f" - {unfulfilled_obligations_count} obligations are not fulfilled "
-            )
+        count_results = []
 
-        message_lines.append("")
-        message_lines.append("Details of non-compliance:")
+        # Check all permissions with count constraints and evaluate them against the recorded match_count. Do the same for prohibitions.
+        for permission_id, count_constraints in permission_count_map.items():
+            if permissions[permission_id].get("match_count"):
+                match_count = permissions[permission_id]["match_count"]
+                all_satisfied = all(eval_count(match_count, c, OPS_MAP) for c in count_constraints)
+                if all_satisfied:
+                    count_results.append({
+                        "policy_id": policy_idx,
+                        "policy_iri": policy.get("policy_iri", "unknown_policy"),
+                        "permission_id": permission_id,
+                        "match_count": match_count,
+                        "count_constraints": count_constraints,
+                        "decision" : "ALLOW",
+                    })
+                else:
+                    count_results.append({
+                        "policy_id": policy_idx,
+                        "policy_iri": policy.get("policy_iri", "unknown_policy"),
+                        "permission_id": permission_id,
+                        "match_count": match_count,
+                        "count_constraints": count_constraints,
+                        "decision" : "DENY",
+                    })
 
-        for r in not_permitted:
-            idx = r["row_index"]
-            message_lines.append(
-                f" - The following logged event (row {idx}) is non-compliant because it is NOT PERMITTED"
-            )
-            message_lines.append(str(data_frame.iloc[idx].to_dict()))
+        for prohibition_id, count_constraints in prohibition_count_map.items():
+            if prohibitions[prohibition_id].get("match_count"):
+                match_count = prohibitions[prohibition_id]["match_count"]
+                all_satisfied = all(eval_count(match_count, c, OPS_MAP) for c in count_constraints)
+                if all_satisfied:
+                    count_results.append({
+                        "policy_id": policy_idx,
+                        "policy_iri": policy.get("policy_iri", "unknown_policy"),
+                        "prohibition_id": prohibition_id,
+                        "match_count": match_count,
+                        "count_constraints": count_constraints,
+                        "decision" : "DENY",
+                    })
+                else:
+                    count_results.append({
+                        "policy_id": policy_idx,
+                        "policy_iri": policy.get("policy_iri", "unknown_policy"),
+                        "prohibition_id": prohibition_id,
+                        "match_count": match_count,
+                        "count_constraints": count_constraints,
+                        "decision" : "ALLOW",
+                    })
 
-        for r in prohibited:
-            idx = r["row_index"]
-            message_lines.append(
-                f" - The following logged event (row {idx}) is non-compliant because it is PROHIBITED"
-            )
-            message_lines.append(str(data_frame.iloc[idx].to_dict()))
+        obligation_results = evaluate_obligations_df_rowwise(data_frame, policy, OPS_MAP, FEATURE_TYPE_MAP)
 
-        for r in unfulfilled_obligations:
-            message_lines.append(
-                f" - The following obligation is not fulfilled: {r['obligation']}"
-            )
+        decision = "ALLOW" if all(r["decision"] == "ALLOW" for r in permission_prohibition_results) and all(cr["decision"] == "ALLOW" for cr in count_results) and all(ob["decision"] == "ALLOW" for ob in obligation_results) else "DENY"
 
-    message_str = "\n".join(message_lines)
+        # ---- FINAL STORE ----
+        all_results.append({
+            "policy_id": policy_idx,
+            "policy_iri": policy.get("policy_iri", "unknown_policy"),
 
-    return overall_compliant, {}, message_str
+            "permissions_duties": permission_duties_results,
+            "row_permission_prohibitions": permission_prohibition_results,
+            "count_results": count_results,
+            "obligation_results": obligation_results,
+            "decision": decision
+        })
+        
+    # result=build_tracking_report(all_results)
+    return all_results
 
 def eval_count(value, constraint, OPS_MAP):
     left, op_symbol, right = constraint
@@ -524,7 +559,6 @@ def evaluate_files(policy_file, SotW_file, normalise=False):
 
     if normalise:
         graph = rdf_utils.load_normalise(policy_file)[0]
-        # policies, features = SotW_generator.extract_rule_list_from_policy_object(graph)
     else:
         graph = rdf_utils.load(policy_file)[0]
     policies = SotW_generator.extract_rule_list_from_policy(graph)
@@ -534,125 +568,7 @@ def evaluate_files(policy_file, SotW_file, normalise=False):
 
     df = pd.read_csv(SotW_file)
 
-    if "dateTime" in df.columns:
-        df["dateTime"] = pd.to_datetime(df["dateTime"], errors="coerce")
-
-    all_results = []
-
-    for policy_idx, policy in enumerate(policies):
-
-        permissions = policy.get("permissions", [])
-        prohibitions = policy.get("prohibitions", [])
-
-        permission_duties_results = []
-        permission_prohibition_results = []
-
-        permission_count_map = dict()
-
-        # ---- DUTIES ----
-        for perm_idx, permission in enumerate(permissions):
-
-            permission_duties = evaluate_permission_duties(
-                permission_id=permission.get("id", perm_idx),
-                df=df,
-                duties=permission.get("duties", []),
-                policy=policy,
-                OPS_MAP=OPS_MAP,
-                FEATURE_TYPE_MAP=FEATURE_TYPE_MAP
-            )
-            if permission_duties is not None:
-                permission_duties_results.append(permission_duties)
-
-            # Check if the current permission has count constraints.
-            count_constraints = [c for c in permission.get("conditions", []) if c[0] == "http://www.w3.org/ns/odrl/2/count"]
-
-            if len(count_constraints) > 0:
-                permission_count_map[permission.get("id", perm_idx)] = count_constraints
-
-        prohibition_count_map = dict()
-        for prh_idx, prohibition in enumerate(policy.get("prohibitions", [])):
-            # Check if the current prohibition has count constraints.
-            count_constraints = [c for c in prohibition.get("conditions", []) if c[0] == "http://www.w3.org/ns/odrl/2/count"]
-
-            if len(count_constraints) > 0:
-                prohibition_count_map[prohibition.get("id", prh_idx)] = count_constraints
-
-        # ---- PERMISSION PROHIBITION / ROW LEVEL ----
-        for idx, row in df.iterrows():
-
-            result = evaluate_row_policy_permission_prohibition(
-                idx, row, policy, OPS_MAP, FEATURE_TYPE_MAP, permission_duties_results
-            )
-
-            permission_prohibition_results.append(result)
-
-        count_results = []
-
-        # Check all permissions with count constraints and evaluate them against the recorded match_count. Do the same for prohibitions.
-        for permission_id, count_constraints in permission_count_map.items():
-            if permissions[permission_id].get("match_count"):
-                match_count = permissions[permission_id]["match_count"]
-                all_satisfied = all(eval_count(match_count, c, OPS_MAP) for c in count_constraints)
-                if all_satisfied:
-                    count_results.append({
-                        "policy_id": policy_idx,
-                        "policy_iri": policy.get("policy_iri", "unknown_policy"),
-                        "permission_id": permission_id,
-                        "match_count": match_count,
-                        "count_constraints": count_constraints,
-                        "decision" : "ALLOW",
-                    })
-                else:
-                    count_results.append({
-                        "policy_id": policy_idx,
-                        "policy_iri": policy.get("policy_iri", "unknown_policy"),
-                        "permission_id": permission_id,
-                        "match_count": match_count,
-                        "count_constraints": count_constraints,
-                        "decision" : "DENY",
-                    })
-
-        for prohibition_id, count_constraints in prohibition_count_map.items():
-            if prohibitions[prohibition_id].get("match_count"):
-                match_count = prohibitions[prohibition_id]["match_count"]
-                all_satisfied = all(eval_count(match_count, c, OPS_MAP) for c in count_constraints)
-                if all_satisfied:
-                    count_results.append({
-                        "policy_id": policy_idx,
-                        "policy_iri": policy.get("policy_iri", "unknown_policy"),
-                        "prohibition_id": prohibition_id,
-                        "match_count": match_count,
-                        "count_constraints": count_constraints,
-                        "decision" : "DENY",
-                    })
-                else:
-                    count_results.append({
-                        "policy_id": policy_idx,
-                        "policy_iri": policy.get("policy_iri", "unknown_policy"),
-                        "prohibition_id": prohibition_id,
-                        "match_count": match_count,
-                        "count_constraints": count_constraints,
-                        "decision" : "ALLOW",
-                    })
-
-        obligation_results = evaluate_obligations_df_rowwise(df, policy, OPS_MAP, FEATURE_TYPE_MAP)
-
-        decision = "ALLOW" if all(r["decision"] == "ALLOW" for r in permission_prohibition_results) and all(cr["decision"] == "ALLOW" for cr in count_results) and all(ob["decision"] == "ALLOW" for ob in obligation_results) else "DENY"
-
-        # ---- FINAL STORE ----
-        all_results.append({
-            "policy_id": policy_idx,
-            "policy_iri": policy.get("policy_iri", "unknown_policy"),
-
-            "permissions_duties": permission_duties_results,
-            "row_permission_prohibitions": permission_prohibition_results,
-            "count_results": count_results,
-            "obligation_results": obligation_results,
-            "decision": decision
-        })
-        
-    # result=build_tracking_report(all_results)
-    return all_results
+    return evaluate_ODRL_on_dataframe(policies=policies, data_frame=df, FEATURE_TYPE_MAP=FEATURE_TYPE_MAP)
        
         
 

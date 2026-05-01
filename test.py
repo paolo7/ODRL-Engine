@@ -166,10 +166,6 @@ def run_folder_evaluation_tests():
             try:
                 result_list = ODRL_Evaluator.evaluate_files(ttl_path, csv_path)
                 result = all(r.get("decision") == "ALLOW" for r in result_list)
-                # result = ODRL_Evaluator.evaluate_ODRL_from_files(
-                #     ttl_path,
-                #     csv_path
-                # )[0]
 
             except Exception as e:
 
@@ -259,13 +255,17 @@ def runTests(test_repetitions = 0):
     # EVALUATION TESTS
 
     # evaluation with datetime
-    if ODRL_Evaluator.evaluate_ODRL_from_files("example_policies/example_valid3.ttl", "example_policies/sotw_ex3_valid.csv")[0]:
+    result_list = ODRL_Evaluator.evaluate_files("example_policies/example_valid3.ttl", "example_policies/sotw_ex3_valid.csv")
+    result = all(r.get("decision") == "ALLOW" for r in result_list)
+    if result:
         tests_passed += 1
     else:
         tests_failed += 1
         test_log.append("Failed to evaluate datetime example example_policies/example_valid3.ttl as valid on SotW example_policies/sotw_ex3_valid.csv")
 
-    if not ODRL_Evaluator.evaluate_ODRL_from_files("example_policies/example_valid3.ttl", "example_policies/sotw_ex3_invalid.csv")[0]:
+    result_list = ODRL_Evaluator.evaluate_files("example_policies/example_valid3.ttl", "example_policies/sotw_ex3_invalid.csv")
+    result = all(r.get("decision") == "ALLOW" for r in result_list)
+    if not result:
         tests_passed += 1
     else:
         tests_failed += 1
