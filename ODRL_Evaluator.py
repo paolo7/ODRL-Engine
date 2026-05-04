@@ -528,11 +528,17 @@ def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW
                 evaluation_state = json.load(f)
 
         # Run evaluation
-        result = evaluate_ODRL_on_dataframe(
-            policies[0],
-            pd.read_csv(stream_file),
-            FEATURE_TYPE_MAP,
-            evaluation_state
+        #result = evaluate_ODRL_on_dataframe(
+        #    policies[0],
+        #    pd.read_csv(stream_file),
+        #    FEATURE_TYPE_MAP,
+        #    evaluation_state
+        #)
+        result = evaluate_ODRL_from_files(
+            policy_file,
+            stream_file,
+            evaluation_state=evaluation_state,
+            normalise=normalise
         )
 
         # Save updated state
