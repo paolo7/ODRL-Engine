@@ -319,7 +319,7 @@ def evaluate_ODRL_on_dataframe(policy, df, FEATURE_TYPE_MAP, evaluation_state=No
             if check_match(row, p, OPS_MAP, FEATURE_TYPE_MAP):
                 matched_permissions.append(p)
 
-            # Duties ALWAYS evaluated (as you specified)
+            # Duties ALWAYS evaluated
             for d in p.get("duties", []):
                 check_match(row, d, OPS_MAP, FEATURE_TYPE_MAP)
 
