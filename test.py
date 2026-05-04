@@ -164,7 +164,7 @@ def run_folder_evaluation_tests():
             category_stats[category]["total"] += 1
 
             try:
-                result_list = ODRL_Evaluator.evaluate_ODRL_from_files(ttl_path, csv_path)
+                result_list = ODRL_Evaluator.evaluate_ODRL_from_files_streaming(ttl_path, csv_path)
                 result = result_list[1] #all(r.get("decision") == "ALLOW" for r in result_list)
 
             except Exception as e:

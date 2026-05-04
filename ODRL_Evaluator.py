@@ -1,7 +1,10 @@
 import rdf_utils
 import SotW_generator
 import pandas as pd
-
+import os
+import shutil
+import json
+import math
 import operator
 
 
@@ -379,7 +382,13 @@ def evaluate_ODRL_on_dataframe(policy, df, FEATURE_TYPE_MAP, evaluation_state=No
     # 5) POST PROCESSING
     # ----------------------------------------
 
+
     temporary_validity = validity
+    if (
+            len(evaluation_state["rows_violating_permissions"]) > 0
+            or len(evaluation_state["rows_violating_prohibitions"]) > 0
+    ):
+        temporary_validity = 0
 
     obligations_not_satisfied = []
     unfulfilled_duties = []
@@ -447,3 +456,92 @@ def evaluate_ODRL_from_files(policy_file, SotW_file, evaluation_state=None, norm
     df = pd.read_csv(SotW_file)
 
     return evaluate_ODRL_on_dataframe(policies[0], df, FEATURE_TYPE_MAP, evaluation_state)
+
+
+
+def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW=1, normalise=False):
+
+    STREAM_DIR = "stream_simulation"
+
+    # ----------------------------------------
+    # 1) PREPARE STREAM DIRECTORY
+    # ----------------------------------------
+    if os.path.exists(STREAM_DIR):
+        shutil.rmtree(STREAM_DIR)
+    os.makedirs(STREAM_DIR)
+
+    # ----------------------------------------
+    # 2) LOAD POLICY + FEATURES
+    # ----------------------------------------
+    graph = rdf_utils.load(policy_file)[0]
+    if normalise:
+        graph = rdf_utils.load_normalise(policy_file)[0]
+
+    policies = SotW_generator.extract_rule_list_from_policy(graph)
+    features = SotW_generator.extract_features_list_from_policy(graph)
+
+    FEATURE_TYPE_MAP = {f["iri"]: f["type"] for f in features}
+
+    # ----------------------------------------
+    # 3) LOAD + SORT SOTW
+    # ----------------------------------------
+    df = pd.read_csv(SotW_file)
+
+    DT_COL = "http://www.w3.org/ns/odrl/2/dateTime"
+
+    if DT_COL in df.columns:
+        df[DT_COL] = pd.to_datetime(df[DT_COL], errors="coerce", utc=True)
+        df = df.sort_values(by=DT_COL, ascending=True)
+
+    # ----------------------------------------
+    # 4) SPLIT INTO STREAM FILES
+    # ----------------------------------------
+    total_rows = len(df)
+    num_chunks = math.ceil(total_rows / max_rows_per_SotW)
+
+    stream_files = []
+
+    for i in range(num_chunks):
+        start = i * max_rows_per_SotW
+        end = start + max_rows_per_SotW
+
+        chunk_df = df.iloc[start:end]
+
+        file_path = os.path.join(STREAM_DIR, f"stream{i}.csv")
+        chunk_df.to_csv(file_path, index=False)
+
+        stream_files.append(file_path)
+
+    # ----------------------------------------
+    # 5) PROCESS STREAM FILES SEQUENTIALLY
+    # ----------------------------------------
+    evaluation_state = None
+    result = None
+
+    state_file = os.path.join(STREAM_DIR, "evaluation_state.json")
+
+    for i, stream_file in enumerate(stream_files):
+
+        # Load previous state if exists
+        if os.path.exists(state_file):
+            with open(state_file, "r") as f:
+                evaluation_state = json.load(f)
+
+        # Run evaluation
+        result = evaluate_ODRL_on_dataframe(
+            policies[0],
+            pd.read_csv(stream_file),
+            FEATURE_TYPE_MAP,
+            evaluation_state
+        )
+
+        # Save updated state
+        evaluation_state = result[0]
+
+        with open(state_file, "w") as f:
+            json.dump(evaluation_state, f, default=str, indent=2)
+
+    # ----------------------------------------
+    # 6) RETURN FINAL RESULT
+    # ----------------------------------------
+    return result
