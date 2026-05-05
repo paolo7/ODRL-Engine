@@ -1,11 +1,4 @@
-"""
-Author: Semih Yumuşak
-Date: July 24, 2024
-Description: This is the action class which implements refinable interface.
 
-Contributors:
-
-"""
 
 from .Constraint import Constraint
 from .Interfaces import RefinableInterface

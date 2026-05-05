@@ -1,12 +1,4 @@
-"""
-Author: Semih Yumuşak
-Date: July 24, 2024
-Description: This is file containing Policy and rule classes.
 
-Contributors:
-Jaime Osvaldo Salas
-Added normalisation methods.
-"""
 from typing import Union, Optional
 
 from rdflib import BNode

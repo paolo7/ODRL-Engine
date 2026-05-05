@@ -2,8 +2,6 @@
 
 The Policy Engine provides a suite of functionality to inspect, process and use ODRL policies.
 
-You can access a live demo of these functionalities using the following [Google Colab interface](https://colab.research.google.com/drive/19t7xmiLkL1RW3s77_HkhysE04W4DUNPc#scrollTo=yK6I-AKSrVZ5).
-
 ## **Main Goal/Functionalities**
 
 Currently the following main functionalities are supported: 
@@ -164,8 +162,3 @@ Tests placed here will be run automatically when `test.py` is run.
 In the X.txt file you can optionally add additional information about your test:
 * First line: you can add here a message describing the test, which will be printed if the test fails
 * Second line: you can add here a single keyword, to group similar types of tests together. The test output will show a breakdown for each keyword.
-
-## Contact
-* Paolo Pareti p.pareti@soton.ac.uk
-* Adeel Aslam A.Aslam@soton.ac.uk
-* Jaime Salas J.O.Salas@soton.ac.uk
