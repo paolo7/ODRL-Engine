@@ -80,11 +80,17 @@ def eval_count(value, constraint, OPS_MAP):
 
 def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP):
 
-    left, op_symbol, right = constraint  
-    # Split it for spaces
+    left, op_symbol, right = constraint
+
     if left == "http://www.w3.org/ns/odrl/2/count":
-        # Count will be handled separately.
-        return True
+
+        if op_symbol not in OPS_MAP:
+            return False
+        try:
+            current_count = rule.get("matches_count", 0)
+            return OPS_MAP[op_symbol](float(current_count), float(right))
+        except Exception:
+            return False
     
     if left in row:
         resolved_left = left
@@ -175,7 +181,6 @@ def initialise_evaluation_state(policy):
         return {
             "rule_id": rule.get("id", str(uuid.uuid4())),
             "matches_count": 0,
-            "match_count": 0,  # 🔧 compatibility with old tests
             "earliestMatch": None,
             "latestMatch": None,
             "conditions": rule.get("conditions", []),
@@ -222,7 +227,6 @@ def check_match(row, rule_state, OPS_MAP, FEATURE_TYPE_MAP):
     if eval_rule(row, rule_state, OPS_MAP, FEATURE_TYPE_MAP):
 
         rule_state["matches_count"] += 1
-        rule_state["match_count"] = rule_state["matches_count"]  # 🔧 compatibility
 
         time_val = row.get("http://www.w3.org/ns/odrl/2/dateTime")
 
@@ -373,19 +377,6 @@ def evaluate_ODRL_on_dataframe(policy, df, FEATURE_TYPE_MAP, evaluation_state=No
             if r.get("required") == 1:
                 unfulfilled_remedies.append(r)
                 temporary_validity = 0
-
-    # ---- COUNT CONSTRAINTS ----
-    for p in evaluation_state["permissions"]:
-        for c in p.get("conditions", []):
-            if c[0] == "http://www.w3.org/ns/odrl/2/count":
-                if not eval_count(p["matches_count"], c, OPS_MAP):
-                    temporary_validity = 0
-
-    for f in evaluation_state["prohibitions"]:
-        for c in f.get("conditions", []):
-            if c[0] == "http://www.w3.org/ns/odrl/2/count":
-                if eval_count(f["matches_count"], c, OPS_MAP):
-                    temporary_validity = 0
 
     return (
         evaluation_state,
