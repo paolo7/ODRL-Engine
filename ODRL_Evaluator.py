@@ -389,12 +389,18 @@ def evaluate_ODRL_on_dataframe(policy, df, FEATURE_TYPE_MAP, evaluation_state=No
         unfulfilled_remedies
     )
 
-def evaluate_ODRL_from_files(policy_file, SotW_file, evaluation_state=None, normalise=False):
+def evaluate_ODRL_from_files(policy_file, SotW_file, state_file=None, normalise=False):
     graph = rdf_utils.load(policy_file)[0]
     if normalise:
         graph = rdf_utils.load_normalise(policy_file)[0]
     policies = SotW_generator.extract_rule_list_from_policy(graph)
     features = SotW_generator.extract_features_list_from_policy(graph)
+
+    evaluation_state = None
+
+    if state_file and os.path.exists(state_file):
+        with open(state_file, "r") as f:
+            evaluation_state = json.load(f)
 
     FEATURE_TYPE_MAP = {f["iri"]: f["type"] for f in features}
     df = pd.read_csv(SotW_file)
@@ -466,11 +472,6 @@ def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW
 
     for i, stream_file in enumerate(stream_files):
 
-        # Load previous state if exists
-        if os.path.exists(state_file):
-            with open(state_file, "r") as f:
-                evaluation_state = json.load(f)
-
         # Run evaluation
         #result = evaluate_ODRL_on_dataframe(
         #    policies[0],
@@ -481,7 +482,7 @@ def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW
         result = evaluate_ODRL_from_files(
             policy_file,
             stream_file,
-            evaluation_state=evaluation_state,
+            state_file=state_file,
             normalise=normalise
         )
 

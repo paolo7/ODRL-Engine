@@ -15,14 +15,13 @@ Currently the following main functionalities are supported:
 
 ### Requirements
 
-Python, rdflib, pyshacl, pandas
+Python, rdflib, pyshacl, pandas, matplotlib
 
 ## Usage
 
 ### Jupiter Notebook Interface
 
 You can easily test the functions of this Policy Engine using the Jupiter Notebook `colab_notebook.ipynb`. This notebook is compatible with Google Colab, and contains instructions on how to use it. 
-
 
 ### Programmatic use
 
@@ -42,9 +41,10 @@ The main functions can be found in the following files (more details in the code
 * `load`
 
 `ODRL_Evaluator.py`
-* `evaluate_ODRL_from_files`
-* `evaluate_ODRL_on_dataframe`
-* `evaluate_ODRL_from_files_merge_policies`
+* `evaluate_ODRL_on_dataframe` core ODRL evaluation function, which takes as inputs an ODRL policy, a state of the world/event stream batch/access request, and optionally a previous saved state of the evaluation json object (this last parameter is only needed in online/stream evaluation) 
+* `evaluate_ODRL_from_files` wrapper of the function above, which loads the inputs from files instead of using in-memory objects
+* `evaluate_ODRL_from_files_merge_policies` utility function that allows for the processing of multiple policies at once, by merging their rules into a single policy
+* `evaluate_ODRL_from_files_streaming` variant test function, that simulates streaming of events by breaking down a single large state of the world into multiple batches, by default containing 1 event each, and evaluates them sequentially 
 
 `ODRL_generator.py`
 * `generate_ODRL`
@@ -141,9 +141,13 @@ Is encoded in the following object:
   'obligations': []}]
 ```
 
-## How to test
+## How to test for correctness
 
-To test, run the `test.py` script. After the tests are run, the output of the tests will be print to console.
+To test, run the `test.py` script. After the tests are run, the output of the tests will be print to console. 
+
+The main test routine checks each main feature of the evaluator against curated test cases, and outputs the number of 
+tests passed, along with the average time for evaluation. It also tests the streaming capabilities of the evaluator
+by using simulating streaming using the `evaluate_ODRL_from_files_streaming` function.
 
 ### How to add evaluation tests
 
@@ -162,3 +166,7 @@ Tests placed here will be run automatically when `test.py` is run.
 In the X.txt file you can optionally add additional information about your test:
 * First line: you can add here a message describing the test, which will be printed if the test fails
 * Second line: you can add here a single keyword, to group similar types of tests together. The test output will show a breakdown for each keyword.
+
+## How to perform scalability tests
+
+Scalability tests can be run using the `scalability_tests.py` function.
