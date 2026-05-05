@@ -6,10 +6,26 @@ import SotW_generator
 import validate
 import os
 import uuid
+import time
+
+total_eval_time = 0.0
+total_eval_calls = 0
 
 tests_passed = 0
 tests_failed = 0
 test_log = []
+
+def timed_evaluation(func, *args, **kwargs):
+    global total_eval_time, total_eval_calls
+
+    start = time.perf_counter()
+    result = func(*args, **kwargs)
+    end = time.perf_counter()
+
+    total_eval_time += (end - start)
+    total_eval_calls += 1
+
+    return result
 
 def run_SotW_tests(test_repetitions, test_cases, test_name ):
     global tests_passed
@@ -164,7 +180,12 @@ def run_folder_evaluation_tests():
             category_stats[category]["total"] += 1
 
             try:
-                result_list = ODRL_Evaluator.evaluate_ODRL_from_files_streaming(ttl_path, csv_path)
+                #result_list = ODRL_Evaluator.evaluate_ODRL_from_files_streaming(ttl_path, csv_path)
+                result_list = timed_evaluation(
+                    ODRL_Evaluator.evaluate_ODRL_from_files_streaming,
+                    ttl_path,
+                    csv_path
+                )
                 result = result_list[1] #all(r.get("decision") == "ALLOW" for r in result_list)
 
             except Exception as e:
@@ -287,6 +308,10 @@ def runTests(test_repetitions = 0):
 
     for log in test_log:
         print(log)
+
+    if total_eval_calls > 0:
+        avg_time = total_eval_time / total_eval_calls
+        print(f"\nAverage evaluation time: {avg_time:.6f} seconds over {total_eval_calls} runs")
 
     if tests_failed > 0:
         exit(1)

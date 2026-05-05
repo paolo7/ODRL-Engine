@@ -78,9 +78,8 @@ def eval_count(value, constraint, OPS_MAP):
     except Exception:
         return False
 
-def eval_constraint(row, constraint, OPS_MAP, FEATURE_TYPE_MAP):
-   
-    
+def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP):
+
     left, op_symbol, right = constraint  
     # Split it for spaces
     if left == "http://www.w3.org/ns/odrl/2/count":
@@ -152,14 +151,8 @@ def eval_constraint(row, constraint, OPS_MAP, FEATURE_TYPE_MAP):
     except Exception:
         return False
 
-
-# def eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
-#     return all(eval_constraint(row, c, OPS_MAP, FEATURE_TYPE_MAP) for c in rule)
-
 def eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
 
-    # 🔒 ensure rule is dict and has conditions
-    
     if not isinstance(rule, dict):
         return False
 
@@ -169,49 +162,9 @@ def eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
         return False
 
     return all(
-        eval_constraint(row, c, OPS_MAP, FEATURE_TYPE_MAP)
+        eval_constraint(row, rule, c, OPS_MAP, FEATURE_TYPE_MAP)
         for c in conditions
     )
-
-def evaluate_row_policy_verbose(row, policy, OPS_MAP, FEATURE_TYPE_MAP):
-    permission_matches = []
-    satisfied_permissions = []
-    prohibition_matches = []
-    violated_prohibitions = []
-   
-    # check permissions
-    for i, rule in enumerate(policy["permissions"]):
-        if eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
-            permission_matches.append(i)
-            satisfied_permissions.append(rule)
-    # check prohibitions
-    for i, rule in enumerate(policy["prohibitions"]):
-        if eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
-            prohibition_matches.append(i)
-            violated_prohibitions.append(rule)
-
-    # decision logic
-    if prohibition_matches:
-        decision = "DENY"
-        reason = "Prohibition violated"
-    elif permission_matches:
-        decision = "ALLOW"
-        reason = "Permission satisfied"
-    else:
-        decision = "DENY"
-        reason = "No permission satisfied"
-
-    return {
-        "decision": decision,
-        "reason": reason,
-        "permissions_satisfied_indices": permission_matches,
-        "permissions_satisfied_rules": satisfied_permissions,
-        "prohibitions_violated_indices": prohibition_matches,
-        "prohibitions_violated_rules": violated_prohibitions,
-    }
-
-
-### New evalation mode
 
 def initialise_evaluation_state(policy):
 
@@ -266,7 +219,7 @@ def initialise_evaluation_state(policy):
 
 def check_match(row, rule_state, OPS_MAP, FEATURE_TYPE_MAP):
 
-    if eval_rule(row, {"conditions": rule_state["conditions"]}, OPS_MAP, FEATURE_TYPE_MAP):
+    if eval_rule(row, rule_state, OPS_MAP, FEATURE_TYPE_MAP):
 
         rule_state["matches_count"] += 1
         rule_state["match_count"] = rule_state["matches_count"]  # 🔧 compatibility
