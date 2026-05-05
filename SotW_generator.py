@@ -507,17 +507,17 @@ def generate_pd_state_of_the_world_from_policies(
                 # INT
                 try:
                     val_int = int(val)
-                    if (op == "=" and not invert_condition) or (op == "!=" and invert_condition):
+                    if (op == "http://www.w3.org/ns/odrl/2/eq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/neq" and invert_condition):
                         row[iri] = val_int
-                    elif (op == "!=" and not invert_condition) or (op == "=" and invert_condition):
+                    elif (op == "http://www.w3.org/ns/odrl/2/neq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/eq" and invert_condition):
                         row[iri] = val_int + random.randint(1, 100)
-                    elif (op == "<" and not invert_condition) or (op == ">=" and invert_condition):
+                    elif (op == "http://www.w3.org/ns/odrl/2/lt" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/gteq" and invert_condition):
                         row[iri] = val_int - random.randint(1, 100)
-                    elif (op == "<=" and not invert_condition) or (op == ">" and invert_condition):
+                    elif (op == "http://www.w3.org/ns/odrl/2/lteq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/gt" and invert_condition):
                         row[iri] = val_int - random.randint(0, 100)
-                    elif (op == ">" and not invert_condition) or (op == "<=" and invert_condition):
+                    elif (op == "http://www.w3.org/ns/odrl/2/gt" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/lteq" and invert_condition):
                         row[iri] = val_int + random.randint(1, 100)
-                    elif (op == ">=" and not invert_condition) or (op == "<" and invert_condition):
+                    elif (op == "http://www.w3.org/ns/odrl/2/gteq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/lt" and invert_condition):
                         row[iri] = val_int + random.randint(0, 100)
                     else:
                         row[iri] = val_int
@@ -528,17 +528,17 @@ def generate_pd_state_of_the_world_from_policies(
                 # FLOAT
                 try:
                     val_float = float(val)
-                    if (op == "=" and not invert_condition) or (op == "!=" and invert_condition):
+                    if (op == "http://www.w3.org/ns/odrl/2/eq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/neq" and invert_condition):
                         row[iri] = val_float
-                    elif (op == "!=" and not invert_condition) or (op == "=" and invert_condition):
+                    elif (op == "http://www.w3.org/ns/odrl/2/neq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/eq" and invert_condition):
                         row[iri] = val_float + random.uniform(1, 100)
-                    elif (op == "<" and not invert_condition) or (op == ">=" and invert_condition):
+                    elif (op == "http://www.w3.org/ns/odrl/2/lt" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/gteq" and invert_condition):
                         row[iri] = val_float - random.uniform(1, 100)
-                    elif (op == "<=" and not invert_condition) or (op == ">" and invert_condition):
+                    elif (op == "http://www.w3.org/ns/odrl/2/lteq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/gt" and invert_condition):
                         row[iri] = val_float - random.uniform(0, 100)
-                    elif (op == ">" and not invert_condition) or (op == "<=" and invert_condition):
+                    elif (op == "http://www.w3.org/ns/odrl/2/gt" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/lteq" and invert_condition):
                         row[iri] = val_float + random.uniform(1, 100)
-                    elif (op == ">=" and not invert_condition) or (op == "<" and invert_condition):
+                    elif (op == "http://www.w3.org/ns/odrl/2/gteq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/lt" and invert_condition):
                         row[iri] = val_float + random.uniform(0, 100)
                     else:
                         row[iri] = val_float
@@ -547,9 +547,9 @@ def generate_pd_state_of_the_world_from_policies(
                     pass
 
                 # STRING fallback
-                if (op == "=" and not invert_condition) or (op == "!=" and invert_condition):
+                if (op == "http://www.w3.org/ns/odrl/2/eq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/neq" and invert_condition):
                     row[iri] = val
-                elif (op == "!=" and not invert_condition) or (op == "=" and invert_condition):
+                elif (op == "http://www.w3.org/ns/odrl/2/neq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/eq" and invert_condition):
                     row[iri] = f"https://example.com/iri/sotw#{random.randint(1, 100000)}"
                 else:
                     row[iri] = ""
