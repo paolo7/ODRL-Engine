@@ -79,6 +79,43 @@ def eval_count(value, constraint, OPS_MAP):
         return False
 
 def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP):
+    # ----------------------------------------
+    # 0) LOGIC CONSTRAINT HANDLING
+    # ----------------------------------------
+    if (
+            isinstance(constraint, list)
+            and len(constraint) == 2
+            and isinstance(constraint[0], str)
+            and isinstance(constraint[1], list)
+    ):
+        logic_op = constraint[0]
+        subconstraints = constraint[1]
+
+        results = []
+
+        for sub in subconstraints:
+            result = eval_constraint(row, rule, sub, OPS_MAP, FEATURE_TYPE_MAP)
+            results.append(result)
+
+            # ---- SHORT-CIRCUIT ----
+            if logic_op.endswith("or") and result:
+                return True
+            if logic_op.endswith("and") and not result:
+                return False
+            if logic_op.endswith("andSequence") and not result:
+                return False
+
+        # ---- FINAL EVALUATION ----
+        if logic_op.endswith("and") or logic_op.endswith("andSequence"):
+            return all(results)
+
+        if logic_op.endswith("or"):
+            return any(results)
+
+        if logic_op.endswith("xone"):
+            return sum(results) == 1
+
+        return False
 
     left, op_symbol, right = constraint
 

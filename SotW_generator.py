@@ -208,15 +208,51 @@ def extract_rule_list(odrl_graph, rule_node, features):
         return [str(v) for v in values] if values else [str(node)]
 
     def append_triplet(node, prefix=None):
+        """
+        Handles both simple constraints and logical constraints recursively.
+        Returns either:
+          - a triplet [left, op, right]
+          - or a logic structure [logic_operator, [sub_constraints]]
+        """
+
+        # --- 1. SIMPLE CONSTRAINT ---
         lefts = list(odrl_graph.objects(node, ODRL.leftOperand))
-        rights = list(odrl_graph.objects(node, ODRL.rightOperand))
-        operators = list(odrl_graph.objects(node, ODRL.operator))
         if lefts:
+            rights = list(odrl_graph.objects(node, ODRL.rightOperand))
+            operators = list(odrl_graph.objects(node, ODRL.operator))
+
             left = f"{prefix} {str(lefts[0])}" if prefix else str(lefts[0])
-            # op = operator_map.get(operators[0], str(operators[0])) if operators else str(operators[0])
             op = str(operators[0]) if operators else ""
             right = str(rights[0]) if rights else ""
-            triplets.append([left, op, right])
+
+            return [left, op, right]
+
+        # --- 2. LOGIC CONSTRAINT ---
+        logic_predicates = [
+            rdflib.URIRef("http://www.w3.org/ns/odrl/2/and"),
+            rdflib.URIRef("http://www.w3.org/ns/odrl/2/or"),
+            rdflib.URIRef("http://www.w3.org/ns/odrl/2/xone"),
+            rdflib.URIRef("http://www.w3.org/ns/odrl/2/andSequence"),
+        ]
+
+        for logic_op in logic_predicates:
+            for collection_node in odrl_graph.objects(node, logic_op):
+                # RDF list → Python list
+                try:
+                    items = list(Collection(odrl_graph, collection_node))
+                except Exception:
+                    items = []
+
+                sub_constraints = []
+
+                for item in items:
+                    result = append_triplet(item, prefix)
+                    if result:
+                        sub_constraints.append(result)
+
+                return [str(logic_op), sub_constraints]
+
+        return None
 
     # --- 1. Extract Action, Asset, Party components ---
     for component_type, predicate in refinement_contexts_incoming.items():
@@ -226,23 +262,37 @@ def extract_rule_list(odrl_graph, rule_node, features):
                 triplets.append([component_type, "http://www.w3.org/ns/odrl/2/eq", val])
             # Nested refinements inside component
             for refinement in odrl_graph.objects(comp_node, ODRL.refinement):
-                append_triplet(refinement, prefix=component_type)
+                #append_triplet(refinement, prefix=component_type)
+                result = append_triplet(refinement, prefix=component_type)
+                if result:
+                    triplets.append(result)
 
     # --- 2. Extract constraints directly attached to the rule ---
     for constraint in odrl_graph.objects(rule_node, ODRL.constraint):
-        append_triplet(constraint)
+        #append_triplet(constraint)
+        result = append_triplet(constraint)
+        if result:
+            triplets.append(result)
 
-        # --- 3. Handle refinements attached to this constraint ---
+        # --- 3. Handle refinements attached to this constraint --- TODO: this part might not be needed
         for refinement in odrl_graph.subjects(predicate=ODRL.refinement, object=constraint):
             for iri_prefix, incoming_pred in refinement_contexts_incoming.items():
                 if any(odrl_graph.subjects(predicate=incoming_pred, object=refinement)):
-                    append_triplet(constraint, prefix=iri_prefix)
+                    #append_triplet(constraint, prefix=iri_prefix)
+                    result = append_triplet(constraint, prefix=iri_prefix)
+                    if result:
+                        triplets.append(result)
+
+    def make_hashable(x):
+        if isinstance(x, list):
+            return tuple(make_hashable(i) for i in x)
+        return x
 
     # Deduplicate triplets by all three fields
     seen = set()
     unique_triplets = []
     for t in triplets:
-        key = tuple(t)
+        key = make_hashable(t)
         if key not in seen:
             seen.add(key)
             unique_triplets.append(t)
