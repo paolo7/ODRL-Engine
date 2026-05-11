@@ -3,7 +3,7 @@ name: Sync to DATAPACT repository
 on:
   push:
     branches:
-      - main
+      - main ## TODO: UPDATE TO whatever branch you want to copy to DATAPACT
 
 concurrency:
   group: sync-main-to-datapact
@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   sync:
-    if: github.repository == 'DIPS-Tools/ODRL-Engine'
+    if: github.repository == 'DIPS-Tools/ODRL-Engine' ## TODO: UPDATE TO YOUR DIPS REPOSITORY
 
     runs-on: ubuntu-latest
 
@@ -48,7 +48,7 @@ jobs:
         env:
           TOKEN: ${{ secrets.SYNC_TOKEN }}
         run: |
-          git ls-remote https://oauth2:${TOKEN}@github.com/DATAPACT/ODRL-Engine.git
+          git ls-remote https://oauth2:${TOKEN}@github.com/DATAPACT/ODRL-Engine.git ## TODO: UPDATE TO YOUR DATAPACT REPOSITORY
 
       - name: Sync main branch to DATAPACT
         env:
@@ -56,6 +56,6 @@ jobs:
         run: |
           set -euo pipefail
 
-          git fetch target main
+          git fetch target main ## TODO: UPDATE TO whatever branch you want to copy to DATAPACT
 
-          git push target HEAD:main --force
+          git push target HEAD:main --force ## This should not change, as we should be using the DATAPACT main branch unless there is a special reason why not to
