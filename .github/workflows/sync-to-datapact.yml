@@ -5,61 +5,38 @@ on:
     branches:
       - main
 
-# Prevent overlapping syncs when multiple commits happen quickly one after the other (just in case)
 concurrency:
   group: sync-main-to-datapact
   cancel-in-progress: false
 
-permissions:
-  contents: read
-
 jobs:
   sync:
-    # make sure this only runs from this repository, this prevents this workflow from running also on the datapact repo
     if: github.repository == 'DIPS-Tools/ODRL-Engine'
-
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Push mirror to DATAPACT
+      - name: Verify token exists
         env:
-          TARGET_REPO: DATAPACT/ODRL-Engine
           TOKEN: ${{ secrets.SYNC_TOKEN }}
         run: |
-          set -euo pipefail
+          test -n "$TOKEN"
 
-          # Configure git
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Verify access to target repo
+        env:
+          TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: |
+          git ls-remote \
+            https://oauth2:${TOKEN}@github.com/DATAPACT/ODRL-Engine.git
 
-          # Add target remote
+      - name: Push to target
+        env:
+          TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: |
           git remote add target \
-            https://x-access-token:${TOKEN}@github.com/${TARGET_REPO}.git
+            https://oauth2:${TOKEN}@github.com/DATAPACT/ODRL-Engine.git
 
-          # Retry logic for robustness during quick updates
-          max_attempts=5
-          attempt=1
-
-          until [ $attempt -gt $max_attempts ]
-          do
-            echo "Push attempt $attempt..."
-
-            if git push target main:main --force-with-lease; then
-              echo "Sync successful"
-              exit 0
-            fi
-
-            echo "Push failed. Retrying..."
-            sleep $((attempt * 5))
-            attempt=$((attempt + 1))
-
-            git fetch target main || true
-          done
-
-          echo "Sync failed after retries"
-          exit 1
+          git push target main:main --force-with-lease
