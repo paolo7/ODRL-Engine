@@ -8,13 +8,13 @@
     odrl:action [
       rdf:value odrl:print ;
 	  odrl:refinement [ odrl:or (
-			 odrl:refinement [
+			 [
 				odrl:leftOperand odrl:resolution ;
 				odrl:operator odrl:eq ;
 				odrl:rightOperand 1024 ;
 				odrl:unit "http://dbpedia.org/resource/Dots_per_inch"^^xsd:string
 			  ]
-			 odrl:refinement [
+			 [
 				odrl:leftOperand odrl:resolution ;
 				odrl:operator odrl:eq ;
 				odrl:rightOperand 2048 ;
