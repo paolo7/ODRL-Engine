@@ -12,41 +12,50 @@ concurrency:
 jobs:
   sync:
     if: github.repository == 'DIPS-Tools/ODRL-Engine'
+
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source repo
+      - name: Checkout source repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
+          submodules: false  
 
       - name: Verify token exists
         env:
           TOKEN: ${{ secrets.SYNC_TOKEN }}
         run: |
           if [ -z "$TOKEN" ]; then
-            echo "SYNC_TOKEN missing"
+            echo "SYNC_TOKEN is missing"
             exit 1
           fi
-          echo "Token exists"
 
-      - name: Push to DATAPACT
+      - name: Configure git auth
         env:
           TOKEN: ${{ secrets.SYNC_TOKEN }}
         run: |
           set -euo pipefail
 
-          # Remove any credentials injected by checkout
           git config --unset-all http.https://github.com/.extraheader || true
 
-          # Add target remote using PAT
           git remote remove target || true
           git remote add target \
-            https://x-access-token:${TOKEN}@github.com/DATAPACT/ODRL-Engine.git
+            https://oauth2:${TOKEN}@github.com/DATAPACT/ODRL-Engine.git
 
-          # sanity check (will fail fast if auth broken)
-          git ls-remote target
+      - name: Verify access to target repo
+        env:
+          TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: |
+          git ls-remote https://oauth2:${TOKEN}@github.com/DATAPACT/ODRL-Engine.git
 
-          # push
-          git push target HEAD:main --force-with-lease
+      - name: Sync main branch to DATAPACT
+        env:
+          TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          git fetch target main
+
+          git push target HEAD:main --force
