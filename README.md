@@ -1,4 +1,4 @@
-# Policy Engine
+# Policy Engine and Evaluator
 
 The Policy Engine provides a suite of functionality to inspect, process and use ODRL policies.
 
