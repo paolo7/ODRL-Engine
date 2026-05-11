@@ -15,28 +15,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout source repo
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Verify token exists
         env:
           TOKEN: ${{ secrets.SYNC_TOKEN }}
         run: |
-          test -n "$TOKEN"
+          if [ -z "$TOKEN" ]; then
+            echo "SYNC_TOKEN missing"
+            exit 1
+          fi
+          echo "Token exists"
 
-      - name: Verify access to target repo
+      - name: Push to DATAPACT
         env:
           TOKEN: ${{ secrets.SYNC_TOKEN }}
         run: |
-          git ls-remote \
-            https://oauth2:${TOKEN}@github.com/DATAPACT/ODRL-Engine.git
+          set -euo pipefail
 
-      - name: Push to target
-        env:
-          TOKEN: ${{ secrets.SYNC_TOKEN }}
-        run: |
+          # Remove any credentials injected by checkout
+          git config --unset-all http.https://github.com/.extraheader || true
+
+          # Add target remote using PAT
+          git remote remove target || true
           git remote add target \
-            https://oauth2:${TOKEN}@github.com/DATAPACT/ODRL-Engine.git
+            https://x-access-token:${TOKEN}@github.com/DATAPACT/ODRL-Engine.git
 
-          git push target main:main --force-with-lease
+          # sanity check (will fail fast if auth broken)
+          git ls-remote target
+
+          # push
+          git push target HEAD:main --force-with-lease
