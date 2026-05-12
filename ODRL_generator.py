@@ -80,7 +80,7 @@ def generate_ODRL(policy_number = 1, p_rule_n = 2, f_rule_n = 2, o_rule_n = 1,
     selected_actions = sample_iris(actions_all, constants_per_feature)
     selected_parties = sample_iris(parties_all, constants_per_feature)
     selected_targets = sample_iris(targets_all, constants_per_feature)
-    selected_left_operands = sample_iris(left_operands_all, constants_per_feature)
+    selected_left_operands = sample_iris(left_operands_all, min(constraint_number_max, len(left_operands_all)))
 
     # --- Helpers
 

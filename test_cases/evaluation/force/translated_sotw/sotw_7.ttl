@@ -1,0 +1,6 @@
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://example.com/iri/sotw_uid#7> a <https://w3id.org/force/sotw#SotW> ;
+    dcterms:issued "2026-01-11T10:33:10.665638"^^xsd:dateTime .
+

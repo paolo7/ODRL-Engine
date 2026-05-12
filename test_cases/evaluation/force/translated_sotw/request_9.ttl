@@ -1,0 +1,29 @@
+@prefix ns1: <https://w3id.org/force/sotw#> .
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.com/iri/request_uid#9> odrl:permission <http://example.com/iri/permission_uid#9> .
+
+<http://example.com/iri/context_uid#9_0> a odrl:Constraint ;
+    odrl:leftOperand <http://www.example.com/age> ;
+    odrl:operator odrl:eq ;
+    odrl:rightOperand 2.9e+01 .
+
+<http://example.com/iri/context_uid#9_1> a odrl:Constraint ;
+    odrl:leftOperand odrl:resolution ;
+    odrl:operator odrl:eq ;
+    odrl:rightOperand 5.8e+01 .
+
+<http://example.com/iri/context_uid#9_2> a odrl:Constraint ;
+    odrl:leftOperand odrl:adminLevel ;
+    odrl:operator odrl:eq ;
+    odrl:rightOperand 9.3e+01 .
+
+<http://example.com/iri/permission_uid#9> a odrl:Permission ;
+    odrl:action odrl:create ;
+    odrl:assignee <http://example.com/org:AccountManager> ;
+    odrl:target <http://example.com/document:1234> ;
+    ns1:context <http://example.com/iri/context_uid#9_0>,
+        <http://example.com/iri/context_uid#9_1>,
+        <http://example.com/iri/context_uid#9_2> .
+

@@ -107,7 +107,7 @@ class GraphParser:
         for action in actions:
             if isinstance(action, rdflib.BNode):
                 action_value = self.graph.value(action, RDF.value)
-                action_refinables = self.parse_constraints(self.graph.objects(action, ODRL.refinable))
+                action_refinables = self.parse_constraints(self.graph.objects(action, ODRL.refinement))
                 action_list.append(Refinables.Action(value=action_value, refinement=action_refinables))
             else:
                 action_list.append(Refinables.Action(value=action))

@@ -22,41 +22,54 @@ REPORT = rdflib.Namespace("https://w3id.org/force/compliance-report#")
 DCT = rdflib.Namespace("http://purl.org/dc/terms/")
 TEMP = rdflib.Namespace("http://example.com/request/")
 
-def translate_csv_to_solid_syntax(csv_file, destination_file="translated_sotw.ttl"):
+def translate_csv_to_solid_syntax(csv_file, destination_file="test_cases/evaluation/force/translated_sotw/"):
     df = pd.read_csv(csv_file)
-    rdf_graph = rdflib.Graph()
-    sotw_node = rdflib.URIRef("https://example.com/iri/sotw")
-    rdf_graph.add((sotw_node, RDF.type, SOTW.SotW))
     for i, row in df.iterrows():
-        evaluation_node = rdflib.URIRef(f"https://example.com/iri/sotw#{i}")
-        rdf_graph.add((sotw_node, SOTW.context, evaluation_node))
-        rdf_graph.add((rdflib.URIRef(evaluation_node), RDF.type, SOTW.EvaluationRequest))
-        for col, val in zip(df.columns, row):
-            if not pd.isnull(val):
-                if col == "http://www.w3.org/ns/odrl/2/dateTime":
-                    rdf_graph.add((rdflib.URIRef(evaluation_node), rdflib.URIRef("http://purl.org/dc/terms/issued"), rdflib.Literal(val, datatype=rdflib.XSD.dateTime)))
-                elif col == "http://www.w3.org/ns/odrl/2/Party":
-                    rdf_graph.add((rdflib.URIRef(evaluation_node), SOTW.evaluatedParty, rdflib.URIRef(val)))
-                elif col == "http://www.w3.org/ns/odrl/2/Action": 
-                    rdf_graph.add((rdflib.URIRef(evaluation_node), SOTW.evaluatedAction, rdflib.URIRef(val)))
-                elif col == "http://www.w3.org/ns/odrl/2/Asset":
-                    rdf_graph.add((rdflib.URIRef(evaluation_node), SOTW.evaluatedTarget, rdflib.URIRef(val)))
-                else:
-                    blank_node = rdflib.BNode()
-                    rdf_graph.add((rdflib.URIRef(evaluation_node), SOTW.requestParameter, blank_node))
-                    rdf_graph.add((blank_node, RDF.type, SOTW.RequestParameter))
-                    if len(col.split()) > 1:
-                        prefix, feature_iri = col.split(" ", 1)
-                        if prefix in ["http://www.w3.org/ns/odrl/2/Party", "http://www.w3.org/ns/odrl/2/Action", "http://www.w3.org/ns/odrl/2/Asset"]:
-                            rdf_graph.add((blank_node, SOTW.describesFeature, rdflib.URIRef(feature_iri)))
-                            rdf_graph.add((blank_node, SOTW.value, rdflib.Literal(val)))
-                        else:
-                            rdf_graph.add((blank_node, SOTW.describesFeature, rdflib.URIRef(feature_iri)))
-                            rdf_graph.add((blank_node, SOTW.value, rdflib.Literal(val)))
+        permission_graph, sotw_graph = translate_event_to_request(df.columns, row, i)
+        permission_graph.serialize(destination=destination_file + f"request_{i}.ttl", format="turtle")
+        sotw_graph.serialize(destination=destination_file + f"sotw_{i}.ttl", format="turtle")
+
+def translate_event_to_request(columns, row, i):
+    rdf_graph = rdflib.Graph()
+    sotw_graph = rdflib.Graph()
+    request_node = rdflib.URIRef(f"http://example.com/iri/request_uid#{i}")
+    permission_node = rdflib.URIRef(f"http://example.com/iri/permission_uid#{i}")
+    sotw_node = rdflib.URIRef(f"https://example.com/iri/sotw_uid#{i}")
+    context_node = rdflib.URIRef("https://w3id.org/force/sotw#context")
+    sotw_graph.add((sotw_node, RDF.type, SOTW.SotW))
+    rdf_graph.add((request_node, ODRL.permission, permission_node))
+    rdf_graph.add((permission_node, RDF.type, ODRL.Permission))
+    k = 0
+    for col, val in zip(columns, row):
+        if not pd.isnull(val):
+            if col == "http://www.w3.org/ns/odrl/2/dateTime":
+                sotw_graph.add((sotw_node, rdflib.URIRef("http://purl.org/dc/terms/issued"), rdflib.Literal(val, datatype=rdflib.XSD.dateTime)))
+            elif col == "http://www.w3.org/ns/odrl/2/Party":
+                rdf_graph.add((permission_node, ODRL.assignee, rdflib.URIRef(val)))
+            elif col == "http://www.w3.org/ns/odrl/2/Action": 
+                rdf_graph.add((permission_node, ODRL.action, rdflib.URIRef(val)))
+            elif col == "http://www.w3.org/ns/odrl/2/Asset":
+                rdf_graph.add((permission_node, ODRL.target, rdflib.URIRef(val)))
+            else:
+                blank_node = rdflib.URIRef(f"http://example.com/iri/context_uid#{i}_{k}")
+                rdf_graph.add((permission_node, context_node, blank_node))
+                rdf_graph.add((blank_node, RDF.type, ODRL.Constraint))
+                if len(col.split()) > 1:
+                    prefix, feature_iri = col.split(" ", 1)
+                    if prefix in ["http://www.w3.org/ns/odrl/2/Party", "http://www.w3.org/ns/odrl/2/Action", "http://www.w3.org/ns/odrl/2/Asset"]:
+                        rdf_graph.add((blank_node, ODRL.leftOperand, rdflib.URIRef(feature_iri)))
+                        rdf_graph.add((blank_node, ODRL.operator, ODRL.eq))
+                        rdf_graph.add((blank_node, ODRL.rightOperand, rdflib.Literal(val)))
                     else:
-                        rdf_graph.add((blank_node, SOTW.describesFeature, rdflib.URIRef(col)))
-                        rdf_graph.add((blank_node, SOTW.value, rdflib.Literal(val)))
-    rdf_graph.serialize(destination=destination_file, format="turtle")
+                        rdf_graph.add((blank_node, ODRL.leftOperand, rdflib.URIRef(feature_iri)))
+                        rdf_graph.add((blank_node, ODRL.operator, ODRL.eq))
+                        rdf_graph.add((blank_node, ODRL.rightOperand, rdflib.Literal(val)))
+                else:
+                    rdf_graph.add((blank_node, ODRL.leftOperand, rdflib.URIRef(col)))
+                    rdf_graph.add((blank_node, ODRL.operator, ODRL.eq))
+                    rdf_graph.add((blank_node, ODRL.rightOperand, rdflib.Literal(val)))
+                k += 1
+    return rdf_graph, sotw_graph
 
 def extract_sotw_from_solid_syntax(policy, request, sotw, destination_csv="extracted_sotw.csv"):
     request_graph = rdflib.Graph().parse(data=request, format="turtle")
@@ -154,4 +167,4 @@ if __name__ == "__main__":
     if not args:
         print("Please provide the path to a markdown file containing the test case.")
     else:
-        parse_test_cases_from_md(args[0])
+        translate_csv_to_solid_syntax(args[0])
