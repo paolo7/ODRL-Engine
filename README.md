@@ -241,11 +241,11 @@ ONTOLOGY_PATH = "sample_ontologies/ODRL_DPV.ttl"
 #### Graph a)
 
 For graph a) to get the results shown in red, set the following parameters:
-POLICY_SIZE_START = 10
-POLICY_SIZE_END = 100
-POLICY_SIZE_STEP = 10
-FIXED_STATE_SIZE = 100
-PERMISSIONS_WITH_DUTIES = 0
+* POLICY_SIZE_START = 10
+* POLICY_SIZE_END = 100
+* POLICY_SIZE_STEP = 10
+* FIXED_STATE_SIZE = 100
+* PERMISSIONS_WITH_DUTIES = 0
 
 And run `python scalability_tests.py POLICY`
 
