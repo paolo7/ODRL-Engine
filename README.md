@@ -169,6 +169,15 @@ In the X.txt file you can optionally add additional information about your test:
 
 ## How to perform scalability tests
 
+To reproduce scalability results, run the `scalability_tests_all.py` script. This script will run all the scalability tests, 
+output the results in CSV format, and lastly generate some plots from them for a quick inspection of the results.
+When running the script, output files will be found in the `test_results` subfolder. Pre-generated results can be found in the `test_results_sample` subfolder.
+
+To speed up the tests, you can reduce the `TEST_REPETITIONS` parameter in `scalability_tests.py`. More repetitions result
+in more informative averages, but take more time to be processed.
+
+### How to manually perform scalability tests
+
 Scalability tests can be run using the `scalability_tests.py` function. Inside the file, there are various fixed parameters for the experiments such as TEST_REPETITIONS, STATE_SIZE_START, etc.
 
 To run scalability tests, run `scalability_tests.py` with one of the following commands depending on which metric you want to measure:

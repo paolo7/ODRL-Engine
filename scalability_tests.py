@@ -20,7 +20,7 @@ Requires:
 import time
 import csv
 import matplotlib.pyplot as plt
-import rdflib
+import ast
 import sys
 
 import ODRL_generator
@@ -59,12 +59,12 @@ CONSTANTS_PER_FEATURE = 6
 FIXED_CONSTRAINT_NUMBER = 1
 
 PERMISSIONS_WITH_DUTIES = 100
-DUTIES_PER_PERMISSION = 0
+DUTIES_PER_PERMISSION = 1
 DUTIES_PER_PERMISSION_MIN = 0
 DUTIES_PER_PERMISSION_MAX = 10
 
 CONSEQUENCE_PER_PERMISSION = 1
-REMEDIES_PER_PROHIBITION = 0
+REMEDIES_PER_PROHIBITION = 1
 PROHIBITIONS_WITH_REMEDIES = 100
 
 CHANCE_FEATURE_NULL = 0.5
@@ -73,6 +73,40 @@ CHANCE_FEATURE_EMPTY = 0.5
 ONTOLOGY_PATH = "sample_ontologies/ODRL_DPV.ttl"
 
 
+# PARAMETER OVERRIDES
+
+def apply_cli_overrides(args):
+    """
+    Allows overriding global parameters from command line.
+
+    Example:
+        python scalability_tests.py POLICY POLICY_SIZE_START=10 POLICY_SIZE_END=100
+    """
+
+    global_vars = globals()
+
+    for arg in args:
+        if "=" not in arg:
+            continue
+
+        key, value = arg.split("=", 1)
+
+        if key == "suffix":
+            continue
+
+        if key not in global_vars:
+            print(f"[WARNING] Unknown parameter: {key}")
+            continue
+
+        try:
+            # Automatically parse int, float, bool, etc.
+            parsed_value = ast.literal_eval(value)
+        except:
+            parsed_value = value
+
+        global_vars[key] = parsed_value
+
+        print(f"[CONFIG] {key} = {parsed_value}")
 
 # ==========================================================
 # CORE EVALUATION FUNCTION
@@ -844,11 +878,15 @@ def main():
 
 if __name__ == "__main__":
     args = sys.argv[1:]
+    apply_cli_overrides(args[1:])
     if not args:
         main()
         print("Please provide the path to a markdown file containing the test case.")
     else:
-        suffix = args[1] if len(args) > 1 else ""
+        suffix = ""
+        for arg in args[1:]:
+            if arg.startswith("suffix="):
+                suffix = arg.split("=", 1)[1].strip('"').strip("'")
         if args[0] == "DUTIES":
             results, avg_results = benchmark_duties_plot(DUTIES_PER_PERMISSION_MIN, DUTIES_PER_PERMISSION_MAX)
             save_plot(results=results, filename=f"test_results/duties{suffix}.csv")

@@ -1,0 +1,6 @@
+policy_size,permissions,prohibitions,obligations,duties_per_permission,constants_per_feature,constraints_number_min,constraints_number_max,sotw_size,runtime_seconds,null_chance,empty_chance,valid
+130,5,0,5,1,6,1,21,100,0.03088060640002368,0.5,0.5,
+214,10,0,10,1,6,1,21,100,0.036734659200192255,0.5,0.5,
+290,15,0,15,1,6,1,21,100,0.042841874599798754,0.5,0.5,
+362,20,0,20,1,6,1,21,100,0.052551468199817465,0.5,0.5,
+450,25,0,25,1,6,1,21,100,0.0529530262998378,0.5,0.5,
