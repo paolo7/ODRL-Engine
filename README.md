@@ -185,7 +185,49 @@ For example, to reproduce the results in the following graph:
 
 ![Graphs showing the scalability of OVAL under different metrics.](test_results/performance_metrics.PNG)
 
-Unless specified, all parameters are set to their default values.
+Unless specified, all parameters are set to their default values:
+
+```python
+STATE_SIZE_START = 50
+STATE_SIZE_END = 1000
+STATE_SIZE_STEP = 50
+
+FIXED_PERMISSION_RULES = 10
+FIXED_PROHIBITION_RULES = 10
+FIXED_OBLIGATION_RULES = 10
+
+
+# ---- plot 2 parameters ----
+POLICY_SIZE_START = 5
+POLICY_SIZE_END = 50
+POLICY_SIZE_STEP = 5
+
+FIXED_STATE_SIZE = 100
+
+# ---- general parameters ----
+TEST_REPETITIONS = 10
+
+CONSTRAINT_NUMBER_MIN = 0
+CONSTRAINT_NUMBER_MAX = 100
+CONSTRAINT_NUMBER_STEP = 5
+CONSTANTS_PER_FEATURE = 6
+FIXED_CONSTRAINT_NUMBER = 1
+
+PERMISSIONS_WITH_DUTIES = 100
+DUTIES_PER_PERMISSION = 0
+DUTIES_PER_PERMISSION_MIN = 0
+DUTIES_PER_PERMISSION_MAX = 10
+
+CONSEQUENCE_PER_PERMISSION = 1
+REMEDIES_PER_PROHIBITION = 0
+PROHIBITIONS_WITH_REMEDIES = 100
+
+CHANCE_FEATURE_NULL = 0.5
+CHANCE_FEATURE_EMPTY = 0.5
+
+ONTOLOGY_PATH = "sample_ontologies/ODRL_DPV.ttl"
+```
+`
 
 #### Graph a)
 
