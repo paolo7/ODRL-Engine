@@ -257,7 +257,10 @@ To get the results shown in blue, set the following parameters:
 * POLICY_SIZE_STEP = 5
 * FIXED_STATE_SIZE = 100
 * PERMISSIONS_WITH_DUTIES = 100
+* DUTIES_PER_PERMISSION = 1
+* CONSEQUENCE_PER_PERMISION = 1
 * PROHIBITIONS_WITH_REMEDIES = 100
+* REMEDIES_PER_PROHIBITION = 1
 
 And run `python scalability_tests.py COMPLEX`
 
