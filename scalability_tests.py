@@ -382,8 +382,8 @@ def benchmark_permissions_obligations_plot(policy_size_min = POLICY_SIZE_START, 
 
             policy, df = generate_valid_pair(
                 permissions=half_size,
-                prohibitions=half_size,
-                obligations=0,
+                prohibitions=0,
+                obligations=half_size,
                 sotw_size=FIXED_STATE_SIZE,
                 constraint_number_max=FIXED_CONSTRAINT_NUMBER,
                 constraint_number_min=FIXED_CONSTRAINT_NUMBER

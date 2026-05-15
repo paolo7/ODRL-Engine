@@ -178,7 +178,7 @@ in more informative averages, but take more time to be processed.
 
 ### How to manually perform scalability tests
 
-Scalability tests can be run using the `scalability_tests.py` function. Inside the file, there are various fixed parameters for the experiments such as TEST_REPETITIONS, STATE_SIZE_START, etc.
+Scalability tests can be run using the `scalability_tests.py` script. Inside the file, there are various fixed parameters for the experiments such as TEST_REPETITIONS, STATE_SIZE_START, etc.
 
 To run scalability tests, run `scalability_tests.py` with one of the following commands depending on which metric you want to measure:
 
@@ -258,7 +258,7 @@ To get the results shown in blue, set the following parameters:
 * FIXED_STATE_SIZE = 100
 * PERMISSIONS_WITH_DUTIES = 100
 * DUTIES_PER_PERMISSION = 1
-* CONSEQUENCE_PER_PERMISION = 1
+* CONSEQUENCE_PER_PERMISSION = 1
 * PROHIBITIONS_WITH_REMEDIES = 100
 * REMEDIES_PER_PROHIBITION = 1
 
