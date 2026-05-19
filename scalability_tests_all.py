@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 
 PYTHON = sys.executable
 
+os.makedirs("test_results", exist_ok=True)
 
 def run_experiment(name, command):
-
     print("\n" + "=" * 70)
     print(f"STARTING EXPERIMENT: {name}")
     print("=" * 70)
@@ -246,7 +246,7 @@ def generate_combined_plot():
     ax.set_xlabel("Policy Size")
     ax.set_ylabel("Runtime (seconds)")
     ax.set_title("a)")
-    ax.set_ylim(0, 0.2)
+    #ax.set_ylim(0, 0.2)
     ax.grid(True)
     ax.legend()
 
@@ -291,7 +291,7 @@ def generate_combined_plot():
     ax.set_xlabel("Number of events")
     ax.set_title("b)")
     ax.set_xlim(0, 1000)
-    ax.set_ylim(0, 1)
+    #ax.set_ylim(0, 1)
     ax.grid(True)
     ax.legend()
 
@@ -337,7 +337,7 @@ def generate_combined_plot():
     ax.set_ylabel("Runtime (seconds)")
     ax.set_title("c)")
     ax.set_xlim(0, 11)
-    ax.set_ylim(0, 1.7)
+    #ax.set_ylim(0, 1.7)
     ax.grid(True)
     ax.legend()
 
@@ -382,7 +382,7 @@ def generate_combined_plot():
     ax.set_xlabel("Constraints per Rule")
     ax.set_title("d)")
     ax.set_xlim(0, 100)
-    ax.set_ylim(0, 0.5)
+    #ax.set_ylim(0, 0.5)
     ax.grid(True)
     ax.legend()
 
