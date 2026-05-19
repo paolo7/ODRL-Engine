@@ -326,358 +326,107 @@ def show_interface():
                 clear_output()
                 import ODRL_Evaluator as Evaluator
 
-                # ----------------------------
-                # Local upload state
-                # ----------------------------
-                class SotWUploadState:
-                    filename = None
-
-                class MultiPolicyState:
+                class State:
                     policy_files = []
+                    sotw_file = None
 
-                # ----------------------------
-                # Output areas (DO NOT clear globally)
-                # ----------------------------
-                odrl_upload_out = widgets.Output()
-                sotw_upload_out = widgets.Output()
+                odrl_out = widgets.Output()
+                sotw_out = widgets.Output()
                 eval_out = widgets.Output()
-                detail_eval_out = widgets.Output()
-                stats_out = widgets.Output()
-                tracking_out = widgets.Output()
 
-                result_box = widgets.Textarea(
-                    layout=widgets.Layout(width="100%", height="250px"), disabled=True
-                )
-                detail_result_box = widgets.Textarea(
-                    layout=widgets.Layout(width="100%", height="250px"), disabled=True
-                )
-                stats_box = widgets.Textarea(
-                    layout=widgets.Layout(width="100%", height="250px"), disabled=True
-                )
-
-                tracking_box = widgets.Textarea(
-                    layout=widgets.Layout(width="100%", height="300px"),
-                    disabled=True
-                )
-
-                # ----------------------------
-                # Upload handlers
-                # ----------------------------
-
-                def refresh_policy_list_display():
-                    policy_list_box.clear_output()
-                    with policy_list_box:
-                        if not MultiPolicyState.policy_files:
-                            print("No policies uploaded yet.")
-                            return
-
-                        for file in MultiPolicyState.policy_files:
-                            minus_btn = widgets.Button(
-                                description="❌",
-                                layout=widgets.Layout(width="40px"),
-                                button_style="danger"
-                            )
-
-                            def remove_policy(b, filename=file):
-                                MultiPolicyState.policy_files.remove(filename)
-                                refresh_policy_list_display()
-
-                            minus_btn.on_click(remove_policy)
-
-                            display(
-                                widgets.HBox([
-                                    widgets.Label(value=file),
-                                    minus_btn
-                                ])
-                            )
-
-                def upload_odrl_clicked(b):
-                    with odrl_upload_out:
-                        odrl_upload_out.clear_output()
-                        uploaded = files.upload()
-
-                        if len(uploaded) != 1:
-                            print("⚠️ Please upload exactly one ODRL file.")
-                            return
-
-                        filename = list(uploaded.keys())[0]
-
-                        # Avoid duplicates
-                        if filename not in MultiPolicyState.policy_files:
-                            MultiPolicyState.policy_files.append(filename)
-                            print(f"✅ ODRL uploaded: {filename}")
-                        else:
-                            print("⚠️ This policy is already uploaded.")
-
-                        refresh_policy_list_display()
-
-                def upload_sotw_clicked(b):
-                    with sotw_upload_out:
-                        sotw_upload_out.clear_output()
+                # ---------- Upload ODRL ----------
+                def upload_odrl(b):
+                    with odrl_out:
+                        clear_output()
                         uploaded = files.upload()
                         if len(uploaded) != 1:
-                            print("⚠️ Please upload exactly one CSV file.")
+                            print("⚠️ Upload exactly one ODRL file")
                             return
-                        SotWUploadState.filename = list(uploaded.keys())[0]
-                        print(f"✅ SotW CSV uploaded: {SotWUploadState.filename}")
 
-                # ----------------------------
-                # Evaluate handler
-                # ----------------------------
-                def on_evaluate_clicked(b):
+                        fname = list(uploaded.keys())[0]
+                        if fname not in State.policy_files:
+                            State.policy_files.append(fname)
+
+                        print("✅ Policies:", State.policy_files)
+
+                # ---------- Upload SotW ----------
+                def upload_sotw(b):
+                    with sotw_out:
+                        clear_output()
+                        uploaded = files.upload()
+                        if len(uploaded) != 1:
+                            print("⚠️ Upload exactly one CSV file")
+                            return
+
+                        State.sotw_file = list(uploaded.keys())[0]
+                        print("✅ SotW:", State.sotw_file)
+
+                # ---------- Evaluate ----------
+                def evaluate(b):
                     with eval_out:
-                        eval_out.clear_output()
+                        clear_output()
 
-                        if not MultiPolicyState.policy_files:
-                            print("⚠️ No ODRL policies uploaded.")
+                        if not State.policy_files:
+                            print("⚠️ No policies uploaded")
                             return
 
-                        if not SotWUploadState.filename:
-                            print("⚠️ No SotW CSV uploaded.")
+                        if not State.sotw_file:
+                            print("⚠️ No SotW uploaded")
                             return
 
                         try:
-                            result = Evaluator.evaluate_ODRL_from_files_merge_policies(
-                                MultiPolicyState.policy_files,
-                                SotWUploadState.filename
-                            )
-
                             (
                                 state,
                                 validity,
-                                rows_perm,
-                                rows_prohib,
+                                perm_viol,
+                                prohib_viol,
                                 obligations_not_satisfied,
                                 unfulfilled_duties,
                                 unfulfilled_consequences,
                                 unfulfilled_remedies
-                            ) = result
-
-                            print("========== ODRL EVALUATION REPORT ==========\n")
-
-                            print(f"✔️ Overall valid: {'YES' if validity else 'NO'}\n")
-
-                            print(f"Violations summary:")
-                            print(f"  - Permission violations: {len(rows_perm)} rows")
-                            print(f"  - Prohibition violations: {len(rows_prohib)} rows\n")
-
-                            if rows_perm:
-                                print("Rows violating permissions:", rows_perm)
-
-                            if rows_prohib:
-                                print("Rows violating prohibitions:", rows_prohib)
-
-                            print("\nObligations not satisfied:")
-                            if obligations_not_satisfied:
-                                for o in obligations_not_satisfied:
-                                    print(f"  - {o.get('rule_id')}")
-                            else:
-                                print("  None")
-
-                            print("\n⚙Duties unfulfilled:")
-                            print(f"  {len(unfulfilled_duties)}")
-
-                            print("\n⚙Consequences unfulfilled:")
-                            print(f"  {len(unfulfilled_consequences)}")
-
-                            print("\n⚠Remedies unfulfilled:")
-                            print(f"  {len(unfulfilled_remedies)}")
-
-                            print("\n===========================================\n")
-
-                        except Exception as e:
-                            print(f"⚠️ Evaluation error: {e}")
-
-                def on_detail_evaluation_clicked(b):
-                    with detail_eval_out:
-                        detail_eval_out.clear_output()
-
-                        if not MultiPolicyState.policy_files:
-                            print("⚠️ No ODRL policy uploaded.")
-                            return
-                        if not SotWUploadState.filename:
-                            print("⚠️ No SotW CSV uploaded.")
-                            return
-
-                        try:
-
-                            evaluation = Evaluator.evaluate_ODRL_from_files_merge_policies(
-                                MultiPolicyState.policy_files, SotWUploadState.filename
+                            ) = Evaluator.evaluate_ODRL_from_files_merge_policies(
+                                State.policy_files,
+                                State.sotw_file
                             )
 
-                            # Store raw results for future use if needed
-                            SotWUploadState.raw_results = evaluation["raw_results"]
+                            print("========== ODRL EVALUATION ==========\n")
 
-                            # Overall compliance
-                            validity_str = "YES" if evaluation["overall_compliant"] else "NO"
+                            print("Valid:", "YES" if validity else "NO")
 
-                            # Start building the output text
-                            output_lines = [f"Is the State of the World valid? {validity_str}\n"]
+                            print("\n--- Violations ---")
+                            print("Permission violations:", len(perm_viol))
+                            print("Prohibition violations:", len(prohib_viol))
 
-                            deny_details = evaluation["deny_details"]
-                            if not deny_details:
-                                output_lines.append("✅ No violations detected.")
-                            else:
-                                output_lines.append(f"⚠️ {len(deny_details)} violation(s) detected:\n")
-                                for r in deny_details:
-                                    output_lines.append(f"=== Row {r['row_index']} DENIED ===")
+                            print("\n--- Obligations ---")
+                            print("Not satisfied:", len(obligations_not_satisfied))
 
-                                    # Row data
-                                    output_lines.append("Row data (schema + values):")
-                                    for col, val in r["row_data"].items():
-                                        output_lines.append(f"  {col}: {val}")
+                            print("\n--- Execution gaps ---")
+                            print("Unfulfilled duties:", len(unfulfilled_duties))
+                            print("Unfulfilled consequences:", len(unfulfilled_consequences))
+                            print("Unfulfilled remedies:", len(unfulfilled_remedies))
 
-                                    # Policy and reason
-                                    output_lines.append(f"Policy: {r['policy_iri']}")
-                                    output_lines.append(f"Reason for DENY: {r['reason']}")
-
-                                    # Prohibitions violated
-                                    output_lines.append("Prohibitions violated:")
-                                    for i, rule in enumerate(r["prohibitions_violated"]):
-                                        output_lines.append(f"  [{i}] {rule}")
-
-                                    # Permissions satisfied (optional)
-                                    if r.get("permissions_satisfied"):
-                                        output_lines.append("Permissions satisfied (for reference):")
-                                        for i, rule in enumerate(r["permissions_satisfied"]):
-                                            output_lines.append(f"  [{i}] {rule}")
-
-                                    output_lines.append("-" * 60)
-
-                            # Join everything into one string
-                            detail_result_box.value = "\n".join(output_lines)
-                            print("✅ Evaluation completed.")
+                            print("\n====================================")
 
                         except Exception as e:
-                            detail_result_box.value = ""
-                            print(f"⚠️ Evaluation error: {e}")
+                            print("⚠️ Evaluation error:", e)
 
-                def format_rowwise_stats(rowwise_stats):
-                    lines = []
-                    current_row = None
+                # ---------- UI ----------
+                odrl_btn = widgets.Button(description="Upload ODRL", button_style="success")
+                sotw_btn = widgets.Button(description="Upload SotW", button_style="success")
+                eval_btn = widgets.Button(description="Evaluate", button_style="warning")
 
-                    for stat in rowwise_stats:
-                        if current_row != stat["row_index"]:
-                            lines.append(f"\n=== Row {stat['row_index']} ===")
-                            current_row = stat["row_index"]
+                odrl_btn.on_click(upload_odrl)
+                sotw_btn.on_click(upload_sotw)
+                eval_btn.on_click(evaluate)
 
-                        lines.append(f"Policy: {stat['policy_iri']}")
-                        lines.append(
-                            f"  Permission satisfied: {stat['permission_satisfied_percentage']}%"
-                        )
-                        lines.append(
-                            f"  Prohibition violated: {stat['prohibition_violated_percentage']}%"
-                        )
-                        lines.append(
-                            f"  Permissions satisfied indices: {stat['permissions_satisfied_indices']}"
-                        )
-                        lines.append(
-                            f"  Prohibitions violated indices: {stat['prohibitions_violated_indices']}"
-                        )
-
-                    return "\n".join(lines)
-
-                # ----------------------------
-                # Widgets
-                # ----------------------------
-                odrl_btn = widgets.Button(
-                    description="Upload ODRL Policy", button_style="success"
-                )
-                sotw_btn = widgets.Button(
-                    description="Upload SotW CSV", button_style="success"
-                )
-                eval_btn = widgets.Button(
-                    description="Evaluate", button_style="warning"
-                )
-                detail_eval_btn = widgets.Button(
-                    description="Detail", button_style="warning"
-                )
-                stats_eval_btn = widgets.Button(
-                    description="Statistics", button_style="info"
-                )
-                # Temporal statisitics
-                tracking_eval_btn = widgets.Button(
-                    description="Temporal Tracking", button_style="info"
-                )
-
-                odrl_btn.on_click(upload_odrl_clicked)
-                sotw_btn.on_click(upload_sotw_clicked)
-                eval_btn.on_click(on_evaluate_clicked)
-                detail_eval_btn.on_click(on_detail_evaluation_clicked)
-
-                # ----------------------------
-                # Layout (upload widget appears RIGHT BELOW button)
-                # ----------------------------
-                # display(
-                #     widgets.VBox(
-                #         [
-                #             widgets.HTML(
-                #                 "<b>Please upload an ODRL policy (if you haven't already)</b>"
-                #             ),
-                #             odrl_btn,
-                #             odrl_upload_out,
-                #             widgets.HTML(
-                #                 "<br><b>Please upload a State of the World (SotW) file in CSV format.</b>"
-                #             ),
-                #             sotw_btn,
-                #             sotw_upload_out,
-                #             widgets.HTML("<br>"),
-                #             eval_btn,
-                #             eval_out,
-                #             widgets.HTML("<b>Evaluation Result:</b>"),
-                #             result_box,
-                #             widgets.HTML("<br>"),
-                #             detail_eval_btn,
-                #             detail_eval_out,
-                #             widgets.HTML("<b>Details of Non Compliance SoTWs:</b>"),
-                #             detail_result_box,
-                #             widgets.HTML("<br>"),
-                #             stats_eval_btn,
-                #             stats_out,
-                #             stats_box
-                #         ]
-                #     )
-                # )
-                display(
-                    widgets.VBox(
-                        [
-                            widgets.HTML("<b>Please upload an ODRL policy (if you haven't already)</b>"),
-                            odrl_btn,
-                            odrl_upload_out,
-
-                            widgets.HTML("<br><b>Please upload a State of the World (SotW) file in CSV format.</b>"),
-                            sotw_btn,
-                            sotw_upload_out,
-
-                            widgets.HTML("<br>"),
-
-                            eval_btn,
-                            eval_out,
-                            widgets.HTML("<b>Evaluation Result:</b>"),
-                            result_box,
-
-                            widgets.HTML("<br>"),
-
-                            detail_eval_btn,
-                            detail_eval_out,
-                            widgets.HTML("<b>Details of Non Compliance SoTWs:</b>"),
-                            detail_result_box,
-
-                            widgets.HTML("<br>"),
-
-                            stats_eval_btn,
-                            stats_out,
-                            stats_box,
-
-                            widgets.HTML("<br>"),
-
-                            tracking_eval_btn,  # ✅ NEW BUTTON
-                            tracking_out,
-                            widgets.HTML("<b>Temporal Rule Tracking:</b>"),
-                            tracking_box  # ✅ NEW OUTPUT
-                        ]
-                    )
-                )
+                display(widgets.VBox([
+                    odrl_btn,
+                    odrl_out,
+                    sotw_btn,
+                    sotw_out,
+                    eval_btn,
+                    eval_out
+                ]))
             elif selected == "SotWgeneration":
                 clear_output()  # clear output before showing new widgets
                 import SotW_generator
