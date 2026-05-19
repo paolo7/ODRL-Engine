@@ -209,16 +209,16 @@ def show_interface():
 
                         <p><b>Number of Obligation Rules:</b> How many duty (obligation) rules each policy imposes.<br>
                         Duties define actions that must be performed.</p>
-                        
+
                         <p><b>N. of Duties each Permission with Duties has:</b> Number of duty rules attached to each permission that includes duties.<br>
                         Defines how many actions must be fulfilled when a permission has associated obligations.</p>
-                        
+
                         <p><b>Permissions that will have Duties:</b> Number of permissions that will include duties.<br>
                         If this number exceeds the number of permissions, all permissions will include duties.</p>
-                        
+
                         <p><b>N. of Remedies each Prohibition with Remedies has:</b> Number of remedy duties attached to each prohibition that includes remedies.<br>
                         Remedies specify corrective actions that must be performed when a prohibition is violated.</p>
-                        
+
                         <p><b>Prohibitions that will have Remedies:</b> Number of prohibitions that will include remedies.<br>
                         If this number exceeds the number of prohibitions, all prohibitions will include remedies.</p>
 
@@ -313,7 +313,7 @@ def show_interface():
                         from google.colab import files
 
                         with tempfile.NamedTemporaryFile(
-                            suffix=".ttl", delete=False
+                                suffix=".ttl", delete=False
                         ) as tmp_file:
                             policies_graph.serialize(
                                 destination=tmp_file.name, format="turtle"
@@ -354,7 +354,7 @@ def show_interface():
                 stats_box = widgets.Textarea(
                     layout=widgets.Layout(width="100%", height="250px"), disabled=True
                 )
-                
+
                 tracking_box = widgets.Textarea(
                     layout=widgets.Layout(width="100%", height="300px"),
                     disabled=True
@@ -437,32 +437,62 @@ def show_interface():
                             return
 
                         try:
-                            is_valid, violations, message = (
-                                Evaluator.evaluate_ODRL_from_files_merge_policies(
-                                    MultiPolicyState.policy_files,
-                                    SotWUploadState.filename
-                                )
+                            result = Evaluator.evaluate_ODRL_from_files_merge_policies(
+                                MultiPolicyState.policy_files,
+                                SotWUploadState.filename
                             )
 
-                            validity_str = "YES" if is_valid else "NO"
+                            (
+                                state,
+                                validity,
+                                rows_perm,
+                                rows_prohib,
+                                obligations_not_satisfied,
+                                unfulfilled_duties,
+                                unfulfilled_consequences,
+                                unfulfilled_remedies
+                            ) = result
 
-                            result_box.value = (
-                                f"Is the State of the World valid? {validity_str}\n\n"
-                                f"Evaluation report:\n"
-                                f"{message}"
-                            )
+                            print("========== ODRL EVALUATION REPORT ==========\n")
 
-                            print("✅ Evaluation completed.")
+                            print(f"✔️ Overall valid: {'YES' if validity else 'NO'}\n")
+
+                            print(f"Violations summary:")
+                            print(f"  - Permission violations: {len(rows_perm)} rows")
+                            print(f"  - Prohibition violations: {len(rows_prohib)} rows\n")
+
+                            if rows_perm:
+                                print("Rows violating permissions:", rows_perm)
+
+                            if rows_prohib:
+                                print("Rows violating prohibitions:", rows_prohib)
+
+                            print("\nObligations not satisfied:")
+                            if obligations_not_satisfied:
+                                for o in obligations_not_satisfied:
+                                    print(f"  - {o.get('rule_id')}")
+                            else:
+                                print("  None")
+
+                            print("\n⚙Duties unfulfilled:")
+                            print(f"  {len(unfulfilled_duties)}")
+
+                            print("\n⚙Consequences unfulfilled:")
+                            print(f"  {len(unfulfilled_consequences)}")
+
+                            print("\n⚠Remedies unfulfilled:")
+                            print(f"  {len(unfulfilled_remedies)}")
+
+                            print("\n===========================================\n")
 
                         except Exception as e:
-                            result_box.value = ""
                             print(f"⚠️ Evaluation error: {e}")
 
                 def on_detail_evaluation_clicked(b):
-                     with detail_eval_out:
+                    with detail_eval_out:
                         detail_eval_out.clear_output()
 
-                        if not UploadState.filename:
+                        if not MultiPolicyState.policy_files:
                             print("⚠️ No ODRL policy uploaded.")
                             return
                         if not SotWUploadState.filename:
@@ -470,9 +500,9 @@ def show_interface():
                             return
 
                         try:
-                            # Call your new detailed evaluator
-                            evaluation = Evaluator.detailed_evaluation_from_files(
-                                UploadState.filename, SotWUploadState.filename
+
+                            evaluation = Evaluator.evaluate_ODRL_from_files_merge_policies(
+                                MultiPolicyState.policy_files, SotWUploadState.filename
                             )
 
                             # Store raw results for future use if needed
@@ -521,7 +551,7 @@ def show_interface():
                         except Exception as e:
                             detail_result_box.value = ""
                             print(f"⚠️ Evaluation error: {e}")
-               
+
                 def format_rowwise_stats(rowwise_stats):
                     lines = []
                     current_row = None
@@ -546,66 +576,6 @@ def show_interface():
                         )
 
                     return "\n".join(lines)
-                def on_stats_evaluation_clicked(b):
-                    with stats_out:
-                        stats_out.clear_output()
-
-                        if not UploadState.filename:
-                            print("⚠️ No ODRL policy uploaded.")
-                            return
-
-                        if not SotWUploadState.filename:
-                            print("⚠️ No SotW CSV uploaded.")
-                            return
-
-                        try:
-                            # This already calls your existing function
-                            rowwise_stats = Evaluator.compute_statistics_from_files(
-                                UploadState.filename,
-                                SotWUploadState.filename
-                            )
-
-                            output = ["=== Policy Evaluation (Row-wise Statistics) ==="]
-                            output.append(format_rowwise_stats(rowwise_stats))
-
-                            stats_box.value = "\n".join(output)
-                            print("✅ Statistics computed successfully.")
-
-                        except Exception as e:
-                            stats_box.value = ""
-                            print(f"⚠️ Statistics computation error: {e}")
-                
-                def on_tracking_evaluation_clicked(b):
-                    with tracking_out:
-                        tracking_out.clear_output()
-
-                        if not UploadState.filename:
-                            print("⚠️ No ODRL policy uploaded.")
-                            return
-
-                        if not SotWUploadState.filename:
-                            print("⚠️ No SotW CSV uploaded.")
-                            return
-
-                        try:
-                            #  CALL YOUR NEW BACKEND FUNCTION
-                            tracking_results = Evaluator.evaluate_files(
-                                UploadState.filename,
-                                SotWUploadState.filename
-                            )
-
-                             #  FORMAT OUTPUT
-                            report = Evaluator.build_tracking_report(tracking_results)
-
-                            tracking_box.value = report
-
-                            print("✅ Temporal tracking computed successfully.")
-
-                        except Exception as e:
-                            tracking_box.value = ""
-                            print(f"⚠️ Tracking computation error: {e}")
-                
-                
 
                 # ----------------------------
                 # Widgets
@@ -634,8 +604,6 @@ def show_interface():
                 sotw_btn.on_click(upload_sotw_clicked)
                 eval_btn.on_click(on_evaluate_clicked)
                 detail_eval_btn.on_click(on_detail_evaluation_clicked)
-                stats_eval_btn.on_click(on_stats_evaluation_clicked)
-                tracking_eval_btn.on_click(on_tracking_evaluation_clicked)
 
                 # ----------------------------
                 # Layout (upload widget appears RIGHT BELOW button)
@@ -703,10 +671,10 @@ def show_interface():
 
                             widgets.HTML("<br>"),
 
-                            tracking_eval_btn,            # ✅ NEW BUTTON
+                            tracking_eval_btn,  # ✅ NEW BUTTON
                             tracking_out,
                             widgets.HTML("<b>Temporal Rule Tracking:</b>"),
-                            tracking_box                # ✅ NEW OUTPUT
+                            tracking_box  # ✅ NEW OUTPUT
                         ]
                     )
                 )
@@ -846,13 +814,13 @@ def show_interface():
                                     def format_rule_dict(rd, indent_level=2):
                                         indent = "    " * indent_level
                                         sub_indent = "    " * (indent_level + 1)
-                                        
+
                                         if rd.get("conditions"):
                                             out_lines.append(f"{indent}Rule conditions:")
                                             for cond in rd["conditions"]:
                                                 subj, op, obj = cond
                                                 out_lines.append(f"{sub_indent}{subj} {op} {obj}")
-                                        
+
                                         if rd.get("duties"):
                                             out_lines.append(f"{indent}Duties:")
                                             for duty in rd["duties"]:
