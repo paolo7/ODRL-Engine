@@ -1,3 +1,11 @@
+"""
+Author: Semih Yumuşak
+Date: July 24, 2024
+Description: This is the constraint package which has logical and arithmetic constraint implementations.
+
+Contributors:
+
+"""
 
 import itertools
 import math

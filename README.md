@@ -2,6 +2,8 @@
 
 The Policy Engine provides a suite of functionality to inspect, process and use ODRL policies.
 
+You can access a live demo of these functionalities using the following [Google Colab interface](https://colab.research.google.com/drive/19t7xmiLkL1RW3s77_HkhysE04W4DUNPc#scrollTo=yK6I-AKSrVZ5).
+
 ## **Main Goal/Functionalities**
 
 Currently the following main functionalities are supported: 
@@ -297,3 +299,8 @@ For graph d) set the parameters to:
 And depending on the colour of the results, FIXED_STATE_SIZE should be set to 100, 300 or 500 for red, blue and black, respectively.
 
 Then, running `python scalability_tests.py CONSTRAINTS` will produce a file "constraints.csv" that contains the results in the graph.
+
+## Contact
+* Paolo Pareti p.pareti@soton.ac.uk
+* Adeel Aslam A.Aslam@soton.ac.uk
+* Jaime Salas J.O.Salas@soton.ac.uk

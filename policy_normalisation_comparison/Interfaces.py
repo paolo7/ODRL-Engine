@@ -1,4 +1,11 @@
+"""
+Author: Semih Yumuşak
+Date: July 24, 2024
+Description: This is the refinable interface.
 
+Contributors:
+
+"""
 
 from abc import abstractmethod, ABC
 
