@@ -1,0 +1,64 @@
+name: Sync to Paolo repository
+
+on:
+push:
+branches:
+- main
+
+concurrency:
+group: sync-main-to-paolo
+cancel-in-progress: false
+
+jobs:
+sync:
+if: github.repository == 'DIPS-Tools/ODRL-Engine'
+
+```
+runs-on: ubuntu-latest
+
+steps:
+  - name: Checkout source repository
+    uses: actions/checkout@v4
+    with:
+      fetch-depth: 0
+      persist-credentials: false
+      submodules: false
+
+  - name: Verify token exists
+    env:
+      TOKEN: ${{ secrets.SYNC_TOKEN_P }}
+    run: |
+      if [ -z "$TOKEN" ]; then
+        echo "SYNC_TOKEN_P is missing"
+        exit 1
+      fi
+
+  - name: Configure git auth
+    env:
+      TOKEN: ${{ secrets.SYNC_TOKEN_P }}
+    run: |
+      set -euo pipefail
+
+      git config --unset-all http.https://github.com/.extraheader || true
+
+      git remote remove paolo || true
+      git remote add paolo \
+        https://oauth2:${TOKEN}@github.com/paolo7/ODRL-Engine.git
+
+  - name: Verify access to target repo
+    env:
+      TOKEN: ${{ secrets.SYNC_TOKEN_P }}
+    run: |
+      git ls-remote https://oauth2:${TOKEN}@github.com/paolo7/ODRL-Engine.git
+
+  - name: Fetch target branch
+    run: |
+      git fetch paolo main
+
+  - name: Push main branch to Paolo repository
+    run: |
+      set -euo pipefail
+
+      # Non-forced push.
+      # Will fail if paolo/main contains commits not present locally.
+      git push paolo HEAD:main
