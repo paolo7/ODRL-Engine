@@ -1,0 +1,61 @@
+name: Sync to DATAPACT repository
+
+on:
+  push:
+    branches:
+      - main ## TODO: UPDATE TO whatever branch you want to copy to DATAPACT
+
+concurrency:
+  group: sync-main-to-datapact
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'DIPS-Tools/ODRL-Engine' ## TODO: UPDATE TO YOUR DIPS REPOSITORY
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          submodules: false
+
+      - name: Verify token exists
+        env:
+          TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "SYNC_TOKEN is missing"
+            exit 1
+          fi
+
+      - name: Configure git auth
+        env:
+          TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          git config --unset-all http.https://github.com/.extraheader || true
+
+          git remote remove target || true
+          git remote add target \
+            https://oauth2:${TOKEN}@github.com/DATAPACT/ODRL-Engine.git
+
+      - name: Verify access to target repo
+        env:
+          TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: |
+          git ls-remote https://oauth2:${TOKEN}@github.com/DATAPACT/ODRL-Engine.git ## TODO: UPDATE TO YOUR DATAPACT REPOSITORY
+
+      - name: Sync main branch to DATAPACT
+        env:
+          TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          git fetch target main ## TODO: UPDATE TO whatever branch you want to copy to DATAPACT
+
+          git push target HEAD:main --force ## This should not change, as we should be using the DATAPACT main branch unless there is a special reason why not to
