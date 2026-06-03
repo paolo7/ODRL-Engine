@@ -444,6 +444,40 @@ def evaluate_ODRL_from_files(policy_file, SotW_file, state_file=None, normalise=
 
     return evaluate_ODRL_on_dataframe(policies[0], df, FEATURE_TYPE_MAP, evaluation_state)
 
+def evaluate_ODRL_from_strings(
+    policy_text,
+    sotw_csv
+):
+    graph, _ = rdf_utils.parse_string_to_graph(
+        policy_text
+    )
+
+    policies = (
+        SotW_generator.extract_rule_list_from_policy(
+            graph
+        )
+    )
+
+    features = (
+        SotW_generator.extract_features_list_from_policy(
+            graph
+        )
+    )
+
+    feature_type_map = {
+        f["iri"]: f["type"]
+        for f in features
+    }
+
+    df = pd.read_csv(
+        StringIO(sotw_csv)
+    )
+
+    return evaluate_ODRL_on_dataframe(
+        policies[0],
+        df,
+        feature_type_map
+    )
 
 
 def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW=1, normalise=False):

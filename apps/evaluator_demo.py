@@ -226,12 +226,21 @@ if evaluate_button:
         # Run evaluation
         with st.spinner("Evaluating policy..."):
 
-            is_valid, violations, message = (
-                Evaluator.evaluate_ODRL_from_files_merge_policies(
-                    [policy_path],
-                    sotw_path
-                )
+            result = Evaluator.evaluate_ODRL_from_files_merge_policies(
+                [policy_path],
+                sotw_path
             )
+
+            (
+                evaluation_state,
+                is_valid,
+                permissions_violations,
+                prohibitions_violations,
+                obligations_not_satisfied,
+                unfulfilled_duties,
+                unfulfilled_consequences,
+                unfulfilled_remedies
+            ) = result
 
         st.divider()
 
@@ -239,6 +248,15 @@ if evaluate_button:
             st.success("✅ YES — State of the World is VALID")
         else:
             st.error("❌ NO — State of the World is NOT VALID")
+
+        message = f"""
+        Permissions violations: {len(permissions_violations)}
+        Prohibitions violations: {len(prohibitions_violations)}
+        Unfulfilled obligations: {len(obligations_not_satisfied)}
+        Unfulfilled duties: {len(unfulfilled_duties)}
+        Unfulfilled consequences: {len(unfulfilled_consequences)}
+        Unfulfilled remedies: {len(unfulfilled_remedies)}
+        """
 
         st.text_area(
             label="Evaluation Details",

@@ -170,3 +170,11 @@ In the X.txt file you can optionally add additional information about your test:
 ## How to perform scalability tests
 
 Scalability tests can be run using the `scalability_tests.py` function.
+
+## How to run as a service in Docker 
+
+This project comes with a docker image which you can start on port 8031 (or choose another port by modifying `docker-compose.yml`) using command `docker compose up -d`.
+
+The docker image exposes the evaluation function using API `http://localhost:8031/api/docs`
+
+Streamlit apps found in the `apps` subfolder will be run under path `http://localhost:8031/apps/`. For example, the app `evaluator_demo.py` can be accessed `http://localhost:8031/apps/evaluator-demo/` (any underscore is turned into a dash in the path).
