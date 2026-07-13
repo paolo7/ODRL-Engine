@@ -13,7 +13,31 @@ Currently the following main functionalities are supported:
 * Evaluating one or more ODRL policies against a State of the World (like an event log, or a data access request)
 * Generating synthetic ODRL policies, and generating synthetic States of the World about policies to be used for testing purposes.
 
-## **How To Install**
+## **How To Install With Docker**
+
+This project comes with a docker image which you can start on port 8031 (or choose another port by modifying `docker-compose.yml`).
+
+The docker image exposes the evaluation function using API `http://localhost:8031/api/docs`
+
+Streamlit apps found in the `apps` subfolder will be run under path `http://localhost:8031/apps/`. For example, the app `evaluator_demo.py` can be accessed `http://localhost:8031/apps/evaluator-demo/` (any underscore is turned into a dash in the path).
+
+### Instructions
+
+1. Make sure you have Docker installed and running
+2. Go to the the root directory of this project and run command `docker compose up -d`
+3. Wait for the image to be created
+
+You can now access the various functionalities:
+* Navigate to http://localhost:8031/apps/evaluator/ to access the evaluator demo
+* Navigate to http://localhost:8031/apps/validator/ to access the validator demo
+* Navigate to http://localhost:8031/apps/odrl-generator/ to access the ODRL generator demo 
+* Navigate to http://localhost:8031/apps/sotw-generator/ to access the State of the World generator demo 
+* Navigate to http://localhost:8031/api/docs to access the evaluation API swagger interface
+
+You can test these functionalities with the sample ODRL policies and states of the world available [here](https://github.com/DIPS-Tools/ODRL-Engine/tree/main/test_cases/evaluation/valid).
+
+
+## **How To Install Without Docker**
 
 ### Requirements
 
