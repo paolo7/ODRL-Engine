@@ -1,5 +1,4 @@
 from jinja2 import Template
-from discover_apps import discover_apps
 
 NGINX_TEMPLATE = """
 events {}
@@ -25,7 +24,7 @@ http {
         location /ODRL-Engine/apps/{{ app.route }}/ {
             rewrite ^/ODRL-Engine/apps/{{ app.route }}/(.*)$ /$1 break;
 
-            proxy_pass http://127.0.0.1:{{ app.port }}/;
+            proxy_pass http://127.0.0.1:{{ app.port }};
 
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
@@ -33,7 +32,7 @@ http {
         }
 
         location /apps/{{ app.route }}/ {
-            proxy_pass http://127.0.0.1:{{ app.port }}/;
+            proxy_pass http://127.0.0.1:{{ app.port }};
 
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;

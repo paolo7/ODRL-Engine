@@ -4,7 +4,12 @@ import os
 import pandas as pd
 from io import StringIO
 
-# Import evaluator
+from pathlib import Path
+import sys
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
 import ODRL_Evaluator as Evaluator
 
 # ------------------------------
@@ -226,11 +231,18 @@ if evaluate_button:
         # Run evaluation
         with st.spinner("Evaluating policy..."):
 
-            is_valid, violations, message = (
-                Evaluator.evaluate_ODRL_from_files_merge_policies(
-                    [policy_path],
-                    sotw_path
-                )
+            (
+                evaluation_state,
+                is_valid,
+                rows_violating_permissions,
+                rows_violating_prohibitions,
+                obligations_not_satisfied,
+                unfulfilled_duties,
+                unfulfilled_consequences,
+                unfulfilled_remedies,
+            ) = Evaluator.evaluate_ODRL_from_files_merge_policies(
+                [policy_path],
+                sotw_path,
             )
 
         st.divider()
@@ -240,11 +252,31 @@ if evaluate_button:
         else:
             st.error("❌ NO — State of the World is NOT VALID")
 
-        st.text_area(
-            label="Evaluation Details",
-            value=message,
-            height=250
-        )
+        st.subheader("Evaluation Summary")
+
+        if rows_violating_permissions:
+            st.subheader("Rows violating permissions")
+            st.write(rows_violating_permissions)
+
+        if rows_violating_prohibitions:
+            st.subheader("Rows violating prohibitions")
+            st.write(rows_violating_prohibitions)
+
+        if obligations_not_satisfied:
+            st.subheader("Unsatisfied obligations")
+            st.json(obligations_not_satisfied)
+
+        if unfulfilled_duties:
+            st.subheader("Unfulfilled duties")
+            st.json(unfulfilled_duties)
+
+        if unfulfilled_consequences:
+            st.subheader("Unfulfilled consequences")
+            st.json(unfulfilled_consequences)
+
+        if unfulfilled_remedies:
+            st.subheader("Unfulfilled remedies")
+            st.json(unfulfilled_remedies)
 
     except Exception as e:
 

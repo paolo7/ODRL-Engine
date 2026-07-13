@@ -23,4 +23,11 @@ def discover_apps(start_port=8501):
 
         port += 1
 
+    if apps:
+        print(f"[discover_apps] Found {len(apps)} app(s):", flush=True)
+        for app in apps:
+            print(f"  - {app['name']} ({app['file']}) -> port {app['port']}", flush=True)
+    else:
+        print(f"[discover_apps] No apps found in {APPS_DIR}", flush=True)
+
     return apps
