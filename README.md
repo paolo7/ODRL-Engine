@@ -28,11 +28,13 @@ Streamlit apps found in the `apps` subfolder will be run under path `http://loca
 3. Wait for the image to be created
 
 You can now access the various functionalities:
-* Navigate to `http://localhost:8031/apps/evaluator/` to access the evaluator demo
-* Navigate to `http://localhost:8031/apps/validator/` to access the validator demo
-* Navigate to `http://localhost:8031/apps/odrl-generator/` to access the ODRL generator demo 
-* Navigate to `http://localhost:8031/apps/sotw-generator/` to access the State of the World generator demo 
+* Navigate to http://localhost:8031/apps/evaluator/ to access the evaluator demo
+* Navigate to http://localhost:8031/apps/validator/ to access the validator demo
+* Navigate to http://localhost:8031/apps/odrl-generator/ to access the ODRL generator demo 
+* Navigate to http://localhost:8031/apps/sotw-generator/ to access the State of the World generator demo 
 * Navigate to http://localhost:8031/api/docs to access the evaluation API swagger interface
+
+You can test these functionalities with the sample ODRL policies and states of the world available [here](https://github.com/DIPS-Tools/ODRL-Engine/tree/main/test_cases/evaluation/valid).
 
 
 ## **How To Install Without Docker**
