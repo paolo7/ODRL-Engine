@@ -123,7 +123,7 @@ st.title("ODRL Policy Generator")
 
 st.write(
     """
-Generate ODRL policies using the same generator used by the Colab interface.
+Generate ODRL policies based on a number of parameters.
 The generated RDF/Turtle policy can be viewed and downloaded.
 """
 )

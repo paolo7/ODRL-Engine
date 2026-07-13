@@ -15,7 +15,7 @@ Currently the following main functionalities are supported:
 
 ## **How To Install With Docker**
 
-This project comes with a docker image which you can start on port 8031 (or choose another port by modifying `docker-compose.yml`) using command `docker compose up -d`.
+This project comes with a docker image which you can start on port 8031 (or choose another port by modifying `docker-compose.yml`).
 
 The docker image exposes the evaluation function using API `http://localhost:8031/api/docs`
 
@@ -31,6 +31,7 @@ You can now access the various functionalities:
 * Navigate to `http://localhost:8031/apps/evaluator/` to access the evaluator demo
 * Navigate to `http://localhost:8031/apps/validator/` to access the validator demo
 * Navigate to `http://localhost:8031/apps/odrl-generator/` to access the ODRL generator demo 
+* Navigate to `http://localhost:8031/apps/sotw-generator/` to access the State of the World generator demo 
 * Navigate to http://localhost:8031/api/docs to access the evaluation API swagger interface
 
 

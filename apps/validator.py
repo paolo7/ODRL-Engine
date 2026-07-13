@@ -50,7 +50,7 @@ def save_uploaded_file(uploaded_file):
 # Main App
 # ---------------------------------------------------------
 
-st.title("✅ ODRL Policy Validation")
+st.title("ODRL Policy Validation")
 
 st.write(
     """
