@@ -44,6 +44,8 @@ if "sotw_text" not in st.session_state:
 if "raw_toggle" not in st.session_state:
     st.session_state.raw_toggle = True  # start TRUE
 
+if "sotw_editor" not in st.session_state:
+    st.session_state.sotw_editor = ""
 # ------------------------------
 # Layout
 # ------------------------------
@@ -103,16 +105,9 @@ with col2:
 
         if content != st.session_state.sotw_text:
             st.session_state.sotw_text = content
+            st.session_state.sotw_editor = content
             st.session_state.raw_toggle = False
             st.rerun()
-
-    # Detect multiline manual input
-    if (
-        st.session_state.raw_toggle
-        and st.session_state.sotw_text.count("\n") >= 1
-    ):
-        st.session_state.raw_toggle = False
-        st.rerun()
 
     # ------------------------------
     # Raw Toggle (fixed behavior)
@@ -123,17 +118,21 @@ with col2:
         key="raw_toggle"
     )
 
+    st.session_state.sotw_text = st.session_state.sotw_editor
+
     # ------------------------------
     # Display
     # ------------------------------
 
     if raw_toggle:
 
-        sotw_text = st.text_area(
-            label="CSV Text",
+        st.text_area(
+            "CSV Text",
             height=450,
-            key="sotw_text"
+            key="sotw_editor",
         )
+
+        st.session_state.sotw_text = st.session_state.sotw_editor
 
     else:
 
@@ -141,9 +140,7 @@ with col2:
 
             if st.session_state.sotw_text.strip():
 
-                df = pd.read_csv(
-                    StringIO(st.session_state.sotw_text)
-                )
+                df = pd.read_csv(StringIO(st.session_state.sotw_text))
 
                 st.dataframe(
                     df,
@@ -154,10 +151,12 @@ with col2:
             else:
 
                 st.text_area(
-                    label="CSV Text",
+                    "CSV Text",
                     height=450,
-                    key="sotw_text"
+                    key="sotw_editor",
                 )
+
+                st.session_state.sotw_text = st.session_state.sotw_editor
 
         except Exception:
 
@@ -166,10 +165,12 @@ with col2:
             )
 
             st.text_area(
-                label="CSV Text",
+                "CSV Text",
                 height=450,
-                key="sotw_text"
+                key="sotw_editor",
             )
+
+            st.session_state.sotw_text = st.session_state.sotw_editor
 
 # ------------------------------
 # Evaluate Button
