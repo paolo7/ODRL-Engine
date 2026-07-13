@@ -29,7 +29,8 @@ Streamlit apps found in the `apps` subfolder will be run under path `http://loca
 
 You can now access the various functionalities:
 * Navigate to `http://localhost:8031/apps/evaluator/` to access the evaluator demo
-* * Navigate to `http://localhost:8031/apps/validator/` to access the validator demo
+* Navigate to `http://localhost:8031/apps/validator/` to access the validator demo
+* Navigate to `http://localhost:8031/apps/odrl-generator/` to access the ODRL generator demo 
 * Navigate to http://localhost:8031/api/docs to access the evaluation API swagger interface
 
 
