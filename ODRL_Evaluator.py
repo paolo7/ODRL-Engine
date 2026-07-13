@@ -1,3 +1,5 @@
+from io import StringIO
+
 import rdf_utils
 import SotW_generator
 import pandas as pd

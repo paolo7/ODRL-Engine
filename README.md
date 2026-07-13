@@ -26,7 +26,12 @@ Streamlit apps found in the `apps` subfolder will be run under path `http://loca
 1. Make sure you have Docker installed and running
 2. Go to the the root directory of this project and run command `docker compose up -d`
 3. Wait for the image to be created
-4. Navigate to `http://localhost:8031/apps/evaluator-demo/` to access the evaluator demo
+
+You can now access the various functionalities:
+* Navigate to `http://localhost:8031/apps/evaluator/` to access the evaluator demo
+* * Navigate to `http://localhost:8031/apps/validator/` to access the validator demo
+* Navigate to http://localhost:8031/api/docs to access the evaluation API swagger interface
+
 
 ## **How To Install Without Docker**
 
