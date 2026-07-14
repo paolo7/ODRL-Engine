@@ -17,22 +17,23 @@ Currently the following main functionalities are supported:
 
 This project comes with a docker image which you can start on port 8031 (or choose another port by modifying `docker-compose.yml`).
 
-The docker image exposes the evaluation function using API `http://localhost:8031/api/docs`
+The base URL is currently `/apps/` but can be changed in the `.env` file.
 
-Streamlit apps found in the `apps` subfolder will be run under path `http://localhost:8031/apps/`. For example, the app `odrl_generator.py` can be accessed here http://localhost:8031/apps/odrl-generator/ (any underscore is turned into a dash in the path).
+Streamlit apps found in the `apps` subfolder will be automatically loaded when the image is generated. For example, the app `odrl_generator.py` can be accessed here http://localhost:8031/apps/odrl-generator/ (any underscore is turned into a dash in the path).
 
 ### Instructions
 
 1. Make sure you have Docker installed and running
 2. Go to the the root directory of this project and run command `docker compose up -d`
 3. Wait for the image to be created
+4. Open the dashboard that gives you access to all the apps here: http://localhost:8031/apps/odrl-engine-dashboard/ or access the Swagger API here http://localhost:8031/apps/api/docs
 
-You can now access the various functionalities:
+You can also access individual apps here:
 * Navigate to http://localhost:8031/apps/evaluator/ to access the evaluator demo
 * Navigate to http://localhost:8031/apps/validator/ to access the validator demo
 * Navigate to http://localhost:8031/apps/odrl-generator/ to access the ODRL generator demo 
 * Navigate to http://localhost:8031/apps/sotw-generator/ to access the State of the World generator demo 
-* Navigate to http://localhost:8031/api/docs to access the evaluation API swagger interface
+* Navigate to http://localhost:8031/apps/api/docs to access the evaluation API swagger interface
 
 You can test these functionalities with the sample ODRL policies and states of the world available [here](https://github.com/DIPS-Tools/ODRL-Engine/tree/main/test_cases/evaluation/valid).
 

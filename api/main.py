@@ -1,5 +1,5 @@
 from io import StringIO
-
+import os
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 
@@ -13,10 +13,17 @@ from api.models import (
     EvaluateResponse
 )
 
+BASE_PATH = os.environ.get("ODRL_BASE_PATH", "").strip("/")
+
+if BASE_PATH:
+    ROOT_PATH = f"/{BASE_PATH}/api"
+else:
+    ROOT_PATH = "/api"
+
 app = FastAPI(
     title="ODRL Evaluator API",
     version="1.0.0",
-    root_path="/api"
+    root_path=ROOT_PATH,
 )
 
 
