@@ -1,4 +1,5 @@
 import streamlit as st
+
 from pathlib import Path
 import sys
 
@@ -10,7 +11,7 @@ import sys
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-
+from common.streamlit_style import apply_style
 import ODRL_generator
 
 
@@ -22,7 +23,7 @@ st.set_page_config(
     page_title="ODRL Policy Generator",
     layout="wide"
 )
-
+apply_style()
 
 # ============================================================
 # INFO PANEL

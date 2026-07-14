@@ -1,4 +1,5 @@
 import streamlit as st
+
 import tempfile
 import os
 import pandas as pd
@@ -10,6 +11,7 @@ import sys
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from common.streamlit_style import apply_style
 import ODRL_Evaluator as Evaluator
 import rdf_utils
 from SotW_generator import extract_features_list_from_policy
@@ -22,8 +24,8 @@ st.set_page_config(
     page_title="ODRL Policy Evaluator",
     layout="wide"
 )
-
-st.title("ODRL Policy Evaluator")
+apply_style()
+st.markdown("## Policy Evaluator")
 
 st.markdown(
     "This is a DEMO of the [OVAL Policy Evaluator for ODRL](https://github.com/paolo7/ODRL-Engine) from the University of Southampton."

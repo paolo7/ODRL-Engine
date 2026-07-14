@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  odrl:
+  odrl-engine:
     build: .
     container_name: odrl-engine
     restart: unless-stopped
@@ -9,5 +9,5 @@ services:
     ports:
       - "8031:80"
 
-    environment:
-      - BASE_PATH=/ODRL-Engine
+    env_file:
+      - .env

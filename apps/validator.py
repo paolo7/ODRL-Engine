@@ -12,6 +12,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 import validate
+from common.streamlit_style import apply_style
 
 # ---------------------------------------------------------
 # Streamlit Configuration
@@ -19,10 +20,9 @@ import validate
 
 st.set_page_config(
     page_title="ODRL Policy Validator",
-    page_icon="✅",
     layout="wide"
 )
-
+apply_style()
 
 # ---------------------------------------------------------
 # Helper

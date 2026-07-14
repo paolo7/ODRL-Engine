@@ -10,6 +10,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 
 import streamlit as st
+from common.streamlit_style import apply_style
 import tempfile
 import os
 import json
@@ -27,7 +28,7 @@ st.set_page_config(
     page_title="ODRL State of the World Generator",
     layout="wide"
 )
-
+apply_style()
 
 # ---------------------------------------------------------
 # Helper functions

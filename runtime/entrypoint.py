@@ -1,5 +1,8 @@
 import subprocess
 import time
+import json
+import os
+
 
 from runtime.discover_apps import discover_apps
 from runtime.generate_nginx import generate_nginx
@@ -16,6 +19,12 @@ def main():
     apps = discover_apps()
 
     print(f"Discovered apps: {[a['route'] for a in apps]}")
+
+    # write down the list of apps to be discoverable by the Dashboard
+    os.makedirs("/tmp/odrl-engine", exist_ok=True)
+
+    with open("/tmp/odrl-engine/apps.json", "w") as f:
+        json.dump(apps, f)
 
     # 1. generate nginx
     nginx_conf = generate_nginx(apps)

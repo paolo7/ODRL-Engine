@@ -1,0 +1,24 @@
+/* Remove Streamlit header */
+header {
+    display: none;
+}
+
+[data-testid="stHeader"] {
+    display: none;
+}
+
+/* Remove top padding */
+.block-container {
+    padding-top: 0rem;
+    padding-bottom: 1rem;
+}
+
+[data-testid="stAppViewContainer"] > .main {
+    padding-top: 0rem;
+}
+
+/* Segmented control spacing */
+[data-testid="stSegmentedControl"] {
+    margin-top: -0.5rem;
+    margin-bottom: 0.5rem;
+}
