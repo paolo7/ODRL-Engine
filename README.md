@@ -2,7 +2,8 @@
 
 The Policy Engine provides a suite of functionality to inspect, process and use ODRL policies.
 
-You can access a live demo of these functionalities using the following [Google Colab interface](https://colab.research.google.com/drive/19t7xmiLkL1RW3s77_HkhysE04W4DUNPc#scrollTo=yK6I-AKSrVZ5).
+You can access a live demo of these functionalities on [DIPS](https://dips.soton.ac.uk/odrl-engine/odrl-engine-dashboard/). 
+An older [Google Colab interface](https://colab.research.google.com/drive/19t7xmiLkL1RW3s77_HkhysE04W4DUNPc#scrollTo=yK6I-AKSrVZ5) is also available, but it won't be actively maintained anymore.
 
 ## **Main Goal/Functionalities**
 
@@ -17,23 +18,23 @@ Currently the following main functionalities are supported:
 
 This project comes with a docker image which you can start on port 8031 (or choose another port by modifying `docker-compose.yml`).
 
-The base URL is currently `/apps/` but can be changed in the `.env` file.
+The base URL is empty by default, but it can be changed in the `.env` file. For example to access everything under the `/apps/` subpath, set the `.env` file with the contents of the `.env.example` file.
 
-Streamlit apps found in the `apps` subfolder will be automatically loaded when the image is generated. For example, the app `odrl_generator.py` can be accessed here http://localhost:8031/apps/odrl-generator/ (any underscore is turned into a dash in the path).
+Streamlit apps found in the `apps` subfolder will be automatically loaded when the image is generated. For example, the app `odrl_generator.py` can be accessed here http://localhost:8031/odrl-generator/ (any underscore is turned into a dash in the path).
 
 ### Instructions
 
 1. Make sure you have Docker installed and running
 2. Go to the the root directory of this project and run command `docker compose up -d`
 3. Wait for the image to be created
-4. Open the dashboard that gives you access to all the apps here: http://localhost:8031/apps/odrl-engine-dashboard/ or access the Swagger API here http://localhost:8031/apps/api/docs
+4. Open the dashboard that gives you access to all the apps here: http://localhost:8031/odrl-engine-dashboard/ or access the Swagger API here http://localhost:8031/api/docs
 
 You can also access individual apps here:
-* Navigate to http://localhost:8031/apps/evaluator/ to access the evaluator demo
-* Navigate to http://localhost:8031/apps/validator/ to access the validator demo
-* Navigate to http://localhost:8031/apps/odrl-generator/ to access the ODRL generator demo 
-* Navigate to http://localhost:8031/apps/sotw-generator/ to access the State of the World generator demo 
-* Navigate to http://localhost:8031/apps/api/docs to access the evaluation API swagger interface
+* Navigate to http://localhost:8031/evaluator/ to access the evaluator demo
+* Navigate to http://localhost:8031/validator/ to access the validator demo
+* Navigate to http://localhost:8031/odrl-generator/ to access the ODRL generator demo 
+* Navigate to http://localhost:8031/sotw-generator/ to access the State of the World generator demo 
+* Navigate to http://localhost:8031/api/docs to access the evaluation API swagger interface
 
 You can test these functionalities with the sample ODRL policies and states of the world available [here](https://github.com/DIPS-Tools/ODRL-Engine/tree/main/test_cases/evaluation/valid).
 
