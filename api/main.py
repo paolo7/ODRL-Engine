@@ -20,12 +20,12 @@ if BASE_PATH:
 else:
     ROOT_PATH = "/api"
 
+
 app = FastAPI(
     title="ODRL Evaluator API",
     version="1.0.0",
     root_path=ROOT_PATH,
 )
-
 
 @app.get("/health")
 def health():

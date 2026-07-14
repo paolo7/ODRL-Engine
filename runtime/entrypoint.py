@@ -32,10 +32,17 @@ def main():
 
     # 2. start FastAPI
     subprocess.Popen([
-        "uvicorn", "api.main:app",
-        "--host", "127.0.0.1",
-        "--port", "8000"
+        "uvicorn",
+        "api.main:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000",
+        "--proxy-headers",
+        "--forwarded-allow-ips",
+        "*"
     ])
+
 
     # 3. start streamlit apps
     processes = []
