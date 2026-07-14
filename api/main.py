@@ -15,10 +15,7 @@ from api.models import (
 
 BASE_PATH = os.environ.get("ODRL_BASE_PATH", "").strip("/")
 
-if BASE_PATH:
-    ROOT_PATH = f"/{BASE_PATH}/api"
-else:
-    ROOT_PATH = "/api"
+ROOT_PATH = f"/{BASE_PATH}/api" if BASE_PATH else "/api"
 
 
 app = FastAPI(

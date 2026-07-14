@@ -1,9 +1,6 @@
 from jinja2 import Template
 import os
 
-BASE_PATH = os.environ.get("ODRL_BASE_PATH", "").strip("/")
-PREFIX = f"/{BASE_PATH}" if BASE_PATH else ""
-
 NGINX_TEMPLATE = r"""
 events {}
 
@@ -24,7 +21,9 @@ http {
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
         
-            proxy_set_header X-Forwarded-Prefix {{ prefix }}/api;
+            {% if prefix %}
+            proxy_set_header X-Forwarded-Prefix {{ prefix }};
+            {% endif %}
         }
 
         # ---------------- APPS ----------------
