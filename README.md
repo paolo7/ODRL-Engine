@@ -19,7 +19,7 @@ This project comes with a docker image which you can start on port 8031 (or choo
 
 The docker image exposes the evaluation function using API `http://localhost:8031/api/docs`
 
-Streamlit apps found in the `apps` subfolder will be run under path `http://localhost:8031/apps/`. For example, the app `evaluator_demo.py` can be accessed `http://localhost:8031/apps/evaluator-demo/` (any underscore is turned into a dash in the path).
+Streamlit apps found in the `apps` subfolder will be run under path `http://localhost:8031/apps/`. For example, the app `odrl_generator.py` can be accessed here http://localhost:8031/apps/odrl-generator/ (any underscore is turned into a dash in the path).
 
 ### Instructions
 
