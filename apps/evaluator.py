@@ -28,7 +28,7 @@ apply_style()
 st.markdown("## Policy Evaluator")
 
 st.markdown(
-    "This is a DEMO of the [OVAL Policy Evaluator for ODRL](https://github.com/paolo7/ODRL-Engine) from the University of Southampton."
+    "This is a DEMO of the [OVAL Policy Evaluator for ODRL](https://github.com/DIPS-Tools/ODRL-Engine) from the University of Southampton."
 )
 
 st.markdown(
