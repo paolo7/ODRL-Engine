@@ -15,13 +15,17 @@ from api.models import (
 
 BASE_PATH = os.environ.get("ODRL_BASE_PATH", "").strip("/")
 
-ROOT_PATH = f"/{BASE_PATH}/api" if BASE_PATH else "/api"
+if BASE_PATH:
+    ROOT_PATH = f"/{BASE_PATH}/api"
+else:
+    ROOT_PATH = "/api"
 
 
 app = FastAPI(
     title="ODRL Evaluator API",
     version="1.0.0",
     root_path=ROOT_PATH,
+    root_path_in_servers=False,
 )
 
 @app.get("/health")
