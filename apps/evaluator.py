@@ -174,7 +174,7 @@ with col2:
     # Handle CSV upload
     if uploaded_sotw is not None:
 
-        content = uploaded_sotw.read().decode("utf-8")
+        content = uploaded_sotw.getvalue().decode("utf-8")
 
         if content != st.session_state.sotw_text:
             st.session_state.sotw_text = content
