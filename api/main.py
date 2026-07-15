@@ -13,13 +13,8 @@ from api.models import (
     EvaluateResponse
 )
 
-BASE_PATH = os.environ.get("ODRL_BASE_PATH", "").strip("/")
-
-if BASE_PATH:
-    ROOT_PATH = f"/{BASE_PATH}/api"
-else:
-    ROOT_PATH = "/api"
-
+EXTERNAL_PREFIX = os.environ.get("ODRL_EXTERNAL_PREFIX", "").strip("/")
+ROOT_PATH = f"/{EXTERNAL_PREFIX}/api" if EXTERNAL_PREFIX else "/api"
 
 app = FastAPI(
     title="ODRL Evaluator API",

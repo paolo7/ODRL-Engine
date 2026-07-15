@@ -18,7 +18,9 @@ Currently the following main functionalities are supported:
 
 This project comes with a docker image which you can start on port 8031 (or choose another port by modifying `docker-compose.yml`).
 
-The base URL is empty by default, but it can be changed in the `.env` file. For example to access everything under the `/apps/` subpath, set the `.env` file with the contents of the `.env.example` file.
+The following environment variables can be configured in the `.env` file (see the `.env.example` file). They don't need to be set on a test deployment on localhost. 
+* ODRL_BASE_PATH: internal subpath your container's own nginx listens on — set this only if the upstream/server nginx forwards requests to your container WITHOUT stripping the subpath prefix (leave unset/empty if it already strips it, as at dips.soton.ac.uk).
+* ODRL_EXTERNAL_PREFIX: the subpath the API is exposed at from the *browser's* point of view (e.g. "odrl-engine") — used only so FastAPI generates correct absolute URLs (/docs, /openapi.json, redirects); does not affect internal routing.
 
 Streamlit apps found in the `apps` subfolder will be automatically loaded when the image is generated. For example, the app `odrl_generator.py` can be accessed here http://localhost:8031/odrl-generator/ (any underscore is turned into a dash in the path).
 
