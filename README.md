@@ -40,6 +40,12 @@ You can also access individual apps here:
 
 You can test these functionalities with the sample ODRL policies and states of the world available [here](https://github.com/DIPS-Tools/ODRL-Engine/tree/main/test_cases/evaluation/valid).
 
+#### Additional Configuration
+
+You can set usage limit for the API in the .env file with variables:
+* ODRL_MAX_BODY_SIZE_MB
+* ODRL_EVAL_TIMEOUT_SECONDS
+* ODRL_RATE_LIMIT_RPS
 
 ## **How To Install Without Docker**
 
