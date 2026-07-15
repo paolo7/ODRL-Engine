@@ -20,7 +20,6 @@ app = FastAPI(
     title="ODRL Evaluator API",
     version="1.0.0",
     root_path=ROOT_PATH,
-    root_path_in_servers=False,
 )
 
 @app.get("/health")
