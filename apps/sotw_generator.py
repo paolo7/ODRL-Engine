@@ -211,14 +211,18 @@ def main():
         "1. Upload ODRL Policy"
     )
 
-
     uploaded_policy = st.file_uploader(
-        "Upload ODRL TTL file",
+        "Upload ODRL Policy",
         type=[
             "ttl",
+            "json",
+            "jsonld",
             "rdf",
             "xml",
-            "nt"
+            "nt",
+            "nq",
+            "trig",
+            "trix",
         ]
     )
 
@@ -230,13 +234,15 @@ def main():
 
         try:
 
+            policy_suffix = Path(uploaded_policy.name).suffix.lower()
+
             with tempfile.NamedTemporaryFile(
-                suffix=".ttl",
-                delete=False
+                    suffix=policy_suffix,
+                    delete=False
             ) as tmp:
 
                 tmp.write(
-                    uploaded_policy.read()
+                    uploaded_policy.getvalue()
                 )
 
                 tmp_path = tmp.name
