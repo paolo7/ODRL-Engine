@@ -107,6 +107,9 @@ if "raw_toggle" not in st.session_state:
 if "policy_upload_id" not in st.session_state:
     st.session_state.policy_upload_id = None
 
+if "policy_suffix" not in st.session_state:
+    st.session_state.policy_suffix = ".ttl"
+
 if "sotw_upload_id" not in st.session_state:
     st.session_state.sotw_upload_id = None
 
@@ -125,8 +128,18 @@ with col1:
     st.subheader("ODRL Policy")
 
     uploaded_policy = st.file_uploader(
-        "Upload Policy File (.ttl or .json)",
-        type=["ttl", "json"],
+        "Upload Policy File",
+        type=[
+            "ttl",
+            "json",
+            "jsonld",
+            "rdf",
+            "xml",
+            "nt",
+            "nq",
+            "trig",
+            "trix",
+        ],
         label_visibility="collapsed",
         key="policy_upload"
     )
@@ -137,9 +150,11 @@ with col1:
     if uploaded_policy is not None:
 
         if uploaded_policy.file_id != st.session_state.policy_upload_id:
-
             st.session_state.policy_upload_id = uploaded_policy.file_id
             st.session_state.policy_text = uploaded_policy.getvalue().decode("utf-8")
+            # Preserve the original file extension
+            st.session_state.policy_suffix = Path(uploaded_policy.name).suffix.lower()
+
             st.rerun()
 
     # Policy text box
@@ -168,10 +183,7 @@ with col1:
 
             try:
                 # Save policy temporarily so rdf_utils can load it
-                if st.session_state.policy_text.strip().startswith("{"):
-                    policy_suffix = ".json"
-                else:
-                    policy_suffix = ".ttl"
+                policy_suffix = st.session_state.policy_suffix
 
                 with tempfile.NamedTemporaryFile(
                     suffix=policy_suffix,
@@ -315,11 +327,7 @@ if evaluate_button:
 
     try:
 
-        # Detect format
-        if policy_text.strip().startswith("{"):
-            policy_suffix = ".json"
-        else:
-            policy_suffix = ".ttl"
+        policy_suffix = st.session_state.policy_suffix
 
         # Save temp files
         with tempfile.NamedTemporaryFile(
