@@ -119,7 +119,6 @@ sample_assets = [
     "https://example.com#CybersecurityIncidentReports"
 ]
 # LIMITATIONS
-# this code does not deal with constraints expressed as lists, thus it also fails to support logic constraints
 # returns an alphabetically ordered list of unique features (left operands) from the policies
 # refinements of assignee/action/target have Party/Action/Asset prepended to the IRI and space separated, to distinguish them
 # from constraints.
@@ -129,53 +128,80 @@ def extract_features_list_from_policy(odrl_graph: rdflib.Graph):
     features = list(base_features)
     seen_iris = {f["iri"] for f in base_features}
 
+    def process_constraint(constraint, prefix=None):
+        """
+        Recursively process a constraint or logic constraint.
+        """
+
+        # -------------------------
+        # Simple constraint
+        # -------------------------
+        left = next(odrl_graph.objects(constraint, ODRL.leftOperand), None)
+
+        if left is not None:
+
+            iri = str(left)
+            if prefix:
+                iri = f"{prefix} {iri}"
+
+            if iri not in seen_iris:
+                features.append({
+                    "iri": iri,
+                    "type": "http://www.w3.org/ns/shacl#Literal"
+                })
+                seen_iris.add(iri)
+
+            return
+
+        # -------------------------
+        # Logic constraint
+        # -------------------------
+        for logic_pred in LOGIC_PREDICATES:
+            for list_node in odrl_graph.objects(constraint, logic_pred):
+
+                try:
+                    members = Collection(odrl_graph, list_node)
+                except Exception:
+                    continue
+
+                for member in members:
+                    process_constraint(member, prefix)
+
     # Predicates used to decide top-level policy-like nodes
     policy_predicates = {ODRL.permission, ODRL.prohibition, ODRL.obligation}
+
+    LOGIC_PREDICATES = (
+        rdflib.URIRef("http://www.w3.org/ns/odrl/2/and"),
+        rdflib.URIRef("http://www.w3.org/ns/odrl/2/or"),
+        rdflib.URIRef("http://www.w3.org/ns/odrl/2/xone"),
+        rdflib.URIRef("http://www.w3.org/ns/odrl/2/andSequence"),
+    )
 
     # Mapping for refinement context detection:
     # key = label to use as Y, value = tuple(incoming predicate to detect that context)
 
+    # -------------------------
+    # Traverse every policy rule
+    # -------------------------
 
-    # Iterate over all nodes that have an outgoing odrl:leftOperand (these are constraints/refinements)
-    for constraint in odrl_graph.subjects(predicate=ODRL.leftOperand):
-        # get left operand (X) — use the first if multiple
-        lefts = list(odrl_graph.objects(constraint, ODRL.leftOperand))
-        if not lefts:
-            continue
-        left_operand = str(lefts[0])
+    for rule in set(
+            r
+            for pred in policy_predicates
+            for policy in odrl_graph.subjects(pred)
+            for r in odrl_graph.objects(policy, pred)
+    ):
 
-        # Find any parent that references this constraint via odrl:constraint
-        for parent in odrl_graph.subjects(predicate=ODRL.constraint, object=constraint):
-            has_policy_like = any(
-                next(odrl_graph.subjects(predicate=p, object=parent), None) is not None
-                for p in policy_predicates
-            )
-            if has_policy_like and left_operand not in seen_iris:
-                features.append({
-                    "iri": left_operand,
-                    "type": "http://www.w3.org/ns/shacl#Literal"
-                })
-                seen_iris.add(left_operand)
+        # Direct constraints
+        for constraint in odrl_graph.objects(rule, ODRL.constraint):
+            process_constraint(constraint)
 
-        # If constraint was not attached directly to a policy-like parent, check for refinement attachments.
-        # A refinement is modeled as some node R having odrl:refinement -> constraint.
-        for referrer in odrl_graph.subjects(predicate=ODRL.refinement, object=constraint):
-            # For each referrer R, decide whether R is a Party/Action/Asset by checking incoming edges
-            matched = False
-            for iri_prefix, incoming_pred in refinement_contexts_incoming.items():
-                # If there exists any triple (?s, incoming_pred, referrer), then referrer is of that context
-                if any(odrl_graph.subjects(predicate=incoming_pred, object=referrer)):
-                    iri = f"{iri_prefix} {left_operand}"
-                    if iri not in seen_iris:
-                        features.append({
-                            "iri": iri,
-                            "type": "http://www.w3.org/ns/shacl#Literal"
-                        })
-                        seen_iris.add(iri)
-                    matched = True
-                    # could be multiple context types, don't break; allow multiple if RDF encodes them
-            # If referrer is attached to something that itself is a node used in permission/prohibition/obligation,
-            # it's possible the referrer is nested under a rule — the above incoming-edge checks cover the requested detection.
+        # Refinements on Party/Action/Asset
+        for prefix, incoming_pred in refinement_contexts_incoming.items():
+
+            for component in odrl_graph.objects(rule, incoming_pred):
+
+                for refinement in odrl_graph.objects(component, ODRL.refinement):
+                    process_constraint(refinement, prefix)
 
     features = sorted(features, key=lambda f: f["iri"])
     return features
