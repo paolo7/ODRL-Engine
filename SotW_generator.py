@@ -128,6 +128,14 @@ def extract_features_list_from_policy(odrl_graph: rdflib.Graph):
     features = list(base_features)
     seen_iris = {f["iri"] for f in base_features}
 
+    def add_feature(iri):
+        if iri not in seen_iris:
+            features.append({
+                "iri": iri,
+                "type": "http://www.w3.org/ns/shacl#Literal"
+            })
+            seen_iris.add(iri)
+
     def process_constraint(constraint, prefix=None):
         """
         Recursively process a constraint or logic constraint.
@@ -139,33 +147,42 @@ def extract_features_list_from_policy(odrl_graph: rdflib.Graph):
         left = next(odrl_graph.objects(constraint, ODRL.leftOperand), None)
 
         if left is not None:
-
             iri = str(left)
             if prefix:
                 iri = f"{prefix} {iri}"
-
-            if iri not in seen_iris:
-                features.append({
-                    "iri": iri,
-                    "type": "http://www.w3.org/ns/shacl#Literal"
-                })
-                seen_iris.add(iri)
-
+            add_feature(iri)
             return
 
         # -------------------------
         # Logic constraint
         # -------------------------
+#       for logic_pred in LOGIC_PREDICATES:
+#           for list_node in odrl_graph.objects(constraint, logic_pred):
+#
+#                try:
+#                    members = Collection(odrl_graph, list_node)
+#                except Exception:
+#                    continue#
+#
+#                for member in members:
+#                    process_constraint(member, prefix)
         for logic_pred in LOGIC_PREDICATES:
-            for list_node in odrl_graph.objects(constraint, logic_pred):
 
-                try:
-                    members = Collection(odrl_graph, list_node)
-                except Exception:
-                    continue
+            children = list(odrl_graph.objects(constraint, logic_pred))
 
-                for member in members:
-                    process_constraint(member, prefix)
+            for child in children:
+
+                # RDF Collection?
+                if (child, RDF.first, None) in odrl_graph:
+                    try:
+                        for member in Collection(odrl_graph, child):
+                            process_constraint(member, prefix)
+                    except Exception:
+                        pass
+
+                # Otherwise it is already an individual constraint
+                else:
+                    process_constraint(child, prefix)
 
     # Predicates used to decide top-level policy-like nodes
     policy_predicates = {ODRL.permission, ODRL.prohibition, ODRL.obligation}
