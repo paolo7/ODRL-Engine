@@ -300,7 +300,7 @@ def evaluate_ODRL_on_df(policy, df, evaluation_state=None):
     }
 
     return evaluate_ODRL_on_dataframe(
-        policies[0],
+        policy,
         df,
         feature_type_map
     )
