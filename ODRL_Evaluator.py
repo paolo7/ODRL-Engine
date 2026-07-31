@@ -287,10 +287,16 @@ def check_match(row, rule_state, OPS_MAP, FEATURE_TYPE_MAP):
 
     return False
 
-def evaluate_ODRL_on_df(policy, df, evaluation_state=None):
+def evaluate_ODRL_on_df(ODRL_graph, df, evaluation_state=None):
     features = (
         SotW_generator.extract_features_list_from_policy(
-            policy
+            ODRL_graph
+        )
+    )
+
+    policies = (
+        SotW_generator.extract_rule_list_from_policy(
+            ODRL_graph
         )
     )
 
@@ -300,7 +306,7 @@ def evaluate_ODRL_on_df(policy, df, evaluation_state=None):
     }
 
     return evaluate_ODRL_on_dataframe(
-        policy,
+        policies[0],
         df,
         feature_type_map
     )
