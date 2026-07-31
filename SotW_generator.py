@@ -4,6 +4,7 @@ from rdflib.namespace import RDF
 import rdflib
 from rdflib.collection import Collection
 import rdf_utils
+import ODRL_Evaluator
 import csv
 import random
 from datetime import datetime, timedelta, timezone
@@ -539,134 +540,147 @@ def generate_pd_state_of_the_world_from_policies(
     odrl_graph: rdflib.Graph,
     number_of_records=100,
     valid=True,
-    chance_feature_empty=0.5
+    chance_feature_empty=0.5,
+    attempts_for_chosen_validity = 10
 ):
     features = extract_features_list_from_policy(odrl_graph)
     policy_list = extract_rule_list_from_policy(odrl_graph)
 
     feature_iris = [f["iri"] for f in features]
 
-    rows = []
+    dataframe = None
+
     now = datetime.now()
 
-    # PRECOMPUTE invalid rows (10% but min 1)
-    if not valid:
-        n_invalid = max(1, int(0.10 * number_of_records))
-        invalid_indices = set(random.sample(range(number_of_records), n_invalid))
-    else:
-        invalid_indices = set()
+    chosen_validity_achieved = False
 
-    for i in range(number_of_records):
-        if not policy_list:
-            continue
+    generation_attempts = 0
 
-        row_should_invert = (i in invalid_indices)
-        row = {}
+    while not chosen_validity_achieved and generation_attempts < attempts_for_chosen_validity:
 
-        policy = random.choice(policy_list)
-        if not policy["permissions"]:
-            continue
+        generation_attempts += 1
+        rows = []
 
-        permission_rule = random.choice(policy["permissions"])
-        permission_triplets_lists = permission_rule["conditions"]
+        # PRECOMPUTE invalid rows (10% but min 1)
+        if not valid:
+            n_invalid = max(1, int(0.10 * number_of_records))
+            invalid_indices = set(random.sample(range(number_of_records), n_invalid))
+        else:
+            invalid_indices = set()
 
-        # Features that appear in permission rules
-        features_with_triplets = [
-            feature["iri"]
-            for feature in features
-            if any(t[0] == feature["iri"] for t in permission_triplets_lists)
-        ]
-
-        # Choose 1 feature to invert
-        inverted_feature_iri = None
-        if row_should_invert and features_with_triplets:
-            inverted_feature_iri = random.choice(features_with_triplets)
-
-        for feature in features:
-            iri = feature["iri"]
-            ftype = feature["type"]
-
-            # Special datetime feature
-            if iri == "http://www.w3.org/ns/odrl/2/dateTime":
-                row[iri] = (now - timedelta(minutes=i * 10)).isoformat()
+        for i in range(number_of_records):
+            if not policy_list:
                 continue
 
-            matching_triplets = [t for t in permission_triplets_lists if t[0] == iri]
-            invert_condition = (iri == inverted_feature_iri)
+            row_should_invert = (i in invalid_indices)
+            row = {}
 
-            if matching_triplets:
-                _, op, val = random.choice(matching_triplets)
+            policy = random.choice(policy_list)
+            if not policy["permissions"]:
+                continue
 
-                # INT
-                try:
-                    val_int = int(val)
-                    if (op == "http://www.w3.org/ns/odrl/2/eq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/neq" and invert_condition):
-                        row[iri] = val_int
-                    elif (op == "http://www.w3.org/ns/odrl/2/neq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/eq" and invert_condition):
-                        row[iri] = val_int + random.randint(1, 100)
-                    elif (op == "http://www.w3.org/ns/odrl/2/lt" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/gteq" and invert_condition):
-                        row[iri] = val_int - random.randint(1, 100)
-                    elif (op == "http://www.w3.org/ns/odrl/2/lteq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/gt" and invert_condition):
-                        row[iri] = val_int - random.randint(0, 100)
-                    elif (op == "http://www.w3.org/ns/odrl/2/gt" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/lteq" and invert_condition):
-                        row[iri] = val_int + random.randint(1, 100)
-                    elif (op == "http://www.w3.org/ns/odrl/2/gteq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/lt" and invert_condition):
-                        row[iri] = val_int + random.randint(0, 100)
-                    else:
-                        row[iri] = val_int
+            permission_rule = random.choice(policy["permissions"])
+            permission_triplets_lists = permission_rule["conditions"]
+
+            # Features that appear in permission rules
+            features_with_triplets = [
+                feature["iri"]
+                for feature in features
+                if any(t[0] == feature["iri"] for t in permission_triplets_lists)
+            ]
+
+            # Choose 1 feature to invert
+            inverted_feature_iri = None
+            if row_should_invert and features_with_triplets:
+                inverted_feature_iri = random.choice(features_with_triplets)
+
+            for feature in features:
+                iri = feature["iri"]
+                ftype = feature["type"]
+
+                # Special datetime feature
+                if iri == "http://www.w3.org/ns/odrl/2/dateTime":
+                    row[iri] = (now - timedelta(minutes=i * 10)).isoformat()
                     continue
-                except ValueError:
-                    pass
 
-                # FLOAT
-                try:
-                    val_float = float(val)
+                matching_triplets = [t for t in permission_triplets_lists if t[0] == iri]
+                invert_condition = (iri == inverted_feature_iri)
+
+                if matching_triplets:
+                    _, op, val = random.choice(matching_triplets)
+
+                    # INT
+                    try:
+                        val_int = int(val)
+                        if (op == "http://www.w3.org/ns/odrl/2/eq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/neq" and invert_condition):
+                            row[iri] = val_int
+                        elif (op == "http://www.w3.org/ns/odrl/2/neq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/eq" and invert_condition):
+                            row[iri] = val_int + random.randint(1, 100)
+                        elif (op == "http://www.w3.org/ns/odrl/2/lt" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/gteq" and invert_condition):
+                            row[iri] = val_int - random.randint(1, 100)
+                        elif (op == "http://www.w3.org/ns/odrl/2/lteq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/gt" and invert_condition):
+                            row[iri] = val_int - random.randint(0, 100)
+                        elif (op == "http://www.w3.org/ns/odrl/2/gt" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/lteq" and invert_condition):
+                            row[iri] = val_int + random.randint(1, 100)
+                        elif (op == "http://www.w3.org/ns/odrl/2/gteq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/lt" and invert_condition):
+                            row[iri] = val_int + random.randint(0, 100)
+                        else:
+                            row[iri] = val_int
+                        continue
+                    except ValueError:
+                        pass
+
+                    # FLOAT
+                    try:
+                        val_float = float(val)
+                        if (op == "http://www.w3.org/ns/odrl/2/eq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/neq" and invert_condition):
+                            row[iri] = val_float
+                        elif (op == "http://www.w3.org/ns/odrl/2/neq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/eq" and invert_condition):
+                            row[iri] = val_float + random.uniform(1, 100)
+                        elif (op == "http://www.w3.org/ns/odrl/2/lt" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/gteq" and invert_condition):
+                            row[iri] = val_float - random.uniform(1, 100)
+                        elif (op == "http://www.w3.org/ns/odrl/2/lteq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/gt" and invert_condition):
+                            row[iri] = val_float - random.uniform(0, 100)
+                        elif (op == "http://www.w3.org/ns/odrl/2/gt" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/lteq" and invert_condition):
+                            row[iri] = val_float + random.uniform(1, 100)
+                        elif (op == "http://www.w3.org/ns/odrl/2/gteq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/lt" and invert_condition):
+                            row[iri] = val_float + random.uniform(0, 100)
+                        else:
+                            row[iri] = val_float
+                        continue
+                    except ValueError:
+                        pass
+
+                    # STRING fallback
                     if (op == "http://www.w3.org/ns/odrl/2/eq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/neq" and invert_condition):
-                        row[iri] = val_float
+                        row[iri] = val
                     elif (op == "http://www.w3.org/ns/odrl/2/neq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/eq" and invert_condition):
-                        row[iri] = val_float + random.uniform(1, 100)
-                    elif (op == "http://www.w3.org/ns/odrl/2/lt" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/gteq" and invert_condition):
-                        row[iri] = val_float - random.uniform(1, 100)
-                    elif (op == "http://www.w3.org/ns/odrl/2/lteq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/gt" and invert_condition):
-                        row[iri] = val_float - random.uniform(0, 100)
-                    elif (op == "http://www.w3.org/ns/odrl/2/gt" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/lteq" and invert_condition):
-                        row[iri] = val_float + random.uniform(1, 100)
-                    elif (op == "http://www.w3.org/ns/odrl/2/gteq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/lt" and invert_condition):
-                        row[iri] = val_float + random.uniform(0, 100)
+                        row[iri] = f"https://example.com/iri/sotw#{random.randint(1, 100000)}"
                     else:
-                        row[iri] = val_float
-                    continue
-                except ValueError:
-                    pass
+                        row[iri] = ""
 
-                # STRING fallback
-                if (op == "http://www.w3.org/ns/odrl/2/eq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/neq" and invert_condition):
-                    row[iri] = val
-                elif (op == "http://www.w3.org/ns/odrl/2/neq" and not invert_condition) or (op == "http://www.w3.org/ns/odrl/2/eq" and invert_condition):
-                    row[iri] = f"https://example.com/iri/sotw#{random.randint(1, 100000)}"
                 else:
-                    row[iri] = ""
-
-            else:
-                # No rule → random or empty
-                if random.random() < chance_feature_empty:
-                    row[iri] = ""
-                else:
-                    if iri == "http://www.w3.org/ns/odrl/2/Party":
-                        row[iri] = random.choice(sample_parties)
-                    elif iri == "http://www.w3.org/ns/odrl/2/Action":
-                        row[iri] = random.choice(sample_actions)
-                    elif iri == "http://www.w3.org/ns/odrl/2/Asset":
-                        row[iri] = random.choice(sample_assets)
-                    elif ftype == "http://www.w3.org/ns/shacl#IRI":
-                        row[iri] = f"https://example.com/iri/sotw#{random.randint(1, 100)}"
+                    # No rule → random or empty
+                    if random.random() < chance_feature_empty:
+                        row[iri] = ""
                     else:
-                        row[iri] = random.randint(0, 100)
+                        if iri == "http://www.w3.org/ns/odrl/2/Party":
+                            row[iri] = random.choice(sample_parties)
+                        elif iri == "http://www.w3.org/ns/odrl/2/Action":
+                            row[iri] = random.choice(sample_actions)
+                        elif iri == "http://www.w3.org/ns/odrl/2/Asset":
+                            row[iri] = random.choice(sample_assets)
+                        elif ftype == "http://www.w3.org/ns/shacl#IRI":
+                            row[iri] = f"https://example.com/iri/sotw#{random.randint(1, 100)}"
+                        else:
+                            row[iri] = random.randint(0, 100)
 
-        rows.append(row)
+            rows.append(row)
+        dataframe = pd.DataFrame(rows, columns=feature_iris)
 
-    # RETURN pandas DataFrame
-    return pd.DataFrame(rows, columns=feature_iris)
+        chosen_validity_achieved = ODRL_Evaluator.evaluate_ODRL_on_df(odrl_graph,dataframe)[1] == valid
+
+    return dataframe, chosen_validity_achieved
 
 
 def generate_state_of_the_world_from_policies(
@@ -676,7 +690,7 @@ def generate_state_of_the_world_from_policies(
     chance_feature_empty=0.5,
     csv_file="sotw.csv"
 ):
-    df = generate_pd_state_of_the_world_from_policies(
+    df, validity_achieved = generate_pd_state_of_the_world_from_policies(
         odrl_graph,
         number_of_records=number_of_records,
         valid=valid,
@@ -684,7 +698,7 @@ def generate_state_of_the_world_from_policies(
     )
 
     df.to_csv(csv_file, index=False, encoding="utf-8")
-    return df
+    return df, validity_achieved
 
 
     #print(f"CSV file '{csv_file}' generated with {len(rows)} rows and {len(feature_iris)} columns.")

@@ -145,7 +145,7 @@ def generate_permission_test_cases(
         )
 
         # ---- 2. Generate valid SotW ----
-        valid_df = SotW_generator.generate_pd_state_of_the_world_from_policies(
+        valid_df, validity_achieved = SotW_generator.generate_pd_state_of_the_world_from_policies(
             policy_graph,
             number_of_records=recs,
             valid=True,
@@ -154,7 +154,7 @@ def generate_permission_test_cases(
         valid.append((policy_graph, valid_df))
 
         # ---- 3. Generate invalid SotW ----
-        invalid_df = SotW_generator.generate_pd_state_of_the_world_from_policies(
+        invalid_df, validity_achieved = SotW_generator.generate_pd_state_of_the_world_from_policies(
             policy_graph,
             number_of_records=recs,
             valid=False,

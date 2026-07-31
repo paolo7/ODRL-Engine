@@ -287,6 +287,25 @@ def check_match(row, rule_state, OPS_MAP, FEATURE_TYPE_MAP):
 
     return False
 
+def evaluate_ODRL_on_df(policy, df, evaluation_state=None):
+    features = (
+        SotW_generator.extract_features_list_from_policy(
+            policy
+        )
+    )
+
+    feature_type_map = {
+        f["iri"]: f["type"]
+        for f in features
+    }
+
+    return evaluate_ODRL_on_dataframe(
+        policies[0],
+        df,
+        feature_type_map
+    )
+
+
 def evaluate_ODRL_on_dataframe(policy, df, FEATURE_TYPE_MAP, evaluation_state=None):
 
     if isinstance(policy, list):

@@ -319,6 +319,8 @@ def main():
     if "generated_df" not in st.session_state:
         st.session_state.generated_df = None
 
+    if "generated_validity" not in st.session_state:
+        st.session_state.generated_validity = None
 
     if st.button(
         "Generate State of the World",
@@ -336,7 +338,7 @@ def main():
 
             try:
 
-                df = (
+                df, validity_achieved = (
                     SotW_generator
                     .generate_state_of_the_world_from_policies(
                         graph,
@@ -350,11 +352,19 @@ def main():
 
                 st.session_state.generated_df = df
                 st.session_state.generated_csv = csv_filename
+                st.session_state.generated_validity = validity_achieved
 
 
                 st.success(
                     "State of the World generated successfully!"
                 )
+
+                if not validity_achieved:
+                    generated_status = "invalid" if valid else "valid"
+                    st.warning(
+                        f"The State of the World failed to generate at the chosen validity. "
+                        f"The generated one is {generated_status}."
+                    )
 
 
             except Exception as e:

@@ -180,7 +180,7 @@ def generate_valid_pair(
         ontology_path=ontology_path
     )
 
-    dataframe = SotW_generator.generate_pd_state_of_the_world_from_policies(
+    dataframe, validity_achieved = SotW_generator.generate_pd_state_of_the_world_from_policies(
         policy_graph,
         number_of_records=sotw_size,
         valid=valid,
