@@ -278,7 +278,7 @@ def main():
 
 
     number_of_records = st.number_input(
-        "Number of Records:",
+        "Number of Rows (events):",
         min_value=1,
         value=100,
         step=1
