@@ -1,10 +1,22 @@
 from typing import Any
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class EvaluateRequest(BaseModel):
-    policy: str
-    sotw: str
+    policy: str = Field(
+        description=(
+            "An ODRL policy serialized as a string. "
+            "All major RDF serialisations like Turtle (TTL) and JSON-LD are supported."
+        )
+    )
+
+    sotw: str = Field(
+        description=(
+            "A State of the World object (log of events) in CSV format serialised as a string."
+            "It should include, at a minimum, a one column for each feature of the policy, reusing the same IRIs."
+            "Use function /get_policy_features to see the list of required features and their IRIs."
+        )
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
