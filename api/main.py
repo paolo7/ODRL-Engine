@@ -10,7 +10,9 @@ import ODRL_Evaluator as Evaluator
 
 from api.models import (
     EvaluateRequest,
-    EvaluateResponse
+    EvaluateResponse,
+    PolicyFeaturesRequest,
+    PolicyFeaturesResponse,
 )
 
 EXTERNAL_PREFIX = os.environ.get("ODRL_EXTERNAL_PREFIX", "").strip("/")
@@ -59,3 +61,16 @@ def evaluate_policy_on_sotw(request: EvaluateRequest):
         unfulfilled_consequences=consequences,
         unfulfilled_remedies=remedies
     )
+
+@app.post(
+    "/get_policy_features",
+    response_model=PolicyFeaturesResponse
+)
+def get_policy_features(request: PolicyFeaturesRequest):
+    try:
+        features = SotW_generator.extract_features_list_from_string(
+            request.policy
+        )
+        return PolicyFeaturesResponse(features=features)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

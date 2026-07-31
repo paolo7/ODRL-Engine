@@ -224,6 +224,13 @@ def extract_features_list_from_policy(odrl_graph: rdflib.Graph):
     features = sorted(features, key=lambda f: f["iri"])
     return features
 
+def extract_features_list_from_string(graph_string):
+    graph, _ = rdf_utils.parse_string_to_graph(
+        graph_string
+    )
+    return extract_features_list_from_policy(graph)
+
+
 def extract_rule_list(odrl_graph, rule_node, features):
     """
     Extract all components (action, target, assignee) and constraints/refinements

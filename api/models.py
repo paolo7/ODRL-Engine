@@ -26,3 +26,17 @@ class EvaluateResponse(BaseModel):
     unfulfilled_duties: list[Any]
     unfulfilled_consequences: list[Any]
     unfulfilled_remedies: list[Any]
+
+class PolicyFeaturesRequest(BaseModel):
+    policy: str
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "policy": "@prefix odrl: <http://www.w3.org/ns/odrl/2/> .\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n\n<http://example.com/policy:6161>\n  a odrl:Offer ;\n  odrl:permission [\n    odrl:action [\n      rdf:value odrl:print ;\n      odrl:refinement [\n        odrl:leftOperand odrl:resolution ;\n        odrl:operator odrl:lteq ;\n        odrl:rightOperand 1200 ;\n        odrl:unit \"http://dbpedia.org/resource/Dots_per_inch\"^^xsd:string\n      ]\n    ] ;\n    odrl:assignee <http://example.com/org:John> ;\n    odrl:target <http://example.com/document:1234> ;\n  ] ;\n  odrl:profile <http://example.com/odrl:profile:10> ."
+            }
+        }
+    )
+
+class PolicyFeaturesResponse(BaseModel):
+    features: list[dict]
