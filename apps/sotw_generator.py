@@ -198,7 +198,9 @@ def main():
     st.write(
         """
         Upload an ODRL policy file and generate a State of the World (SotW)
-        CSV dataset from the policy definition.
+        CSV dataset from the policy definition. You can specify the number 
+        of rows (events) in the SotW, and whether it should be compliant
+        or not with the policy.
         """
     )
 
@@ -284,7 +286,7 @@ def main():
 
 
     valid = st.checkbox(
-        "Compliant:",
+        "Compliant",
         value=True
     )
 
