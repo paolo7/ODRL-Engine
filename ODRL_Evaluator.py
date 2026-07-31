@@ -473,7 +473,8 @@ def evaluate_ODRL_from_files(policy_file, SotW_file, state_file=None, normalise=
 
 def evaluate_ODRL_from_strings(
     policy_text,
-    sotw_csv
+    sotw_csv,
+    evaluation_state=None
 ):
     graph, _ = rdf_utils.parse_string_to_graph(
         policy_text
@@ -500,10 +501,14 @@ def evaluate_ODRL_from_strings(
         StringIO(sotw_csv)
     )
 
+    if isinstance(evaluation_state, str):
+        evaluation_state = json.loads(evaluation_state)
+
     return evaluate_ODRL_on_dataframe(
         policies[0],
         df,
-        feature_type_map
+        feature_type_map,
+        evaluation_state
     )
 
 

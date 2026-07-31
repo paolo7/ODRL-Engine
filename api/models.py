@@ -18,6 +18,17 @@ class EvaluateRequest(BaseModel):
         )
     )
 
+    evaluation_state: dict | None = Field(
+        default=None,
+        description=(
+            "Optional Evaluation State returned by a previous call to "
+            "/evaluate_policy_on_sotw. If provided, evaluation resumes from "
+            "this state instead of starting a new evaluation. Use this field "
+            "if you want to evaluate incrementally, for example in a streaming "
+            "scenario. Omit or set to null to begin a fresh evaluation. "
+        )
+    )
+
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
@@ -95,7 +106,12 @@ class PolicyFeaturesRequest(BaseModel):
     )
 
 class PolicyFeaturesRequest(BaseModel):
-    policy: str
+    policy: str = Field(
+        description=(
+            "An ODRL policy serialized as a string. "
+            "All major RDF serialisations like Turtle (TTL) and JSON-LD are supported. "
+        )
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
