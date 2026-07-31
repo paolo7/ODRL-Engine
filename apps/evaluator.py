@@ -385,9 +385,9 @@ if evaluate_button:
         st.divider()
 
         if is_valid:
-            st.success("✅ YES — State of the World is VALID")
+            st.success("✅ YES — State of the World is VALID (Compliant with the Policy)")
         else:
-            st.error("❌ NO — State of the World is NOT VALID")
+            st.error("❌ NO — State of the World is NOT VALID (Non-compliant with the Policy")
 
         st.subheader("Evaluation Summary")
 

@@ -284,7 +284,7 @@ def main():
 
 
     valid = st.checkbox(
-        "Valid:",
+        "Compliant:",
         value=True
     )
 
@@ -360,9 +360,9 @@ def main():
                 )
 
                 if not validity_achieved:
-                    generated_status = "invalid" if valid else "valid"
+                    generated_status = "non-compliant" if valid else "compliant"
                     st.warning(
-                        f"The State of the World failed to generate at the chosen validity. "
+                        f"Failed to generate the State of the World with the chosen type of compliance."
                         f"The generated one is {generated_status}."
                     )
 
