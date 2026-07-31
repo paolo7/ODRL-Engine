@@ -6,15 +6,15 @@ class EvaluateRequest(BaseModel):
     policy: str = Field(
         description=(
             "An ODRL policy serialized as a string. "
-            "All major RDF serialisations like Turtle (TTL) and JSON-LD are supported."
+            "All major RDF serialisations like Turtle (TTL) and JSON-LD are supported. "
         )
     )
 
     sotw: str = Field(
         description=(
-            "A State of the World object (log of events) in CSV format serialised as a string."
-            "It should include, at a minimum, a one column for each feature of the policy, reusing the same IRIs."
-            "Use function /get_policy_features to see the list of required features and their IRIs."
+            "A State of the World object (log of events) in CSV format serialised as a string. "
+            "It should include, at a minimum, a one column for each feature of the policy, reusing the same IRIs. "
+            "Use function /get_policy_features to see the list of required features and their IRIs. "
         )
     )
 
@@ -30,17 +30,56 @@ class EvaluateRequest(BaseModel):
 
 
 class EvaluateResponse(BaseModel):
-    evaluation_state: Any
-    valid: bool
-    rows_violating_permissions: list[int]
-    rows_violating_prohibitions: list[int]
-    obligations_not_satisfied: list[Any]
-    unfulfilled_duties: list[Any]
-    unfulfilled_consequences: list[Any]
-    unfulfilled_remedies: list[Any]
+    evaluation_state: Any = Field(
+        description=(
+            "The Evaluation State object in JSON format. "
+            "It contains information that can be used to restart evaluation on newer States of the World if "
+            "the evaluation is done in batches or streaming."
+        )
+    )
+    valid: bool = Field(
+        description=(
+            "True if the State of the World is compliant (valid), or False if the State of the World is not compliant (invalid). "
+        )
+    )
+    rows_violating_permissions: list[int] = Field(
+        description=(
+            "The list of row indexes of rows that do not match any permission. "
+        )
+    )
+    rows_violating_prohibitions: list[int] = Field(
+        description=(
+            "The list of row indexes of rows that match one or more prohibitions. "
+        )
+    )
+    obligations_not_satisfied: list[Any] = Field(
+        description=(
+            "The list of unmet obligations that have not been satisfied in the State of the World. "
+        )
+    )
+    unfulfilled_duties: list[Any] = Field(
+        description=(
+            "The list of required duties that have not been satisfied in the State of the World. "
+        )
+    )
+    unfulfilled_consequences: list[Any]  = Field(
+        description=(
+            "The list of required consequences that have not been satisfied in the State of the World. "
+        )
+    )
+    unfulfilled_remedies: list[Any] = Field(
+        description=(
+            "The list of required remedies that have not been satisfied in the State of the World. "
+        )
+    )
 
 class PolicyFeaturesRequest(BaseModel):
-    policy: str
+    policy: str = Field(
+        description=(
+            "An ODRL policy serialized as a string. "
+            "All major RDF serialisations like Turtle (TTL) and JSON-LD are supported. "
+        )
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -67,4 +106,9 @@ class PolicyFeaturesRequest(BaseModel):
     )
 
 class PolicyFeaturesResponse(BaseModel):
-    features: list[dict]
+    features: list[dict] = Field(
+        description=(
+            "The list of unique policy features extracted from the policy. "
+            "Each feature is defined by its IRI and provides an indication of its expected datatype."
+        )
+    )
