@@ -37,7 +37,8 @@ def evaluate_policy_on_sotw(request: EvaluateRequest):
 
     result = Evaluator.evaluate_ODRL_from_strings(
         request.policy,
-        request.sotw
+        request.sotw,
+        request.evaluation_state
     )
 
     (
