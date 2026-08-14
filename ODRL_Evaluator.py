@@ -8,7 +8,8 @@ import shutil
 import json
 import math
 import operator
-
+import re
+from datetime import datetime
 
 # if dateutil is not install then install it using (!pip install python-dateutil)
 from dateutil import parser
@@ -78,6 +79,22 @@ def eval_count(value, constraint, OPS_MAP):
     try:
         return OPS_MAP[op_symbol](float(value), float(right))
     except Exception:
+        return False
+
+def is_parseable_date(value):
+    if not isinstance(value, str):
+        return False
+
+    value = value.strip()
+
+    # Strictly require DD-MM-YYYY
+    if not re.fullmatch(r"\d{2}-\d{2}-\d{4}", value):
+        return False
+
+    try:
+        datetime.strptime(value, "%d-%m-%Y")
+        return True
+    except ValueError:
         return False
 
 def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP):
@@ -160,36 +177,33 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP):
 
     column_type = FEATURE_TYPE_MAP.get(left)
 
+    def is_parseable_date(value):
+        try:
+            parser.parse(str(value))
+            return True
+        except (ValueError, TypeError, OverflowError):
+            return False
+
     # TODO: fix issues with timezones.
-    # --- 1️⃣ DateTime handling ---
-    if column_type == "http://www.w3.org/2001/XMLSchema#dateTime" or left == "http://www.w3.org/ns/odrl/2/dateTime":
+    # --- DateTime handling ---
+    if column_type == "http://www.w3.org/2001/XMLSchema#dateTime" or left == "http://www.w3.org/ns/odrl/2/dateTime" or is_parseable_date(right):
         try:
             left_date = parser.parse(str(value)).timestamp()
             right_date = parser.parse(str(right)).timestamp()
-
-            # This is important in the case where we normalised.
-            # left_date = datetime.fromisoformat(str(value))
-            # right_date = datetime.fromisoformat(str(right))
-
-            # Normalize timezone (avoid naive vs aware errors)
-            # if left_date.tzinfo and not right_date.tzinfo:
-            #     right_date = right_date.replace(tzinfo=left_date.tzinfo)
-            # elif right_date.tzinfo and not left_date.tzinfo:
-            #     left_date = left_date.replace(tzinfo=right_date.tzinfo)
             ans = OPS_MAP[op_symbol](left_date, right_date)
             return ans
 
         except Exception:
             return False
 
-    # --- 2️⃣ Equality / inequality → string compare ---
+    # --- Equality / inequality → string compare ---
     if op_symbol in ("http://www.w3.org/ns/odrl/2/eq", "http://www.w3.org/ns/odrl/2/neq"):
         try:
             return OPS_MAP[op_symbol](float(value), float(right))
         except Exception:
             return OPS_MAP[op_symbol](str(value), str(right))
 
-    # --- 3️⃣ Numeric comparison ---
+    # --- Numeric comparison ---
     try:
         #print("Value ")
         return OPS_MAP[op_symbol](float(value), float(right))
