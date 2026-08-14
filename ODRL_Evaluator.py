@@ -186,7 +186,7 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP):
 
     # TODO: fix issues with timezones.
     # --- DateTime handling ---
-    if column_type == "http://www.w3.org/2001/XMLSchema#dateTime" or left == "http://www.w3.org/ns/odrl/2/dateTime" or is_parseable_date(right):
+    if column_type == "http://www.w3.org/2001/XMLSchema#dateTime" or left == "http://www.w3.org/ns/odrl/2/dateTime":# or is_parseable_date(right):
         try:
             left_date = parser.parse(str(value)).timestamp()
             right_date = parser.parse(str(right)).timestamp()
