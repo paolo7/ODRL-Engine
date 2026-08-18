@@ -231,7 +231,14 @@ def extract_features_list_from_string(graph_string):
     return extract_features_list_from_policy(graph)
 
 
-def extract_rule_list(odrl_graph, rule_node, features):
+def extract_rule_list(
+    odrl_graph,
+    rule_node,
+    features,
+    policy_target=None,
+    policy_assignee=None,
+    policy_action=None
+):
     """
     Extract all components (action, target, assignee) and constraints/refinements
     of a rule, returning triplets <A, B, C>.
@@ -306,17 +313,50 @@ def extract_rule_list(odrl_graph, rule_node, features):
         return None
 
     # --- 1. Extract Action, Asset, Party components ---
+    #
+    # Rule-level values take precedence.
+    # If a component is not defined at rule level, fall back to the
+    # corresponding value defined directly on the policy.
+
+    component_policy_fallbacks = {
+        ODRL.Action: policy_action,
+        ODRL.Asset: policy_target,
+        ODRL.Party: policy_assignee,
+    }
+
     for component_type, predicate in refinement_contexts_incoming.items():
-        for comp_node in odrl_graph.objects(rule_node, predicate):
-            # Add the component itself
-            for val in extract_values(comp_node):
-                triplets.append([component_type, "http://www.w3.org/ns/odrl/2/eq", val])
-            # Nested refinements inside component
-            for refinement in odrl_graph.objects(comp_node, ODRL.refinement):
-                #append_triplet(refinement, prefix=component_type)
-                result = append_triplet(refinement, prefix=component_type)
-                if result:
-                    triplets.append(result)
+
+        rule_components = list(odrl_graph.objects(rule_node, predicate))
+
+        if rule_components:
+            # Rule-level component exists: use it.
+            for comp_node in rule_components:
+                for val in extract_values(comp_node):
+                    triplets.append([
+                        component_type,
+                        "http://www.w3.org/ns/odrl/2/eq",
+                        val
+                    ])
+
+                # Nested refinements inside component
+                for refinement in odrl_graph.objects(comp_node, ODRL.refinement):
+                    result = append_triplet(
+                        refinement,
+                        prefix=component_type
+                    )
+                    if result:
+                        triplets.append(result)
+
+        else:
+            # No rule-level component: fall back to policy-level value.
+            policy_value = component_policy_fallbacks.get(component_type)
+
+            if policy_value is not None:
+                triplets.append([
+                    component_type,
+                    "http://www.w3.org/ns/odrl/2/eq",
+                    policy_value
+                ])
 
     # --- 2. Extract constraints directly attached to the rule ---
     for constraint in odrl_graph.objects(rule_node, ODRL.constraint):
@@ -355,7 +395,12 @@ def extract_rule_list(odrl_graph, rule_node, features):
 def extract_rule_list_from_policy(odrl_graph: rdflib.Graph):
     policy_list = []
 
-    def build_rule_structure(rule_node):
+    def build_rule_structure(
+            rule_node,
+            policy_target=None,
+            policy_assignee=None,
+            policy_action=None
+    ):
         """
         Recursively build a rule structure in case there are nested duties, consequences or remedies
         """
@@ -364,14 +409,20 @@ def extract_rule_list_from_policy(odrl_graph: rdflib.Graph):
             "conditions": extract_rule_list(
                 odrl_graph,
                 rule_node,
-                last_seen_list_of_features
+                last_seen_list_of_features,
+                policy_target=policy_target,
+                policy_assignee=policy_assignee,
+                policy_action=policy_action
             )
         }
 
         # ---- DUTIES (permission → duty) ----
         duties = []
         for duty in odrl_graph.objects(rule_node, ODRL.duty):
-            duties.append(build_rule_structure(duty))
+            duties.append(build_rule_structure(duty,
+                    policy_target=policy_target,
+                    policy_assignee=policy_assignee,
+                    policy_action=policy_action))
 
         if duties:
             rule_dict["duties"] = duties
@@ -379,7 +430,10 @@ def extract_rule_list_from_policy(odrl_graph: rdflib.Graph):
         # ---- CONSEQUENCES (duty or obligation → consequence) ----
         consequences = []
         for consequence in odrl_graph.objects(rule_node, ODRL.consequence):
-            consequences.append(build_rule_structure(consequence))
+            consequences.append(build_rule_structure(consequence,
+                policy_target=policy_target,
+                policy_assignee=policy_assignee,
+                policy_action=policy_action))
 
         if consequences:
             rule_dict["consequences"] = consequences
@@ -387,7 +441,10 @@ def extract_rule_list_from_policy(odrl_graph: rdflib.Graph):
         # ---- REMEDIES (prohibition → remedy) ----
         remedies = []
         for remedy in odrl_graph.objects(rule_node, ODRL.remedy):
-            remedies.append(build_rule_structure(remedy))
+            remedies.append(build_rule_structure(remedy,
+                policy_target=policy_target,
+                policy_assignee=policy_assignee,
+                policy_action=policy_action))
 
         if remedies:
             rule_dict["remedies"] = remedies
@@ -406,22 +463,48 @@ def extract_rule_list_from_policy(odrl_graph: rdflib.Graph):
         prohibitions = []
         obligations = []
 
+        # Policy-level defaults
+
+        policy_target = next(
+            (str(value) for value in odrl_graph.objects(policy, ODRL.target)),
+            None
+        )
+
+        policy_assignee = next(
+            (str(value) for value in odrl_graph.objects(policy, ODRL.assignee)),
+            None
+        )
+
+        policy_action = next(
+            (str(value) for value in odrl_graph.objects(policy, ODRL.action)),
+            None
+        )
+
         # ---- PERMISSIONS ----
         for perm in odrl_graph.objects(policy, ODRL.permission):
             permissions.append(
-                build_rule_structure(perm)
+                build_rule_structure(perm,
+                    policy_target=policy_target,
+                    policy_assignee=policy_assignee,
+                    policy_action=policy_action)
             )
 
         # ---- PROHIBITIONS ----
         for prohib in odrl_graph.objects(policy, ODRL.prohibition):
             prohibitions.append(
-                build_rule_structure(prohib)
+                build_rule_structure(prohib,
+                    policy_target=policy_target,
+                    policy_assignee=policy_assignee,
+                    policy_action=policy_action)
             )
 
         # ---- OBLIGATIONS ----
         for oblig in odrl_graph.objects(policy, ODRL.obligation):
             obligations.append(
-                build_rule_structure(oblig)
+                build_rule_structure(oblig,
+                    policy_target=policy_target,
+                    policy_assignee=policy_assignee,
+                    policy_action=policy_action)
             )
 
         policy_list.append({
@@ -433,113 +516,113 @@ def extract_rule_list_from_policy(odrl_graph: rdflib.Graph):
 
     return policy_list
 
-def extract_rule_list_from_policy_object(policy):
-    policy_list = []
-    features = list(base_features)
-
-    def extract_rule_params(rule_object):
-        params = []
-        if rule_object.action is not None:
-            if len(rule_object.action) == 1:
-                params.append([str(ODRL.Action), str(ODRL.eq), str(rule_object.action[0].value)])
-            else:
-                params.append([str(ODRL.Action), str(ODRL.eq), str([a.value for a in rule_object.action])])
-        if len(rule_object.target) > 0:
-            if len(rule_object.target) == 1:
-                params.append([str(ODRL.Asset), str(ODRL.eq), str(rule_object.target[0].value)])
-            else:
-                params.append([str(ODRL.Asset), str(ODRL.eq), str([t.value for t in rule_object.target])])
-        if len(rule_object.assignee) > 0:   
-            if len(rule_object.assignee) == 1:
-                    params.append([str(ODRL.Party), str(ODRL.eq), str(rule_object.assignee[0].value)])
-            else:
-                params.append([str(ODRL.Party), str(ODRL.eq), str([a.value for a in rule_object.assignee])])
-
-        for param in rule_object.constraint:
-            if param.leftOperand in ["http://www.w3.org/ns/odrl/2/dateTime", "http://www.w3.org/2001/XMLSchema#dateTime"]:
-                features.append({"iri": param.leftOperand, "type": "http://www.w3.org/2001/XMLSchema#dateTime"})
-                #params.append([param.leftOperand, param.operator, datetime.fromtimestamp(param.rightOperand, timezone.utc).isoformat(timespec="microseconds")])
-                params.append([param.leftOperand, param.operator, param.rightOperand])
-            else:
-                params.append([param.leftOperand, param.operator, param.rightOperand])
-        return params
-
-    def build_rule_structure(rule_object):
-        """
-        Recursively build a rule structure in case there are nested duties, consequences or remedies
-        """
-
-        rule_dict = {
-            "conditions": extract_rule_params(
-                rule_object,
-            )
-        }
-
-        # ---- DUTIES (permission → duty) ----
-        duties = []
-        if isinstance(rule_object, policy_normalisation_comparison.Policy.Permission):
-            if rule_object.duty is not None:
-                for duty in rule_object.duty:
-                    duties.append(build_rule_structure(duty))
-
-        if duties:
-            rule_dict["duties"] = duties
-
-        # ---- CONSEQUENCES (duty or obligation → consequence) ----
-        
-        consequences = []
-        if isinstance(rule_object, policy_normalisation_comparison.Policy.Obligation):
-            if rule_object.consequence is not None:
-                for consequence in rule_object.consequence:
-                    consequences.append(build_rule_structure(consequence))
-
-        if consequences:
-            rule_dict["consequences"] = consequences
-
-        # ---- REMEDIES (prohibition → remedy) ----
-        remedies = []
-        if isinstance(rule_object, policy_normalisation_comparison.Policy.Prohibition):
-            if rule_object.remedy is not None:
-                for remedy in rule_object.remedy:
-                    remedies.append(build_rule_structure(remedy))
-
-        if remedies:
-            rule_dict["remedies"] = remedies
-
-        return rule_dict
-
-    # ----------------------------------------------------
-
-    permissions = []
-    prohibitions = []
-    obligations = []
-
-    # ---- PERMISSIONS ----
-    for perm in policy.permission:
-        permissions.append(
-            build_rule_structure(perm)
-        )
-
-    # ---- PROHIBITIONS ----
-    for prohib in policy.prohibition:
-        prohibitions.append(
-            build_rule_structure(prohib)
-        )
-
-    # ---- OBLIGATIONS ----
-    for oblig in policy.obligation:
-        obligations.append(
-            build_rule_structure(oblig)
-        )
-
-    policy_list.append({
-        "policy_iri": str(policy.uid),
-        "permissions": permissions,
-        "prohibitions": prohibitions,
-        "obligations": obligations
-    })
-
-    return policy_list, features
+# def extract_rule_list_from_policy_object(policy):
+#     policy_list = []
+#     features = list(base_features)
+#
+#     def extract_rule_params(rule_object):
+#         params = []
+#         if rule_object.action is not None:
+#             if len(rule_object.action) == 1:
+#                 params.append([str(ODRL.Action), str(ODRL.eq), str(rule_object.action[0].value)])
+#             else:
+#                 params.append([str(ODRL.Action), str(ODRL.eq), str([a.value for a in rule_object.action])])
+#         if len(rule_object.target) > 0:
+#             if len(rule_object.target) == 1:
+#                 params.append([str(ODRL.Asset), str(ODRL.eq), str(rule_object.target[0].value)])
+#             else:
+#                 params.append([str(ODRL.Asset), str(ODRL.eq), str([t.value for t in rule_object.target])])
+#         if len(rule_object.assignee) > 0:
+#             if len(rule_object.assignee) == 1:
+#                     params.append([str(ODRL.Party), str(ODRL.eq), str(rule_object.assignee[0].value)])
+#             else:
+#                 params.append([str(ODRL.Party), str(ODRL.eq), str([a.value for a in rule_object.assignee])])
+#
+#         for param in rule_object.constraint:
+#             if param.leftOperand in ["http://www.w3.org/ns/odrl/2/dateTime", "http://www.w3.org/2001/XMLSchema#dateTime"]:
+#                 features.append({"iri": param.leftOperand, "type": "http://www.w3.org/2001/XMLSchema#dateTime"})
+#                 #params.append([param.leftOperand, param.operator, datetime.fromtimestamp(param.rightOperand, timezone.utc).isoformat(timespec="microseconds")])
+#                 params.append([param.leftOperand, param.operator, param.rightOperand])
+#             else:
+#                 params.append([param.leftOperand, param.operator, param.rightOperand])
+#         return params
+#
+#     def build_rule_structure(rule_object):
+#         """
+#         Recursively build a rule structure in case there are nested duties, consequences or remedies
+#         """
+#
+#         rule_dict = {
+#             "conditions": extract_rule_params(
+#                 rule_object,
+#             )
+#         }
+#
+#         # ---- DUTIES (permission → duty) ----
+#         duties = []
+#         if isinstance(rule_object, policy_normalisation_comparison.Policy.Permission):
+#             if rule_object.duty is not None:
+#                 for duty in rule_object.duty:
+#                     duties.append(build_rule_structure(duty))
+#
+#         if duties:
+#             rule_dict["duties"] = duties
+#
+#         # ---- CONSEQUENCES (duty or obligation → consequence) ----
+#
+#         consequences = []
+#         if isinstance(rule_object, policy_normalisation_comparison.Policy.Obligation):
+#             if rule_object.consequence is not None:
+#                 for consequence in rule_object.consequence:
+#                     consequences.append(build_rule_structure(consequence))
+#
+#         if consequences:
+#             rule_dict["consequences"] = consequences
+#
+#         # ---- REMEDIES (prohibition → remedy) ----
+#         remedies = []
+#         if isinstance(rule_object, policy_normalisation_comparison.Policy.Prohibition):
+#             if rule_object.remedy is not None:
+#                 for remedy in rule_object.remedy:
+#                     remedies.append(build_rule_structure(remedy))
+#
+#         if remedies:
+#             rule_dict["remedies"] = remedies
+#
+#         return rule_dict
+#
+#     # ----------------------------------------------------
+#
+#     permissions = []
+#     prohibitions = []
+#     obligations = []
+#
+#     # ---- PERMISSIONS ----
+#     for perm in policy.permission:
+#         permissions.append(
+#             build_rule_structure(perm)
+#         )
+#
+#     # ---- PROHIBITIONS ----
+#     for prohib in policy.prohibition:
+#         prohibitions.append(
+#             build_rule_structure(prohib)
+#         )
+#
+#     # ---- OBLIGATIONS ----
+#     for oblig in policy.obligation:
+#         obligations.append(
+#             build_rule_structure(oblig)
+#         )
+#
+#     policy_list.append({
+#         "policy_iri": str(policy.uid),
+#         "permissions": permissions,
+#         "prohibitions": prohibitions,
+#         "obligations": obligations
+#     })
+#
+#     return policy_list, features
 
 
 
