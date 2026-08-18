@@ -87,15 +87,26 @@ def is_parseable_date(value):
 
     value = value.strip()
 
-    # Strictly require DD-MM-YYYY
-    if not re.fullmatch(r"\d{2}-\d{2}-\d{4}", value):
+    # Explicitly reject strings consisting only of digits
+    if value.isdigit():
         return False
 
-    try:
-        datetime.strptime(value, "%d-%m-%Y")
-        return True
-    except ValueError:
-        return False
+    # Supported date formats
+    formats = [
+        "%d-%m-%Y",
+        "%Y-%m-%d",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%dT%H:%M",
+    ]
+
+    for fmt in formats:
+        try:
+            datetime.strptime(value, fmt)
+            return True
+        except ValueError:
+            continue
+
+    return False
 
 def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP):
     # ----------------------------------------
@@ -177,16 +188,9 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP):
 
     column_type = FEATURE_TYPE_MAP.get(left)
 
-    def is_parseable_date(value):
-        try:
-            parser.parse(str(value))
-            return True
-        except (ValueError, TypeError, OverflowError):
-            return False
-
     # TODO: fix issues with timezones.
     # --- DateTime handling ---
-    if column_type == "http://www.w3.org/2001/XMLSchema#dateTime" or left == "http://www.w3.org/ns/odrl/2/dateTime":# or is_parseable_date(right):
+    if column_type == "http://www.w3.org/2001/XMLSchema#dateTime" or left == "http://www.w3.org/ns/odrl/2/dateTime" or is_parseable_date(right):
         try:
             left_date = parser.parse(str(value)).timestamp()
             right_date = parser.parse(str(right)).timestamp()

@@ -80,7 +80,7 @@ apply_style()
 st.markdown("## Policy Evaluator")
 
 st.markdown(
-    "This is a DEMO of the [OVAL Policy Evaluator for ODRL](https://github.com/DIPS-Tools/ODRL-Engine) from the University of Southampton."
+    "This is the [OVAL Policy Evaluator for ODRL](https://github.com/DIPS-Tools/ODRL-Engine) from the University of Southampton."
 )
 
 st.markdown(
@@ -89,6 +89,10 @@ st.markdown(
 
 st.markdown(
     "After uploading an **ODRL Policy** you can press the **Show expected column names** button below to see a list of the column names that should appear in the State of the World. Each column name is listed in a row, note that some of them include a space in the name, which must be preserved. The order of the columns does not matter. If a column does not appear in the State of the World Object, the evaluator will assume all values are null for that feature."
+)
+
+st.markdown(
+    "The evaluator currently supports comparison of dates, numbers and string and URI identifiers in the State of the World object. Values are considered strings/URIs by default if using the equality operator, or numbers if using a numerical comparison operator like < or >=, unless a common date format (like %d-%m-%Y, %Y-%m-%d, %Y-%m-%dT%H:%M:%S, %Y-%m-%dT%H:%M) is detected. This means that for numbers to be considered equal, they need to be written in the same syntactic form (e.g. '4' would not be considered equal to '4.0')"
 )
 
 # ------------------------------
