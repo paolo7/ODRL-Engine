@@ -319,9 +319,9 @@ def extract_rule_list(
     # corresponding value defined directly on the policy.
 
     component_policy_fallbacks = {
-        ODRL.Action: policy_action,
-        ODRL.Asset: policy_target,
-        ODRL.Party: policy_assignee,
+        "http://www.w3.org/ns/odrl/2/Action": policy_action,
+        "http://www.w3.org/ns/odrl/2/Asset": policy_target,
+        "http://www.w3.org/ns/odrl/2/Party": policy_assignee,
     }
 
     for component_type, predicate in refinement_contexts_incoming.items():
@@ -865,11 +865,11 @@ def translate_csv_to_solid_syntax(csv_file, destination_file="translated_sotw.tt
 #     return sotw_data
 
 # Example usage
-#g = rdf_utils.load("example_policies/example_valid3.ttl")[0]
-#file_path = "example_policies/example_valid3.ttl"
+#g = rdf_utils.load("example_policies/Policy_edited.ttl")[0]
+#file_path = "example_policies/Policy_edited.ttl"
 #print(*extract_features_list_from_policy_from_file(file_path), sep ="\n")
 #print("\nPolicies with rules:")
-##print(*extract_rule_list_from_policy_from_file(file_path), sep="\n")
+#print(*extract_rule_list_from_policy_from_file(file_path), sep="\n")
 #from pprint import pprint
 #pprint(
 #    extract_rule_list_from_policy_from_file(file_path),
