@@ -72,7 +72,8 @@ uploaded_policy = st.file_uploader(
         "nt",
         "jsonld",
         "json"
-    ]
+    ],
+    key="odrl_policy_uploader"
 )
 
 # ---------------------------------------------------------
