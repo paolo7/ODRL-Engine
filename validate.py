@@ -119,7 +119,7 @@ def validate_ODRL(graph, format=None):
         validation_report["is_valid_RDF"] = True
         validation_report["file_format"] = format
         validation_report["ODRL_graph_size"] = graph_length
-        validation_report["errors"].append(
+        validation_report["info"].append(
             f"The ODRL graph contains {graph_length} RDF triples."
         )
         shacl_file = os.path.join("SHACL", "odrl-shacl.ttl")

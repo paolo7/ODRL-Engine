@@ -23,6 +23,11 @@ st.set_page_config(
 
 apply_style()
 
+
+# ---------------------------------------------------------
+# Page Header
+# ---------------------------------------------------------
+
 st.markdown("## ODRL Policy Validator")
 
 st.markdown(
@@ -48,6 +53,15 @@ if "policy_upload_id" not in st.session_state:
 if "policy_suffix" not in st.session_state:
     st.session_state.policy_suffix = ".ttl"
 
+if "validation_result" not in st.session_state:
+    st.session_state.validation_result = None
+
+if "validation_source" not in st.session_state:
+    st.session_state.validation_source = None
+
+if "uploaded_filename" not in st.session_state:
+    st.session_state.uploaded_filename = None
+
 
 # ---------------------------------------------------------
 # Helper: Display Validation Results
@@ -58,6 +72,9 @@ def display_validation_results(validation_result):
     Display the result returned by validate.validate_ODRL()
     in a structured Streamlit UI.
     """
+
+    if not validation_result:
+        return
 
     is_valid_rdf = validation_result.get(
         "is_valid_RDF",
@@ -89,21 +106,31 @@ def display_validation_results(validation_result):
 
         if is_valid_odrl is True:
             st.success("✅ Valid ODRL")
+
         elif is_valid_odrl is False:
             st.error("❌ Invalid ODRL")
+
         else:
-            st.warning("⚠️ ODRL validation not performed")
+            st.warning(
+                "⚠️ ODRL validation not performed"
+            )
 
 
     # -----------------------------------------------------
     # Basic information
     # -----------------------------------------------------
 
-    with st.expander("Validation details", expanded=False):
+    with st.expander(
+        "Validation details",
+        expanded=False
+    ):
 
-        file_format = validation_result.get("file_format")
+        file_format = validation_result.get(
+            "file_format"
+        )
 
         if file_format is not None:
+
             st.write(
                 f"**File format:** `{file_format}`"
             )
@@ -113,8 +140,10 @@ def display_validation_results(validation_result):
         )
 
         if graph_size is not None:
+
             st.write(
-                f"**RDF graph size:** `{graph_size}` triples"
+                f"**RDF graph size:** "
+                f"`{graph_size}` triples"
             )
 
 
@@ -131,7 +160,10 @@ def display_validation_results(validation_result):
         )
 
         if odrl_stats_text:
-            st.info(odrl_stats_text)
+
+            st.info(
+                odrl_stats_text
+            )
 
         odrl_stats = validation_result.get(
             "odrl_stats"
@@ -143,7 +175,10 @@ def display_validation_results(validation_result):
                 "ODRL Statistics Details",
                 expanded=False
             ):
-                st.json(odrl_stats)
+
+                st.json(
+                    odrl_stats
+                )
 
 
     # -----------------------------------------------------
@@ -163,7 +198,10 @@ def display_validation_results(validation_result):
         ):
 
             for error in errors:
-                st.error(error)
+
+                st.error(
+                    error
+                )
 
 
     # -----------------------------------------------------
@@ -183,7 +221,10 @@ def display_validation_results(validation_result):
         ):
 
             for warning in warnings:
-                st.warning(warning)
+
+                st.warning(
+                    warning
+                )
 
 
     # -----------------------------------------------------
@@ -203,7 +244,10 @@ def display_validation_results(validation_result):
         ):
 
             for message in info:
-                st.info(message)
+
+                st.info(
+                    message
+                )
 
 
     # -----------------------------------------------------
@@ -259,7 +303,7 @@ def display_validation_results(validation_result):
             for key, value in other_fields.items():
 
                 with st.expander(
-                    key,
+                    str(key),
                     expanded=False
                 ):
 
@@ -267,9 +311,16 @@ def display_validation_results(validation_result):
                         value,
                         (dict, list)
                     ):
-                        st.json(value)
+
+                        st.json(
+                            value
+                        )
+
                     else:
-                        st.write(value)
+
+                        st.write(
+                            value
+                        )
 
 
 # ---------------------------------------------------------
@@ -291,11 +342,17 @@ def save_uploaded_file(uploaded_file):
         suffix=suffix
     )
 
-    temp.write(
-        uploaded_file.getvalue()
-    )
+    try:
 
-    temp.close()
+        temp.write(
+            uploaded_file.getvalue()
+        )
+
+        temp.flush()
+
+    finally:
+
+        temp.close()
 
     return temp.name
 
@@ -330,6 +387,8 @@ uploaded_policy = st.file_uploader(
 
 if uploaded_policy is not None:
 
+    # Streamlit provides file_id for UploadedFile objects.
+    # Only process the file when it is actually a new upload.
     if (
         uploaded_policy.file_id
         != st.session_state.policy_upload_id
@@ -339,10 +398,31 @@ if uploaded_policy is not None:
             uploaded_policy.file_id
         )
 
+        # ---------------------------------------------
+        # Populate the text area
+        # ---------------------------------------------
+
+        try:
+
+            uploaded_content = (
+                uploaded_policy
+                .getvalue()
+                .decode("utf-8")
+            )
+
+        except UnicodeDecodeError:
+
+            uploaded_content = (
+                uploaded_policy
+                .getvalue()
+                .decode(
+                    "utf-8",
+                    errors="replace"
+                )
+            )
+
         st.session_state.policy_text = (
-            uploaded_policy
-            .getvalue()
-            .decode("utf-8")
+            uploaded_content
         )
 
         st.session_state.policy_suffix = (
@@ -351,7 +431,14 @@ if uploaded_policy is not None:
             .lower()
         )
 
-        # Save the uploaded file and validate it immediately.
+        st.session_state.uploaded_filename = (
+            uploaded_policy.name
+        )
+
+        # ---------------------------------------------
+        # Validate uploaded policy
+        # ---------------------------------------------
+
         policy_path = None
 
         try:
@@ -370,15 +457,25 @@ if uploaded_policy is not None:
                     )
                 )
 
-            st.success(
-                f"Uploaded: {uploaded_policy.name}"
-            )
-
-            display_validation_results(
+            st.session_state.validation_result = (
                 validation_result
             )
 
+            st.session_state.validation_source = (
+                "upload"
+            )
+
         except Exception as e:
+
+            st.session_state.validation_result = None
+
+            st.session_state.validation_source = (
+                "upload_error"
+            )
+
+            st.session_state.uploaded_filename = (
+                uploaded_policy.name
+            )
 
             st.error(
                 "Validation of the uploaded policy failed."
@@ -392,7 +489,16 @@ if uploaded_policy is not None:
                 policy_path
                 and os.path.exists(policy_path)
             ):
-                os.remove(policy_path)
+
+                try:
+
+                    os.remove(
+                        policy_path
+                    )
+
+                except OSError:
+
+                    pass
 
 
 # ---------------------------------------------------------
@@ -403,7 +509,7 @@ st.subheader("ODRL Policy")
 
 policy_text = st.text_area(
     "Policy Text",
-    height=450,
+    height=250,
     key="policy_text",
     label_visibility="collapsed"
 )
@@ -425,38 +531,111 @@ validate_button = st.button(
 
 if validate_button:
 
-    policy_text = st.session_state.policy_text
+    policy_text = (
+        st.session_state.policy_text
+    )
 
     if not policy_text.strip():
 
-        st.warning(
-            "⚠️ Please paste or upload an ODRL policy first."
+        st.session_state.validation_result = None
+
+        st.session_state.validation_source = (
+            "empty"
         )
 
-        st.stop()
+    else:
 
-    try:
+        try:
 
-        with st.spinner(
-            "Validating ODRL policy..."
-        ):
+            with st.spinner(
+                "Validating ODRL policy..."
+            ):
 
-            # IMPORTANT:
-            # Manual validation uses the string-based validator.
-            validation_result = (
-                validate.validate_ODRL_from_string(
-                    policy_text
+                validation_result = (
+                    validate.validate_ODRL_from_string(
+                        policy_text
+                    )
                 )
+
+            st.session_state.validation_result = (
+                validation_result
             )
 
-        display_validation_results(
-            validation_result
+            st.session_state.validation_source = (
+                "manual"
+            )
+
+        except Exception as e:
+
+            st.session_state.validation_result = None
+
+            st.session_state.validation_source = (
+                "manual_error"
+            )
+
+            st.error(
+                "Validation failed."
+            )
+
+            st.exception(e)
+
+
+# ---------------------------------------------------------
+# Validation Result Area
+# ---------------------------------------------------------
+
+if (
+    st.session_state.validation_source
+    == "upload"
+):
+
+    if st.session_state.uploaded_filename:
+
+        st.success(
+            f"Uploaded: "
+            f"{st.session_state.uploaded_filename}"
         )
 
-    except Exception as e:
+    display_validation_results(
+        st.session_state.validation_result
+    )
 
-        st.error(
-            "Validation failed."
-        )
 
-        st.exception(e)
+elif (
+    st.session_state.validation_source
+    == "manual"
+):
+
+    display_validation_results(
+        st.session_state.validation_result
+    )
+
+
+elif (
+    st.session_state.validation_source
+    == "empty"
+):
+
+    st.warning(
+        "⚠️ Please paste or upload an ODRL policy first."
+    )
+
+
+elif (
+    st.session_state.validation_source
+    == "upload_error"
+):
+
+    st.error(
+        "The uploaded ODRL policy could not be validated."
+    )
+
+
+elif (
+    st.session_state.validation_source
+    == "manual_error"
+):
+
+    st.error(
+        "The ODRL policy could not be validated."
+    )
