@@ -91,7 +91,7 @@ def is_parseable_date(value):
     if value.isdigit():
         return False
 
-    # Supported date formats
+    # First try the supported date formats
     formats = [
         "%d-%m-%Y",
         "%Y-%m-%d",
@@ -106,7 +106,12 @@ def is_parseable_date(value):
         except ValueError:
             continue
 
-    return False
+    # Try ISO 8601 date-times with timezone information
+    try:
+        datetime.fromisoformat(value)
+        return True
+    except ValueError:
+        return False
 
 def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP):
     # ----------------------------------------
@@ -620,5 +625,5 @@ def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW
 
 
 #result = evaluate_ODRL_from_files("example_policies/GATE_Test/GATE_Policy_Test_Edited.jsonld",
-                                  #"example_policies/GATE_Test/GATE_SotW_valid.csv")
+#                                  "example_policies/GATE_Test/GATE_SotW_valid.csv")
 #print(result)
