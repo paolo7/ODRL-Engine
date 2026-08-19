@@ -26,6 +26,7 @@ import sys
 import ODRL_generator
 import SotW_generator
 import ODRL_Evaluator
+import rdf_utils
 
 
 # ==========================================================
@@ -119,10 +120,10 @@ def evaluate_once(policy_graph, dataframe):
 
     feature_map = {
         f["iri"]: f["type"]
-        for f in SotW_generator.extract_features_list_from_policy(policy_graph)
+        for f in rdf_utils.extract_features_list_from_policy(policy_graph)
     }
 
-    rules = SotW_generator.extract_rule_list_from_policy(policy_graph)
+    rules = rdf_utils.extract_rule_list_from_policy(policy_graph)
 
     start = time.perf_counter()
 

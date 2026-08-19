@@ -2,11 +2,11 @@ import rdflib
 import pyshacl
 import test_utils
 import ODRL_Evaluator
-import SotW_generator
 import validate
 import os
 import uuid
 import time
+from rdf_utils import extract_features_list_from_policy, extract_rule_list_from_policy
 
 total_eval_time = 0.0
 total_eval_calls = 0
@@ -168,9 +168,9 @@ def run_SotW_tests(test_repetitions, test_cases, test_name ):
         pair[1].to_csv(sotw_path, index=False)
 
         # Re-run evaluation once and capture diagnostics
-        FEATURE_TYPE_MAP = {f["iri"]: f["type"] for f in SotW_generator.extract_features_list_from_policy(pair[0])}
+        FEATURE_TYPE_MAP = {f["iri"]: f["type"] for f in extract_features_list_from_policy(pair[0])}
         result = ODRL_Evaluator.evaluate_ODRL_on_dataframe(
-            SotW_generator.extract_rule_list_from_policy(pair[0]),
+            extract_rule_list_from_policy(pair[0]),
             pair[1],
             FEATURE_TYPE_MAP
         )
@@ -190,8 +190,8 @@ def run_SotW_tests(test_repetitions, test_cases, test_name ):
         return uid
 
     for pair in test_cases["valid_pairs"]:
-        FEATURE_TYPE_MAP = {f["iri"]: f["type"] for f in SotW_generator.extract_features_list_from_policy(pair[0])}
-        if ODRL_Evaluator.evaluate_ODRL_on_dataframe(SotW_generator.extract_rule_list_from_policy(pair[0]), pair[1], FEATURE_TYPE_MAP)[1]:
+        FEATURE_TYPE_MAP = {f["iri"]: f["type"] for f in extract_features_list_from_policy(pair[0])}
+        if ODRL_Evaluator.evaluate_ODRL_on_dataframe(extract_rule_list_from_policy(pair[0]), pair[1], FEATURE_TYPE_MAP)[1]:
             tests_passed += 1
         else:
             tests_failed += 1
@@ -201,8 +201,8 @@ def run_SotW_tests(test_repetitions, test_cases, test_name ):
             )
 
     for pair in test_cases["invalid_pairs"]:
-        FEATURE_TYPE_MAP = {f["iri"]: f["type"] for f in SotW_generator.extract_features_list_from_policy(pair[0])}
-        if not ODRL_Evaluator.evaluate_ODRL_on_dataframe(SotW_generator.extract_rule_list_from_policy(pair[0]), pair[1],FEATURE_TYPE_MAP)[1]:
+        FEATURE_TYPE_MAP = {f["iri"]: f["type"] for f in extract_features_list_from_policy(pair[0])}
+        if not ODRL_Evaluator.evaluate_ODRL_on_dataframe(extract_rule_list_from_policy(pair[0]), pair[1],FEATURE_TYPE_MAP)[1]:
             tests_passed += 1
         else:
             tests_failed += 1

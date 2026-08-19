@@ -15,7 +15,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from common.streamlit_style import apply_style
 import ODRL_Evaluator as Evaluator
 import rdf_utils
-from SotW_generator import extract_features_list_from_policy
+from rdf_utils import extract_features_list_from_policy
 
 # ------------------------------
 # Config

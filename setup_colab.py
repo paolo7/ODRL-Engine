@@ -59,6 +59,7 @@ def upload_file():
 
 def show_interface():
     import validate
+    import rdf_utils
     import ODRL_generator
     from colab_functions import visualise
     from colab_functions import graph_equality_comparison
@@ -551,7 +552,7 @@ def show_interface():
                                 return
 
                             try:
-                                rules = SotW_generator.extract_rule_list_from_policy_from_file(
+                                rules = rdf_utils.extract_rule_list_from_policy_from_file(
                                     UploadState.filename
                                 )
 

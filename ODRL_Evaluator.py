@@ -1,7 +1,7 @@
 from io import StringIO
 
 import rdf_utils
-import SotW_generator
+from rdf_utils import extract_rule_list_from_policy, extract_features_list_from_policy
 import pandas as pd
 import os
 import shutil
@@ -35,8 +35,8 @@ def evaluate_ODRL_from_files_merge_policies(policy_files, SotW_file):
     features = []
     for file in policy_files:
         graph = rdf_utils.load(file)[0]
-        graph_rules.append(SotW_generator.extract_rule_list_from_policy(graph))
-        features.append(SotW_generator.extract_features_list_from_policy(graph))
+        graph_rules.append(extract_rule_list_from_policy(graph))
+        features.append(extract_features_list_from_policy(graph))
 
     # temporary merge code, TODO should be updated when a more stable merge function is created
     merged_permissions = []
@@ -307,13 +307,13 @@ def check_match(row, rule_state, OPS_MAP, FEATURE_TYPE_MAP):
 
 def evaluate_ODRL_on_df(ODRL_graph, df, evaluation_state=None):
     features = (
-        SotW_generator.extract_features_list_from_policy(
+        extract_features_list_from_policy(
             ODRL_graph
         )
     )
 
     policies = (
-        SotW_generator.extract_rule_list_from_policy(
+        extract_rule_list_from_policy(
             ODRL_graph
         )
     )
@@ -475,8 +475,8 @@ def evaluate_ODRL_from_files(policy_file, SotW_file, state_file=None, normalise=
     graph = rdf_utils.load(policy_file)[0]
     if normalise:
         graph = rdf_utils.load_normalise(policy_file)[0]
-    policies = SotW_generator.extract_rule_list_from_policy(graph)
-    features = SotW_generator.extract_features_list_from_policy(graph)
+    policies = rdf_utils.extract_rule_list_from_policy(graph)
+    features = rdf_utils.extract_features_list_from_policy(graph)
 
     evaluation_state = None
 
@@ -499,13 +499,13 @@ def evaluate_ODRL_from_strings(
     )
 
     policies = (
-        SotW_generator.extract_rule_list_from_policy(
+        extract_rule_list_from_policy(
             graph
         )
     )
 
     features = (
-        SotW_generator.extract_features_list_from_policy(
+        extract_features_list_from_policy(
             graph
         )
     )
@@ -548,8 +548,8 @@ def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW
     if normalise:
         graph = rdf_utils.load_normalise(policy_file)[0]
 
-    policies = SotW_generator.extract_rule_list_from_policy(graph)
-    features = SotW_generator.extract_features_list_from_policy(graph)
+    policies = extract_rule_list_from_policy(graph)
+    features = extract_features_list_from_policy(graph)
 
     FEATURE_TYPE_MAP = {f["iri"]: f["type"] for f in features}
 
@@ -617,3 +617,8 @@ def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW
     # 6) RETURN FINAL RESULT
     # ----------------------------------------
     return result
+
+
+#result = evaluate_ODRL_from_files("example_policies/GATE_Test/GATE_Policy_Test_Edited.jsonld",
+                                  #"example_policies/GATE_Test/GATE_SotW_valid.csv")
+#print(result)

@@ -1,11 +1,8 @@
-from io import StringIO
 import os
-import pandas as pd
 from fastapi import FastAPI, HTTPException
 
 
 import rdf_utils
-import SotW_generator
 import ODRL_Evaluator as Evaluator
 import validate as Validator
 
@@ -72,7 +69,7 @@ def evaluate_policy_on_sotw(request: EvaluateRequest):
 )
 def get_policy_features(request: PolicyFeaturesRequest):
     try:
-        features = SotW_generator.extract_features_list_from_string(
+        features = rdf_utils.extract_features_list_from_string(
             request.policy
         )
         return PolicyFeaturesResponse(features=features)
