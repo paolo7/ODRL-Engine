@@ -1,346 +1,311 @@
-from rdflib import Graph, Namespace, RDF
-from typing import Union
-import json
-import pyshacl
+import streamlit as st
 import os
-import rdf_utils
-from owlrl import RDFS_Semantics
+import tempfile
 
-def validate_SHACL(graph, shacl, ont_graph=None):
-    r = pyshacl.validate(graph, shacl_graph=shacl, ont_graph=ont_graph, inference='rdfs', abort_on_first=False, meta_shacl=False, debug=False)
-    conforms, results_graph, results_text = r
-    return conforms, results_text
+from pathlib import Path
+import sys
 
-def get_ODRL_macro_statistics(graph: Graph, ont_graph: Graph = None):
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+import validate
+from common.streamlit_style import apply_style
+
+
+# ---------------------------------------------------------
+# Streamlit Configuration
+# ---------------------------------------------------------
+
+st.set_page_config(
+    page_title="ODRL Policy Validator",
+    layout="wide"
+)
+
+apply_style()
+
+
+# ---------------------------------------------------------
+# Helper
+# ---------------------------------------------------------
+
+def save_uploaded_file(uploaded_file):
     """
-    Given an RDFLib graph (and optionally an ontology graph),
-    return a list of integers representing the number of instances
-    of key ODRL classes, after applying RDFS inference.
-
-    Order of classes:
-    1. odrl:Policy
-    2. odrl:Set
-    3. odrl:Agreement
-    4. odrl:Offer
-    5. odrl:Permission
-    6. odrl:Prohibition
-    7. odrl:Duty
-    8. odrl:Constraint
+    Save uploaded Streamlit file temporarily because
+    validate expects a filename.
     """
-    # Merge ontology into graph for reasoning if provided
-    merged = Graph()
-    for g in (ont_graph, graph):
-        if g is not None:
-            for triple in g:
-                merged.add(triple)
+    suffix = os.path.splitext(uploaded_file.name)[1]
 
-    # Apply simple RDFS reasoning
-    reasoning = RDFS_Semantics(merged, axioms=True, daxioms=True)
-    reasoning.closure()
-    reasoning.flush_stored_triples()
+    temp = tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix=suffix
+    )
 
-    # Define ODRL namespace
-    ODRL = Namespace("http://www.w3.org/ns/odrl/2/")
+    temp.write(uploaded_file.getvalue())
+    temp.close()
 
-    # List of ODRL classes to count
-    classes = [
-        ODRL.Policy,
-        ODRL.Set,
-        ODRL.Agreement,
-        ODRL.Offer,
-        ODRL.Permission,
-        ODRL.Prohibition,
-        ODRL.Duty,
-        ODRL.Constraint,
-    ]
+    return temp.name
 
-    # Count instances of each class
-    counts = []
-    for cls in classes:
-        count = len(set(merged.subjects(RDF.type, cls)))
-        counts.append(count)
 
-    return counts
-
-def describe_ODRL_statistics(stats):
+def display_validation_result(validation_result):
     """
-    Given a list of counts from get_ODRL_macro_statistics(),
-    returns a formatted string describing the number of ODRL entities.
-
-    The order of 'stats' is assumed to be:
-    1. Policy
-    2. Set
-    3. Agreement
-    4. Offer
-    5. Permission
-    6. Prohibition
-    7. Duty
-    8. Constraint
+    Display the structured validation result in Streamlit.
     """
-    labels = [
-        "Policy",
-        "Set",
-        "Agreement",
-        "Offer",
-        "Permission",
-        "Prohibition",
-        "Duty",
-        "Constraint"
-    ]
 
-    # Defensive check
-    if len(stats) != len(labels):
-        raise ValueError(f"Expected {len(labels)} statistics, got {len(stats)}")
+    is_valid_rdf = validation_result.get("is_valid_RDF", False)
+    is_valid_odrl = validation_result.get("is_valid_ODRL")
 
-    # Build readable text
-    lines = []
-    for label, count in zip(labels, stats):
-        lines.append(f"- {count} {label}")
+    # -----------------------------------------------------
+    # Main validation status
+    # -----------------------------------------------------
 
-    return "ODRL entities summary:\n" + "\n".join(lines)
+    st.subheader("Validation Status")
 
-def validate_ODRL_from_string(odrl_string):
-    graph = None
-    format = None
-    parsed_result = rdf_utils.parse_string_to_graph(odrl_string)
-    if parsed_result:
-        graph = parsed_result[0]
-        format = parsed_result[1]
-    return validate_ODRL(graph, format)
+    col1, col2 = st.columns(2)
 
-def validate_ODRL(graph, format=None):
-    validation_report = {"ODRL_graph_size": 0, "errors": [], "warnings": [], "info": []}
-    if graph:
-        graph_length = len(graph)
-        validation_report["is_valid_RDF"] = True
-        validation_report["file_format"] = format
-        validation_report["ODRL_graph_size"] = graph_length
-        validation_report["errors"].append(
-            f"The ODRL graph contains {graph_length} RDF triples."
-        )
-        shacl_file = os.path.join("SHACL", "odrl-shacl.ttl")
-        ont_file = os.path.join("ODRL", "ODRL22.ttl")
-        ont_graph = Graph().parse(ont_file, format="turtle")
-        conforms, report = validate_SHACL(graph, shacl_file, ont_graph=ont_graph)
-        odrl_stats = get_ODRL_macro_statistics(graph, ont_graph)
-        odrl_stats_text = describe_ODRL_statistics(odrl_stats)
-
-        validation_report["is_valid_ODRL"] = conforms
-        if conforms:
-            validation_report["info"].append(
-                f"The graph contains valid ODRL."
-            )
-            validation_report["odrl_stats"] = odrl_stats
-            validation_report["odrl_stats_text"] = odrl_stats_text
+    with col1:
+        if is_valid_rdf:
+            st.success("✓ Valid RDF")
         else:
-            validation_report["errors"].append(
-                f"The graph does NOT contains valid ODRL."
+            st.error("✗ Invalid RDF")
+
+    with col2:
+        if is_valid_odrl is True:
+            st.success("✓ Valid ODRL")
+        elif is_valid_odrl is False:
+            st.error("✗ Invalid ODRL")
+        else:
+            st.warning("— ODRL validation not performed")
+
+    # -----------------------------------------------------
+    # Basic information
+    # -----------------------------------------------------
+
+    st.divider()
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        file_format = validation_result.get("file_format")
+
+        if file_format:
+            st.metric(
+                "Detected format",
+                str(file_format)
             )
 
-            validation_report["shacl_validation_report"] = report
-    else:
-        validation_report["is_valid_RDF"] = False
-        validation_report["errors"].append("FORMAT ERROR: The provided string is not recognised as any ODRL graph formats, such as JSON-LD, Turtle or RDF/XML.")
-    return validation_report
+    with col2:
+        graph_size = validation_result.get("ODRL_graph_size")
+
+        if graph_size is not None:
+            st.metric(
+                "RDF triples",
+                graph_size
+            )
+
+    # -----------------------------------------------------
+    # ODRL statistics
+    # -----------------------------------------------------
+
+    if is_valid_odrl is True:
+
+        st.divider()
+        st.subheader("ODRL Statistics")
+
+        stats_text = validation_result.get(
+            "odrl_stats_text"
+        )
+
+        if stats_text:
+            st.text(stats_text)
+
+        stats = validation_result.get("odrl_stats")
+
+        if stats:
+            labels = [
+                "Policy",
+                "Set",
+                "Agreement",
+                "Offer",
+                "Permission",
+                "Prohibition",
+                "Duty",
+                "Constraint"
+            ]
+
+            columns = st.columns(len(labels))
+
+            for column, label, value in zip(
+                columns,
+                labels,
+                stats
+            ):
+                with column:
+                    st.metric(label, value)
+
+    # -----------------------------------------------------
+    # Detailed validation results
+    # -----------------------------------------------------
+
+    st.divider()
+    st.subheader("Detailed Results")
+
+    # Errors
+    errors = validation_result.get("errors", [])
+
+    with st.expander(
+        f"Errors ({len(errors)})",
+        expanded=not is_valid_rdf or is_valid_odrl is False
+    ):
+        if errors:
+            for error in errors:
+                st.error(error)
+        else:
+            st.info("No errors.")
+
+    # Warnings
+    warnings = validation_result.get("warnings", [])
+
+    with st.expander(
+        f"Warnings ({len(warnings)})",
+        expanded=False
+    ):
+        if warnings:
+            for warning in warnings:
+                st.warning(warning)
+        else:
+            st.info("No warnings.")
+
+    # Info
+    info = validation_result.get("info", [])
+
+    with st.expander(
+        f"Information ({len(info)})",
+        expanded=False
+    ):
+        if info:
+            for item in info:
+                st.info(item)
+        else:
+            st.info("No additional information.")
+
+    # File format
+    with st.expander(
+        "File information",
+        expanded=False
+    ):
+        st.json({
+            "file_format": validation_result.get("file_format"),
+            "ODRL_graph_size": validation_result.get(
+                "ODRL_graph_size"
+            )
+        })
+
+    # SHACL validation report
+    shacl_report = validation_result.get(
+        "shacl_validation_report"
+    )
+
+    if shacl_report:
+        with st.expander(
+            "SHACL Validation Report",
+            expanded=False
+        ):
+            st.text(shacl_report)
+
+    # Raw result
+    with st.expander(
+        "Complete validation result",
+        expanded=False
+    ):
+        st.json(validation_result)
 
 
-def diagnose_ODRL(filepath) -> str:
-    graph, format = rdf_utils.load(filepath)
-    errors = []
-    warnings = []
-    parsed_info = []
-    format_report = ""
-    if graph is None or len(graph) == 0:
+# ---------------------------------------------------------
+# Main App
+# ---------------------------------------------------------
+
+st.title("ODRL Policy Validation")
+
+st.write(
+    """
+    Upload an ODRL policy file (`.ttl`, `.rdf`, `.jsonld`, etc.).
+
+    The policy will automatically be validated against the
+    ODRL SHACL shapes and the validation results will be
+    displayed below.
+    """
+)
+
+
+# ---------------------------------------------------------
+# Upload
+# ---------------------------------------------------------
+
+uploaded_policy = st.file_uploader(
+    "Upload ODRL Policy",
+    type=[
+        "ttl",
+        "rdf",
+        "xml",
+        "nt",
+        "jsonld",
+        "json"
+    ]
+)
+
+
+# ---------------------------------------------------------
+# Validation
+# ---------------------------------------------------------
+
+if uploaded_policy is not None:
+
+    st.success(
+        f"Uploaded: {uploaded_policy.name}"
+    )
+
+    policy_path = None
+
+    with st.spinner(
+        "Validating ODRL policy..."
+    ):
+
         try:
-            json.load(filepath)
-            errors.append("FORMAT ERROR: The provided string is plain JSON. An ODRL file should be in a graph format, like JSON-LD.")
-        except (ValueError, TypeError):
-            errors.append("FORMAT ERROR: The provided string is not recognised as any ODRL graph formats, such as JSON-LD, Turtle or RDF/XML. It does not appear to be plain JSON either.")
-            return errors, warnings, parsed_info, False
-    parsed_info.append("INFO: The file contains an RDF graph in the following format: "+str(format))
 
-    # validate ODRL using SHACL
-    # The SHACL shapes graph used is derived from the one at https://github.com/woutslabbinck/ODRL-shape
-    # https://github.com/woutslabbinck/ODRL-shape/blob/main/odrl-shacl.ttl
-    # They are extended to allow for lists of IRIs in the right operands
+            # Save uploaded file
+            policy_path = save_uploaded_file(
+                uploaded_policy
+            )
 
-    shacl_file = os.path.join("SHACL", "odrl-shacl.ttl")
-    ont_file = os.path.join("ODRL", "ODRL22.ttl")
-    ont_graph = Graph().parse(ont_file, format="turtle")
-    conforms, report = validate_SHACL(graph, shacl_file, ont_graph=ont_graph)
-    stats = get_ODRL_macro_statistics(graph, ont_graph)
-    parsed_info.append(describe_ODRL_statistics(stats))
-    if conforms :
-        parsed_info.append("SHACL validation check passed")
-    else :
-        parsed_info.append("\nSHACL validation failed")
-        parsed_info.append("SHACL validation report : \n" + str(report))
-    is_valid = conforms and not errors
-    return errors, warnings, parsed_info, is_valid
+            # Run structured validation
+            validation_result = validate.validate_ODRL_from_file(
+                policy_path
+            )
 
-def generate_ODRL_diagnostic_report(filepath: str) -> str:
-    errors, warnings, parsed_info, is_valid = diagnose_ODRL(filepath)
-    print("REPORT START\nAnalysing the file "+str(filepath)+" for ODRL compliance:")
-    print(f"Is it compliant? {is_valid}")
-    for error in errors:
-        print(error)
-    for warning in warnings:
-        print(warning)
-    for info in parsed_info:
-        print(info)
-    print("REPORT END\n")
+            st.success(
+                "Validation completed successfully."
+            )
 
-# Test
+            st.divider()
 
-validation_result = validate_ODRL_from_string("""
-@prefix ns0: <https://example.com/> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+            # Display results
+            display_validation_result(
+                validation_result
+            )
 
-<http://njh.me/9ec1afc4-aec3-4e3c-abd0-20efb39926f8>
-  a <https://example.com/ContractAgreement> ;
-  ns0:agreementId "48f3df76-12f7-4c25-82bb-50a257490fa7"^^xsd:string ;
-  ns0:assetId "59d1ddcb-f22f-4fc8-a665-2fbf4517c1ff"^^xsd:string ;
-  ns0:claims [ ] ;
-  ns0:consumerId "did:web:solo-vm.dsv2-testing.gate-labs.com:acme"^^xsd:string ;
-  ns0:contractSigningDate 1785945058 ;
-  ns0:policy <http://njh.me/fa57cfd4
-""");
+        except Exception as e:
 
-print(validation_result)
+            st.error(
+                "Validation failed."
+            )
 
+            st.exception(e)
 
-validation_result = validate_ODRL_from_string("""
-@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+        finally:
 
-<http://example.com/policy:6161>
-  a odrl:Offer ;
-  odrl:permission [
-    odrl:action [
-      rdf:value odrl:print ;
-      odrl:refinement [
-        odrl:leftOperand odrl:resolution ;
-        odrl:operator odrl:lteq ;
-        odrl:rightOperand 1200 ;
-        odrl:unit "http://dbpedia.org/resource/Dots_per_inch"^^xsd:string
-      ]
-    ] ;
-    odrl:assignee <http://example.com/org:John> ;
-    odrl:target <http://example.com/document:1234> ;
-    odrl:constraint [
-      a odrl:Constraint ;
-      odrl:leftOperand <http://www.w3.org/ns/odrl/2/dateTime> ;
-      odrl:operator odrl:lteq ;
-      odrl:rightOperand "2026-02-09T12:20:59Z"^^xsd:dateTime
-      ],
-	  [
-	  a odrl:Constraint ;
-	  odrl:leftOperand odrl:count ;
-	  odrl:operator odrl:lt ;
-	  odrl:rightOperand 3 
-	  ]
-  ] ;
-  odrl:permission [
-    odrl:action odrl:create ;
-    odrl:assignee [
-      odrl:source <http://example.com/org:AccountManager> ;
-          odrl:refinement [
-            odrl:leftOperand odrl:adminLevel ;
-            odrl:operator odrl:gt ;
-            odrl:rightOperand 10 ;
-          ] ;
-      ] ;
-    odrl:target <http://example.com/document:1234> ;
-    odrl:constraint [
-      a odrl:Constraint ;
-      odrl:leftOperand <http://www.example.com/age> ;
-      odrl:operator odrl:lt ;
-      odrl:rightOperand 70 ;
-      ] ;
-	odrl:constraint [
-      a odrl:Constraint ;
-      odrl:leftOperand odrl:dateTime ;
-      odrl:operator odrl:lt ;
-      odrl:rightOperand "2027-01-11T11:13:10.665638" ;
-      ],
-	  [
-	  a odrl:Constraint ;
-	  odrl:leftOperand odrl:count ;
-	  odrl:operator odrl:lt ;
-	  odrl:rightOperand 10 
-	  ]
-  ] ;
-  odrl:profile <http://example.com/odrl:profile:10> .
-""");
-
-print(validation_result)
-
-validation_result = validate_ODRL_from_string("""
- {
-  "@type": "ContractAgreement",
-  "@id": "9ec1afc4-aec3-4e3c-abd0-20efb39926f8",
-  "assetId": "59d1ddcb-f22f-4fc8-a665-2fbf4517c1ff",
-  "agreementId": "48f3df76-12f7-4c25-82bb-50a257490fa7",
-  "policy": {
-    "@id": "fa57cfd4-b06b-41e9-8871-af8e1f99d71b",
-    "@type": "Agreement",
-    "permission": [
-      {
-        "action": "use",
-        "constraint": [
-		  {
-			"and": [
-			  {
-				"leftOperand": "https://GATE.com/MembershipCredential.since",
-				"operator": "gteq",
-				"rightOperand": "2026-01-01T00:00:00Z"
-			  }
-			]
-		  }
-		]
-      }
-    ],
-    "assignee": "did:web:solo-vm.dsv2-testing.gate-labs.com:acme",
-    "assigner": "did:web:solo-vm.dsv2-testing.gate-labs.com:gate",
-    "target": "59d1ddcb-f22f-4fc8-a665-2fbf4517c1ff"
-  },
-  "contractSigningDate": 1785945058,
-  "consumerId": "did:web:solo-vm.dsv2-testing.gate-labs.com:acme",
-  "providerId": "did:web:solo-vm.dsv2-testing.gate-labs.com:gate",
-  "claims": {},
-  "@context": {
-	  "odrl": "http://www.w3.org/ns/odrl/2/",
-	  "xsd": "http://www.w3.org/2001/XMLSchema#",
-
-	  "@vocab": "https://example.com/",
-
-	  "PolicyDefinition": "https://example.com/PolicyDefinition",
-	  "createdAt": "https://example.com/createdAt",
-	  "policy": "https://example.com/policy",
-	  "Set": "odrl:Set",
-	  "permission": "odrl:permission",
-	  "prohibition": "odrl:prohibition",
-	  "obligation": "odrl:obligation",
-	  "action": "odrl:action",
-	  "constraint": "odrl:constraint",
-	  "leftOperand": {
-		  "@id": "odrl:leftOperand",
-		  "@type": "@id"
-		},
-	  "operator": "odrl:operator",
-	  "rightOperand": "odrl:rightOperand",
-
-	  "and": {
-		"@id": "odrl:and",
-		"@container": "@list"
-	  },
-
-	  "privateProperties": "https://example.com/privateProperties",
-	  "policyType": "https://example.com/policyType"
-	}
-}
-""");
-
-print(validation_result)
+            # Remove temporary file
+            if policy_path is not None:
+                try:
+                    os.remove(policy_path)
+                except OSError:
+                    pass

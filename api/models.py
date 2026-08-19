@@ -169,6 +169,22 @@ class ValidateODRLRequest(BaseModel):
         )
     )
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "odrl": '{\n'
+                        '  "@context": "http://www.w3.org/ns/odrl.jsonld",\n'
+                        '  "@type": "Set",\n'
+                        '  "uid": "http://example.com/policy:1010",\n'
+                        '  "permission": [{\n'
+                        '    "target": "http://example.com/asset:9898.movie",\n'
+                        '    "action": "use"\n'
+                        '  }]\n'
+                        '}'
+            }
+        }
+    )
+
 
 class ValidateODRLResponse(BaseModel):
     result: dict = Field(

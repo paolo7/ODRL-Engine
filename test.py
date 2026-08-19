@@ -15,6 +15,20 @@ tests_passed = 0
 tests_failed = 0
 test_log = []
 
+def detect_odrl_file_format(filepath):
+    """
+    Detect whether a file has a supported ODRL RDF serialization.
+    """
+    extension = os.path.splitext(filepath)[1].lower()
+    formats = {
+        ".jsonld": "json-ld",
+        ".json": "json",
+        ".ttl": "turtle",
+        ".rdf": "rdf/xml",
+    }
+
+    return formats.get(extension)
+
 def timed_evaluation(func, *args, **kwargs):
     global total_eval_time, total_eval_calls
 
@@ -26,6 +40,112 @@ def timed_evaluation(func, *args, **kwargs):
     total_eval_calls += 1
 
     return result
+
+def run_folder_validation_tests():
+    global tests_passed
+    global tests_failed
+    global test_log
+
+    tests_of_validity = 0
+    tests_of_validity_passed = 0
+    tests_of_invalidity = 0
+    tests_of_invalidity_passed = 0
+
+    base_dirs = {
+        "valid_ODRL": (
+            "test_cases/validation/valid_ODRL",
+            True,
+        ),
+        "invalid_ODRL": (
+            "test_cases/validation/invalid_ODRL",
+            False,
+        ),
+    }
+
+    for test_type, (folder, expected_valid_odrl) in base_dirs.items():
+
+        if not os.path.exists(folder):
+            print(f"Skipping validation tests: folder does not exist: {folder}")
+            continue
+
+        for filename in sorted(os.listdir(folder)):
+
+            filepath = os.path.join(folder, filename)
+
+            # Only validate supported ODRL RDF serializations
+            file_format = detect_odrl_file_format(filepath)
+
+            if file_format is None:
+                continue
+
+            try:
+                validation_result = validate.validate_ODRL_from_file(filepath)
+
+                is_valid_rdf = validation_result.get(
+                    "is_valid_RDF",
+                    False
+                )
+
+                is_valid_odrl = validation_result.get(
+                    "is_valid_ODRL",
+                    False
+                )
+
+                # All files must be valid RDF.
+                # ODRL validity depends on which folder the file is in.
+                test_ok = (
+                    is_valid_rdf is True
+                    and is_valid_odrl is expected_valid_odrl
+                )
+
+                if test_ok:
+                    tests_passed += 1
+                    if expected_valid_odrl:
+                        tests_of_validity_passed += 1
+                        tests_of_validity += 1
+                    else:
+                        tests_of_invalidity_passed += 1
+                        tests_of_invalidity += 1
+                else:
+                    tests_failed += 1
+                    if expected_valid_odrl:
+                        tests_of_validity += 1
+                    else:
+                        tests_of_invalidity += 1
+
+                    test_log.append(
+                        f"Failed ODRL validation test for {filepath}: "
+                        f"expected is_valid_RDF=True, "
+                        f"is_valid_ODRL={expected_valid_odrl}; "
+                        f"got is_valid_RDF={is_valid_rdf}, "
+                        f"is_valid_ODRL={is_valid_odrl}"
+                    )
+
+                    print(
+                        f"ODRL validation failed for {filepath}: "
+                        f"expected is_valid_RDF=True, "
+                        f"is_valid_ODRL={expected_valid_odrl}; "
+                        f"got is_valid_RDF={is_valid_rdf}, "
+                        f"is_valid_ODRL={is_valid_odrl}"
+                    )
+
+            except Exception as e:
+                tests_failed += 1
+
+                test_log.append(
+                    f"Exception validating ODRL file {filepath}: {e}"
+                )
+
+                print(
+                    f"\nODRL validation test of {filepath} "
+                    f"failed due to exception:"
+                )
+                print(str(e))
+
+    print("\n\nValidation tests category summary:")
+    print(f" - Valid ODRL policies correctly validated: {tests_of_validity_passed}/{tests_of_validity}")
+    print(f" - Invalid ODRL policies correctly found to be invalid: {tests_of_invalidity_passed}/{tests_of_invalidity}")
+
 
 def run_SotW_tests(test_repetitions, test_cases, test_name ):
     global tests_passed
@@ -272,6 +392,9 @@ def runTests(test_repetitions = 0):
     else:
         tests_failed += 1
         test_log.append("Failed to validate example_policies/example_invalid.json as invalid")
+
+    # Folder-based ODRL validation tests
+    run_folder_validation_tests()
 
     # EVALUATION TESTS
 
