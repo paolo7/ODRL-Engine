@@ -2,9 +2,6 @@ import streamlit as st
 import os
 import tempfile
 
-import io
-from contextlib import redirect_stdout
-
 from pathlib import Path
 import sys
 
@@ -22,7 +19,9 @@ st.set_page_config(
     page_title="ODRL Policy Validator",
     layout="wide"
 )
+
 apply_style()
+
 
 # ---------------------------------------------------------
 # Helper
@@ -31,7 +30,7 @@ apply_style()
 def save_uploaded_file(uploaded_file):
     """
     Save uploaded Streamlit file temporarily because
-    validate expects a filename.
+    validate.validate_ODRL_from_file() expects a filename.
     """
     suffix = os.path.splitext(uploaded_file.name)[1]
 
@@ -54,10 +53,9 @@ st.title("ODRL Policy Validation")
 
 st.write(
     """
-    Upload an ODRL policy file (`.ttl`, `.rdf`, etc.).
+    Upload an ODRL policy file (`.ttl`, `.rdf`, `.jsonld`, etc.).
 
-    The policy will automatically be validated and a
-    diagnostic report will be generated.
+    The policy will be validated for both RDF and ODRL compliance.
     """
 )
 
@@ -72,7 +70,8 @@ uploaded_policy = st.file_uploader(
         "rdf",
         "xml",
         "nt",
-        "jsonld"
+        "jsonld",
+        "json"
     ]
 )
 
@@ -86,9 +85,9 @@ if uploaded_policy is not None:
         f"Uploaded: {uploaded_policy.name}"
     )
 
-    with st.spinner(
-            "Validating ODRL policy..."
-    ):
+    policy_path = None
+
+    with st.spinner("Validating ODRL policy..."):
 
         try:
 
@@ -97,35 +96,103 @@ if uploaded_policy is not None:
                 uploaded_policy
             )
 
-            # Run validation
-            # Capture printed validation report
-            output_buffer = io.StringIO()
+            # Run structured validation
+            validation_result = validate.validate_ODRL_from_file(
+                policy_path
+            )
 
-            with redirect_stdout(output_buffer):
+            # -------------------------------------------------
+            # Main validation status
+            # -------------------------------------------------
 
-                validate.generate_ODRL_diagnostic_report(
-                    policy_path
+            st.divider()
+
+            st.subheader("Validation Result")
+
+            is_valid_rdf = validation_result.get(
+                "is_valid_RDF",
+                False
+            )
+
+            is_valid_odrl = validation_result.get(
+                "is_valid_ODRL"
+            )
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                if is_valid_rdf:
+                    st.success("✓ Valid RDF")
+                else:
+                    st.error("✗ Invalid RDF")
+
+            with col2:
+                if is_valid_odrl is True:
+                    st.success("✓ Valid ODRL")
+                elif is_valid_odrl is False:
+                    st.error("✗ Invalid ODRL")
+                else:
+                    st.warning("— ODRL validation not performed")
+
+            # -------------------------------------------------
+            # ODRL statistics
+            # -------------------------------------------------
+
+            if is_valid_odrl is True:
+
+                st.divider()
+
+                st.subheader("ODRL Statistics")
+
+                stats_text = validation_result.get(
+                    "odrl_stats_text"
                 )
 
-            report = output_buffer.getvalue()
+                if stats_text:
+                    st.text(stats_text)
+
+                # Optional structured statistics
+                stats = validation_result.get("odrl_stats")
+
+                if stats:
+                    with st.expander("View ODRL statistics data"):
+                        st.json(stats)
+
+            # -------------------------------------------------
+            # Additional validation information
+            # -------------------------------------------------
+
+            st.divider()
+
+            st.subheader("Validation Details")
+
+            # Fields already displayed prominently above
+            displayed_fields = {
+                "is_valid_RDF",
+                "is_valid_ODRL",
+                "odrl_stats",
+                "odrl_stats_text"
+            }
+
+            # Display every remaining returned field
+            for key, value in validation_result.items():
+
+                if key in displayed_fields:
+                    continue
+
+                # Make the field name more readable
+                title = key.replace("_", " ").title()
+
+                with st.expander(title):
+
+                    if isinstance(value, (dict, list)):
+                        st.json(value)
+                    else:
+                        st.write(value)
 
             st.success(
                 "Validation completed successfully."
             )
-
-            st.divider()
-
-            st.subheader(
-                "Validation Report"
-            )
-
-            st.text_area(
-                "Diagnostic Report",
-                report,
-                height=700
-            )
-
-
 
         except Exception as e:
 
@@ -135,11 +202,11 @@ if uploaded_policy is not None:
 
             st.exception(e)
 
-
         finally:
 
             # Remove temporary file
-            try:
-                os.remove(policy_path)
-            except:
-                pass
+            if policy_path is not None:
+                try:
+                    os.remove(policy_path)
+                except OSError:
+                    pass
