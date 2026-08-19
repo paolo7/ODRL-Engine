@@ -11,8 +11,6 @@ def validate_SHACL(graph, shacl, ont_graph=None):
     conforms, results_graph, results_text = r
     return conforms, results_text
 
-from owlrl import RDFS_Semantics
-
 def get_ODRL_macro_statistics(graph: Graph, ont_graph: Graph = None):
     """
     Given an RDFLib graph (and optionally an ontology graph),
@@ -101,6 +99,50 @@ def describe_ODRL_statistics(stats):
 
     return "ODRL entities summary:\n" + "\n".join(lines)
 
+def validate_ODRL_from_string(odrl_string):
+    graph = None
+    format = None
+    parsed_result = rdf_utils.parse_string_to_graph(odrl_string)
+    if parsed_result:
+        graph = parsed_result[0]
+        format = parsed_result[1]
+    return validate_ODRL(graph, format)
+
+def validate_ODRL(graph, format=None):
+    validation_report = {"ODRL_graph_size": 0, "errors": [], "warnings": [], "info": []}
+    if graph:
+        graph_length = len(graph)
+        validation_report["is_valid_RDF"] = True
+        validation_report["file_format"] = format
+        validation_report["ODRL_graph_size"] = graph_length
+        validation_report["errors"].append(
+            f"The ODRL graph contains {graph_length} RDF triples."
+        )
+        shacl_file = os.path.join("SHACL", "odrl-shacl.ttl")
+        ont_file = os.path.join("ODRL", "ODRL22.ttl")
+        ont_graph = Graph().parse(ont_file, format="turtle")
+        conforms, report = validate_SHACL(graph, shacl_file, ont_graph=ont_graph)
+        odrl_stats = get_ODRL_macro_statistics(graph, ont_graph)
+        odrl_stats_text = describe_ODRL_statistics(odrl_stats)
+
+        validation_report["is_valid_ODRL"] = conforms
+        if conforms:
+            validation_report["info"].append(
+                f"The graph contains valid ODRL."
+            )
+            validation_report["odrl_stats"] = odrl_stats
+            validation_report["odrl_stats_text"] = odrl_stats_text
+        else:
+            validation_report["errors"].append(
+                f"The graph does NOT contains valid ODRL."
+            )
+
+            validation_report["shacl_validation_report"] = report
+    else:
+        validation_report["is_valid_RDF"] = False
+        validation_report["errors"].append("FORMAT ERROR: The provided string is not recognised as any ODRL graph formats, such as JSON-LD, Turtle or RDF/XML.")
+    return validation_report
+
 
 def diagnose_ODRL(filepath) -> str:
     graph, format = rdf_utils.load(filepath)
@@ -147,3 +189,158 @@ def generate_ODRL_diagnostic_report(filepath: str) -> str:
     for info in parsed_info:
         print(info)
     print("REPORT END\n")
+
+# Test
+
+validation_result = validate_ODRL_from_string("""
+@prefix ns0: <https://example.com/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+
+<http://njh.me/9ec1afc4-aec3-4e3c-abd0-20efb39926f8>
+  a <https://example.com/ContractAgreement> ;
+  ns0:agreementId "48f3df76-12f7-4c25-82bb-50a257490fa7"^^xsd:string ;
+  ns0:assetId "59d1ddcb-f22f-4fc8-a665-2fbf4517c1ff"^^xsd:string ;
+  ns0:claims [ ] ;
+  ns0:consumerId "did:web:solo-vm.dsv2-testing.gate-labs.com:acme"^^xsd:string ;
+  ns0:contractSigningDate 1785945058 ;
+  ns0:policy <http://njh.me/fa57cfd4
+""");
+
+print(validation_result)
+
+
+validation_result = validate_ODRL_from_string("""
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.com/policy:6161>
+  a odrl:Offer ;
+  odrl:permission [
+    odrl:action [
+      rdf:value odrl:print ;
+      odrl:refinement [
+        odrl:leftOperand odrl:resolution ;
+        odrl:operator odrl:lteq ;
+        odrl:rightOperand 1200 ;
+        odrl:unit "http://dbpedia.org/resource/Dots_per_inch"^^xsd:string
+      ]
+    ] ;
+    odrl:assignee <http://example.com/org:John> ;
+    odrl:target <http://example.com/document:1234> ;
+    odrl:constraint [
+      a odrl:Constraint ;
+      odrl:leftOperand <http://www.w3.org/ns/odrl/2/dateTime> ;
+      odrl:operator odrl:lteq ;
+      odrl:rightOperand "2026-02-09T12:20:59Z"^^xsd:dateTime
+      ],
+	  [
+	  a odrl:Constraint ;
+	  odrl:leftOperand odrl:count ;
+	  odrl:operator odrl:lt ;
+	  odrl:rightOperand 3 
+	  ]
+  ] ;
+  odrl:permission [
+    odrl:action odrl:create ;
+    odrl:assignee [
+      odrl:source <http://example.com/org:AccountManager> ;
+          odrl:refinement [
+            odrl:leftOperand odrl:adminLevel ;
+            odrl:operator odrl:gt ;
+            odrl:rightOperand 10 ;
+          ] ;
+      ] ;
+    odrl:target <http://example.com/document:1234> ;
+    odrl:constraint [
+      a odrl:Constraint ;
+      odrl:leftOperand <http://www.example.com/age> ;
+      odrl:operator odrl:lt ;
+      odrl:rightOperand 70 ;
+      ] ;
+	odrl:constraint [
+      a odrl:Constraint ;
+      odrl:leftOperand odrl:dateTime ;
+      odrl:operator odrl:lt ;
+      odrl:rightOperand "2027-01-11T11:13:10.665638" ;
+      ],
+	  [
+	  a odrl:Constraint ;
+	  odrl:leftOperand odrl:count ;
+	  odrl:operator odrl:lt ;
+	  odrl:rightOperand 10 
+	  ]
+  ] ;
+  odrl:profile <http://example.com/odrl:profile:10> .
+""");
+
+print(validation_result)
+
+validation_result = validate_ODRL_from_string("""
+ {
+  "@type": "ContractAgreement",
+  "@id": "9ec1afc4-aec3-4e3c-abd0-20efb39926f8",
+  "assetId": "59d1ddcb-f22f-4fc8-a665-2fbf4517c1ff",
+  "agreementId": "48f3df76-12f7-4c25-82bb-50a257490fa7",
+  "policy": {
+    "@id": "fa57cfd4-b06b-41e9-8871-af8e1f99d71b",
+    "@type": "Agreement",
+    "permission": [
+      {
+        "action": "use",
+        "constraint": [
+		  {
+			"and": [
+			  {
+				"leftOperand": "https://GATE.com/MembershipCredential.since",
+				"operator": "gteq",
+				"rightOperand": "2026-01-01T00:00:00Z"
+			  }
+			]
+		  }
+		]
+      }
+    ],
+    "assignee": "did:web:solo-vm.dsv2-testing.gate-labs.com:acme",
+    "assigner": "did:web:solo-vm.dsv2-testing.gate-labs.com:gate",
+    "target": "59d1ddcb-f22f-4fc8-a665-2fbf4517c1ff"
+  },
+  "contractSigningDate": 1785945058,
+  "consumerId": "did:web:solo-vm.dsv2-testing.gate-labs.com:acme",
+  "providerId": "did:web:solo-vm.dsv2-testing.gate-labs.com:gate",
+  "claims": {},
+  "@context": {
+	  "odrl": "http://www.w3.org/ns/odrl/2/",
+	  "xsd": "http://www.w3.org/2001/XMLSchema#",
+
+	  "@vocab": "https://example.com/",
+
+	  "PolicyDefinition": "https://example.com/PolicyDefinition",
+	  "createdAt": "https://example.com/createdAt",
+	  "policy": "https://example.com/policy",
+	  "Set": "odrl:Set",
+	  "permission": "odrl:permission",
+	  "prohibition": "odrl:prohibition",
+	  "obligation": "odrl:obligation",
+	  "action": "odrl:action",
+	  "constraint": "odrl:constraint",
+	  "leftOperand": {
+		  "@id": "odrl:leftOperand",
+		  "@type": "@id"
+		},
+	  "operator": "odrl:operator",
+	  "rightOperand": "odrl:rightOperand",
+
+	  "and": {
+		"@id": "odrl:and",
+		"@container": "@list"
+	  },
+
+	  "privateProperties": "https://example.com/privateProperties",
+	  "policyType": "https://example.com/policyType"
+	}
+}
+""");
+
+print(validation_result)

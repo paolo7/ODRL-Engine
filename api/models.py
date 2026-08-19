@@ -160,3 +160,23 @@ class PolicyFeaturesResponse(BaseModel):
             "Each feature is defined by its IRI and provides an indication of its expected datatype."
         )
     )
+
+class ValidateODRLRequest(BaseModel):
+    odrl: str = Field(
+        description=(
+            "An ODRL policy serialized as a string. "
+            "All major RDF serialisations like Turtle (TTL), JSON-LD and RDF/XML are supported."
+        )
+    )
+
+
+class ValidateODRLResponse(BaseModel):
+    result: dict = Field(
+        description=(
+            "The validation result returned by validate_ODRL_from_string(). "
+            "It contains a dictionary with RDF and ODRL validity information, errors, warnings, "
+            "and, when applicable, SHACL validation details and ODRL statistics. "
+            "The boolean value is_valid_RDF and is_valid_ODRL describe whether the string passed "
+            "as an input contains valid RDF triples, and contains a valid ODRL policy, respectively. "
+        )
+    )

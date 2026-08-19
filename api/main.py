@@ -7,12 +7,15 @@ from fastapi import FastAPI, HTTPException
 import rdf_utils
 import SotW_generator
 import ODRL_Evaluator as Evaluator
+import validate as Validator
 
 from api.models import (
     EvaluateRequest,
     EvaluateResponse,
     PolicyFeaturesRequest,
     PolicyFeaturesResponse,
+    ValidateODRLRequest,
+    ValidateODRLResponse,
 )
 
 EXTERNAL_PREFIX = os.environ.get("ODRL_EXTERNAL_PREFIX", "").strip("/")
@@ -73,5 +76,16 @@ def get_policy_features(request: PolicyFeaturesRequest):
             request.policy
         )
         return PolicyFeaturesResponse(features=features)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post(
+    "/validate_ODRL",
+    response_model=ValidateODRLResponse
+)
+def validate_odrl(request: ValidateODRLRequest):
+    try:
+        result = Validator.validate_ODRL_from_string(request.odrl)
+        return ValidateODRLResponse(result=result)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
