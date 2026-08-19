@@ -109,8 +109,7 @@ def validate_ODRL_from_string(odrl_string):
     return validate_ODRL(graph, format)
 
 def validate_ODRL_from_file(filepath):
-    graph = rdf_utils.load(filepath)[0]
-    format = None
+    graph, format = rdf_utils.load(filepath)
     return validate_ODRL(graph, format)
 
 def validate_ODRL(graph, format=None):
