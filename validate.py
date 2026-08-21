@@ -193,3 +193,6 @@ def generate_ODRL_diagnostic_report(filepath: str) -> str:
     for info in parsed_info:
         print(info)
     print("REPORT END\n")
+
+#print( validate_ODRL_from_string("""
+#""") )

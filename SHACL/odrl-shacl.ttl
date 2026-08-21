@@ -89,15 +89,29 @@ pe:Constraint a sh:NodeShape ;
 pe:LogicalConstraint a sh:NodeShape ;
   sh:targetClass odrl:LogicalConstraint ;
   sh:property [
-    sh:path [
-      sh:alternativePath (odrl:or odrl:xone odrl:and odrl:andSequence)
+    sh:path [ sh:alternativePath (
+        odrl:or
+        odrl:xone
+        odrl:and
+        odrl:andSequence
+      )
     ] ;
-    sh:or ([
-      sh:class odrl:Constraint
-    ] [
-      sh:class odrl:LogicalConstraint
-    ])
+    sh:minCount 1 ;
+    sh:nodeKind sh:BlankNodeOrIRI ;
+    sh:property [
+      sh:path rdf:first ;
+      sh:minCount 1 ;
+      sh:or (
+        [ sh:class odrl:Constraint ]
+        [ sh:class odrl:LogicalConstraint ]
+      )
+    ] ;
+    sh:property [
+      sh:path rdf:rest ;
+      sh:minCount 1
+    ]
   ] .
+
 
 pe:odrlActionShape a sh:NodeShape ;
   sh:targetClass odrl:Action ;
