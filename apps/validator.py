@@ -33,6 +33,13 @@ st.markdown(
         padding: 12px 14px;
         margin-top: 10px;
         margin-bottom: 15px;
+        white-space: pre-wrap;
+        color: #333333;
+        font-family: sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+        width: 100%;
+        box-sizing: border-box;
     }
     </style>
     """,
@@ -119,14 +126,12 @@ def display_validation_results(validation_result):
     col1, col2 = st.columns(2)
 
     with col1:
-
         if is_valid_rdf:
             st.success("✅ Valid RDF")
         else:
             st.error("❌ Invalid RDF")
 
     with col2:
-
         if is_valid_odrl is True:
             st.success("✅ Valid ODRL")
 
@@ -137,34 +142,33 @@ def display_validation_results(validation_result):
             st.warning(
                 "⚠️ ODRL validation not performed"
             )
-        # -----------------------------------------------------
-        # SHACL validation explanation
-        # -----------------------------------------------------
 
-        if (
-                is_valid_rdf is True
-                and is_valid_odrl is False
-        ):
+    # -----------------------------------------------------
+    # SHACL validation explanation
+    # -----------------------------------------------------
 
-            shacl_explanation = validation_result.get(
-                "shacl_validation_report_explanation"
+    if (
+            is_valid_rdf is True
+            and is_valid_odrl is False
+    ):
+
+        shacl_explanation = validation_result.get(
+            "shacl_validation_report_explanation"
+        )
+
+        if shacl_explanation:
+            import html
+
+            shacl_explanation = html.escape(
+                shacl_explanation.strip()
             )
 
-            if shacl_explanation:
-                # Escape HTML-sensitive characters so that the
-                # validation message is displayed as plain text.
-                import html
-
-                shacl_explanation = html.escape(
-                    shacl_explanation.strip()
-                )
-
-                st.markdown(
-                    f"""
-                    <div class="shacl-explanation">{shacl_explanation}</div>
-                    """,
-                    unsafe_allow_html=True
-                )
+            st.markdown(
+                f"""
+                <div class="shacl-explanation">{shacl_explanation}</div>
+                """,
+                unsafe_allow_html=True
+            )
 
     # -----------------------------------------------------
     # Basic information
