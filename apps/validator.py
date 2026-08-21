@@ -137,33 +137,34 @@ def display_validation_results(validation_result):
             st.warning(
                 "⚠️ ODRL validation not performed"
             )
-    # -----------------------------------------------------
-    # SHACL validation explanation
-    # -----------------------------------------------------
+        # -----------------------------------------------------
+        # SHACL validation explanation
+        # -----------------------------------------------------
 
-    if (
-            is_valid_rdf is True
-            and is_valid_odrl is False
-    ):
+        if (
+                is_valid_rdf is True
+                and is_valid_odrl is False
+        ):
 
-        shacl_explanation = validation_result.get(
-            "shacl_validation_report_explanation"
-        )
-
-        if shacl_explanation:
-            st.markdown(
-                '<div class="shacl-explanation">',
-                unsafe_allow_html=True
+            shacl_explanation = validation_result.get(
+                "shacl_validation_report_explanation"
             )
 
-            st.text(
-                shacl_explanation
-            )
+            if shacl_explanation:
+                # Escape HTML-sensitive characters so that the
+                # validation message is displayed as plain text.
+                import html
 
-            st.markdown(
-                '</div>',
-                unsafe_allow_html=True
-            )
+                shacl_explanation = html.escape(
+                    shacl_explanation.strip()
+                )
+
+                st.markdown(
+                    f"""
+                    <div class="shacl-explanation">{shacl_explanation}</div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
     # -----------------------------------------------------
     # Basic information
