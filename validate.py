@@ -199,20 +199,5 @@ def generate_ODRL_diagnostic_report(filepath: str) -> str:
         print(info)
     print("REPORT END\n")
 
-print( validate_ODRL_from_string("""
-{
-    "@context": "http://www.w3.org/ns/odrl.jsonld",
-    "@type": "Policy",
-    "uid": "http://example.com/policy:8888",
-    "profile": "http://example.com/odrl:profile:21",
-    "target": "http://example.com/music/1999.mp3",
-    "assigner": "http://example.com/org/sony-music",
-    "action": "play",
-    "permission": [{
-        "assignee": "http://example.com/people/billie"
-        },
-        {
-        "assignee": "http://example.com/people/murphy"
-        }]
-}  
-""") )
+#print( validate_ODRL_from_string("""
+#""") )
