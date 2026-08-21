@@ -6,9 +6,16 @@
 pe:odrlPolicy a sh:NodeShape ;
   sh:targetClass odrl:Policy, odrl:Set, odrl:Agreement, odrl:Offer ;
   sh:nodeKind sh:IRI ;
+  sh:or (
+    [ sh:node pe:odrlMaterialisedPolicy ]
+    [ sh:node pe:odrlInheritedPolicy ]
+  ) .
+
+pe:odrlMaterialisedPolicy a sh:NodeShape ;
+  sh:nodeKind sh:IRI ;
   sh:property [
     sh:path [
-      sh:alternativePath (odrl:permission odrl:prohibition odrl:duty)
+      sh:alternativePath (odrl:permission odrl:prohibition odrl:obligation)
     ] ;
     sh:minCount 1 ;
     sh:or ([
@@ -27,6 +34,34 @@ pe:odrlPolicy a sh:NodeShape ;
   ], [
     sh:path odrl:conflict ;
     sh:nodeKind sh:IRI
+  ] .
+
+# This shape is meant to capture an inherited policy that whose IRI is known, but that is not actually described in the
+# policy graph. Since the policy is only referenced, but no detail (such as its rules) is in the graph, we need to
+# treat it as a separate case, or else it will trivially cause a violation. In this case, we consider the policy
+# to be inherited and not materialised if it has an inheritFrom edge, and no rule or policy-level component defined.
+
+pe:odrlInheritedPolicy a sh:NodeShape ;
+  sh:nodeKind sh:IRI ;
+
+  sh:property [
+    sh:path [ sh:inversePath odrl:inheritFrom ] ;
+    sh:minCount 1
+  ] ;
+
+  sh:property [
+    sh:path [
+      sh:alternativePath (
+        odrl:permission
+        odrl:prohibition
+        odrl:obligation
+        odrl:action
+        odrl:target
+        odrl:assignee
+        odrl:assigner
+      )
+    ] ;
+    sh:maxCount 0
   ] .
 
 pe:odrlRule a sh:NodeShape ;
@@ -125,5 +160,3 @@ pe:odrlActionShape a sh:NodeShape ;
       ]
     ]
   ) .
-
-<urn:x-base:default> a <http://www.w3.org/2002/07/owl#Ontology> .

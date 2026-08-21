@@ -13,6 +13,6 @@
         "assignee": "http://example.com/people/murphy",
         "target": "http://example.com/music/1999.mp3",
         "assigner": "http://example.com/org/sony-music",
-        "action": "play",
+        "action": "play"
         }]
 }  

@@ -36,6 +36,14 @@ st.markdown(
 
     The validator checks both whether the input is valid RDF and
     whether the RDF graph conforms to the ODRL specification.
+    
+    This validator verifies whether ODRL policies are in a correct *atomic*
+    format. ODRL policies in the [compound or compact](https://www.w3.org/TR/odrl-model/#composition)
+    formats will be detected as invalid.
+    
+    Warning, this is an experimental feature. The validator will detect 
+    common ODRL data model violations, but it is not guaranteed to do so 
+    in all cases. 
     """
 )
 
