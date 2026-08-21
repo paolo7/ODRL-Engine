@@ -33,10 +33,6 @@ st.markdown(
         padding: 12px 14px;
         margin-top: 10px;
         margin-bottom: 15px;
-        white-space: pre-wrap;
-        font-family: monospace;
-        font-size: 14px;
-        line-height: 1.5;
     }
     </style>
     """,
@@ -156,14 +152,18 @@ def display_validation_results(validation_result):
 
         if shacl_explanation:
             st.markdown(
-                f"""
-                    <div class="shacl-explanation">
-                    {shacl_explanation}
-                    </div>
-                    """,
+                '<div class="shacl-explanation">',
                 unsafe_allow_html=True
             )
 
+            st.text(
+                shacl_explanation
+            )
+
+            st.markdown(
+                '</div>',
+                unsafe_allow_html=True
+            )
 
     # -----------------------------------------------------
     # Basic information
