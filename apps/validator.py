@@ -1,4 +1,5 @@
 import streamlit as st
+import html
 import os
 import tempfile
 
@@ -23,6 +24,60 @@ st.set_page_config(
 
 apply_style()
 
+def render_shacl_explanation(explanation):
+    """
+    Render the SHACL explanation as clean HTML so that bullet points
+    and continuation lines remain together without unwanted indentation.
+    """
+
+    lines = explanation.strip().splitlines()
+
+    html_parts = []
+
+    for line in lines:
+
+        line = line.strip()
+
+        if not line:
+            continue
+
+        # Summary line
+        if not line.startswith("- ") and not line.startswith("Rule:"):
+
+            html_parts.append(
+                f"<div class='shacl-summary'>{html.escape(line)}</div>"
+            )
+
+        # Main bullet
+        elif line.startswith("- "):
+
+            text = line[2:].strip()
+
+            html_parts.append(
+                f"<div class='shacl-bullet'>"
+                f"<span class='shacl-bullet-marker'>•</span>"
+                f"<span>{html.escape(text)}</span>"
+                f"</div>"
+            )
+
+        # Rule description belonging to the previous bullet
+        elif line.startswith("Rule:"):
+
+            html_parts.append(
+                f"<div class='shacl-rule'>"
+                f"{html.escape(line)}"
+                f"</div>"
+            )
+
+    st.markdown(
+        f"""
+        <div class="shacl-explanation">
+            {''.join(html_parts)}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 st.markdown(
     """
     <style>
@@ -30,16 +85,38 @@ st.markdown(
         background-color: #fff5f5;
         border: 1px solid #f5c2c2;
         border-radius: 6px;
-        padding: 12px 14px;
+        padding: 14px 16px;
         margin-top: 10px;
         margin-bottom: 15px;
-        white-space: pre-wrap;
         color: #333333;
         font-family: sans-serif;
         font-size: 14px;
         line-height: 1.5;
         width: 100%;
         box-sizing: border-box;
+    }
+
+    .shacl-summary {
+        font-weight: 500;
+        margin-bottom: 10px;
+    }
+
+    .shacl-bullet {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 8px;
+    }
+
+    .shacl-bullet-marker {
+        flex-shrink: 0;
+        margin-right: 8px;
+    }
+
+    .shacl-rule {
+        margin-left: 20px;
+        margin-top: -4px;
+        margin-bottom: 10px;
+        color: #555555;
     }
     </style>
     """,
