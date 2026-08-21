@@ -23,6 +23,25 @@ st.set_page_config(
 
 apply_style()
 
+st.markdown(
+    """
+    <style>
+    .shacl-explanation {
+        background-color: #fff5f5;
+        border: 1px solid #f5c2c2;
+        border-radius: 6px;
+        padding: 12px 14px;
+        margin-top: 10px;
+        margin-bottom: 15px;
+        white-space: pre-wrap;
+        font-family: monospace;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # ---------------------------------------------------------
 # Page Header
@@ -121,6 +140,28 @@ def display_validation_results(validation_result):
         else:
             st.warning(
                 "⚠️ ODRL validation not performed"
+            )
+    # -----------------------------------------------------
+    # SHACL validation explanation
+    # -----------------------------------------------------
+
+    if (
+            is_valid_rdf is True
+            and is_valid_odrl is False
+    ):
+
+        shacl_explanation = validation_result.get(
+            "shacl_validation_report_explanation"
+        )
+
+        if shacl_explanation:
+            st.markdown(
+                f"""
+                    <div class="shacl-explanation">
+                    {shacl_explanation}
+                    </div>
+                    """,
+                unsafe_allow_html=True
             )
 
 
@@ -293,6 +334,7 @@ def display_validation_results(validation_result):
         "warnings",
         "info",
         "shacl_validation_report",
+        "shacl_validation_report_explanation",
     }
 
     other_fields = {

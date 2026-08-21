@@ -5,11 +5,12 @@ import pyshacl
 import os
 import rdf_utils
 from owlrl import RDFS_Semantics
+from shacl_explainer import explain_SHACL_validation_report
 
 def validate_SHACL(graph, shacl, ont_graph=None):
     r = pyshacl.validate(graph, shacl_graph=shacl, ont_graph=ont_graph, inference='rdfs', abort_on_first=False, meta_shacl=False, debug=False)
     conforms, results_graph, results_text = r
-    return conforms, results_text
+    return conforms, results_text, results_graph
 
 def get_ODRL_macro_statistics(graph: Graph, ont_graph: Graph = None):
     """
@@ -125,7 +126,7 @@ def validate_ODRL(graph, format=None):
         shacl_file = os.path.join("SHACL", "odrl-shacl.ttl")
         ont_file = os.path.join("ODRL", "ODRL22.ttl")
         ont_graph = Graph().parse(ont_file, format="turtle")
-        conforms, report = validate_SHACL(graph, shacl_file, ont_graph=ont_graph)
+        conforms, report, report_graph = validate_SHACL(graph, shacl_file, ont_graph=ont_graph)
         odrl_stats = get_ODRL_macro_statistics(graph, ont_graph)
         odrl_stats_text = describe_ODRL_statistics(odrl_stats)
 
@@ -142,6 +143,10 @@ def validate_ODRL(graph, format=None):
             )
 
             validation_report["shacl_validation_report"] = report
+
+            validation_report["shacl_validation_report_explanation"] = (
+                explain_SHACL_validation_report(report_graph)
+            )
     else:
         validation_report["is_valid_RDF"] = False
         validation_report["errors"].append("FORMAT ERROR: The provided string is not recognised as any ODRL graph formats, such as JSON-LD, Turtle or RDF/XML.")
@@ -171,7 +176,7 @@ def diagnose_ODRL(filepath) -> str:
     shacl_file = os.path.join("SHACL", "odrl-shacl.ttl")
     ont_file = os.path.join("ODRL", "ODRL22.ttl")
     ont_graph = Graph().parse(ont_file, format="turtle")
-    conforms, report = validate_SHACL(graph, shacl_file, ont_graph=ont_graph)
+    conforms, report, _ = validate_SHACL(graph, shacl_file, ont_graph=ont_graph)
     stats = get_ODRL_macro_statistics(graph, ont_graph)
     parsed_info.append(describe_ODRL_statistics(stats))
     if conforms :
@@ -194,5 +199,20 @@ def generate_ODRL_diagnostic_report(filepath: str) -> str:
         print(info)
     print("REPORT END\n")
 
-#print( validate_ODRL_from_string("""
-#""") )
+print( validate_ODRL_from_string("""
+{
+    "@context": "http://www.w3.org/ns/odrl.jsonld",
+    "@type": "Policy",
+    "uid": "http://example.com/policy:8888",
+    "profile": "http://example.com/odrl:profile:21",
+    "target": "http://example.com/music/1999.mp3",
+    "assigner": "http://example.com/org/sony-music",
+    "action": "play",
+    "permission": [{
+        "assignee": "http://example.com/people/billie"
+        },
+        {
+        "assignee": "http://example.com/people/murphy"
+        }]
+}  
+""") )
