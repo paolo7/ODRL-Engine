@@ -1,0 +1,81 @@
+# Internal JSON Data Model
+
+For ease of computation, ODRL rules are converted internally to a simplified JSON format.
+
+For example, the following ODRL policy (adapted from an example in the ODRL 2.2 specification):
+
+```
+{
+    "@context": "http://www.w3.org/ns/odrl.jsonld",
+    "@type": "Agreement",
+    "uid": "http://example.com/policy:66",
+    "profile": "http://example.com/odrl:profile:09",
+    "permission": [{
+        "target": "http://example.com/data:77",
+        "assigner": "http://example.com/org:99",
+        "assignee": "http://example.com/person:88",
+        "action": "distribute",
+		"constraint": [{
+           "leftOperand": "dateTime",
+           "operator": "gt",
+           "rightOperand":  { "@value": "2018-01-01", "@type": "xsd:date" }
+       }],
+        "duty": [{
+            "action": "attribute",
+            "attributedParty": "http://australia.gov.au/",
+				"constraint": [{
+			   "leftOperand": "dateTime",
+			   "operator": "lt",
+			   "rightOperand":  { "@value": "2028-01-01", "@type": "xsd:date" }
+		   }],
+            "consequence": [{
+               "action": "acceptTracking",
+               "trackingParty": "http://example.com/dept:100",
+			   "constraint": [{
+				   "leftOperand": "dateTime",
+				   "operator": "lt",
+				   "rightOperand":  { "@value": "2030-01-01", "@type": "xsd:date" }
+			   }]
+            },
+			{
+               "action": "acceptTracking",
+               "trackingParty": "http://example.com/dept:120",
+			   "constraint": [{
+				   "leftOperand": "dateTime",
+				   "operator": "lt",
+				   "rightOperand":  { "@value": "2030-01-01", "@type": "xsd:date" }
+			   }]
+            }
+			]
+        }]
+    }]
+}
+```
+
+Is encoded in the following object:
+
+```
+[{'policy_iri': 'http://example.com/policy:66',
+  'permissions': [{'conditions': [['http://www.w3.org/ns/odrl/2/Party', '=', 'http://example.com/person:88'],
+                                  ['http://www.w3.org/ns/odrl/2/Action', '=', 'http://www.w3.org/ns/odrl/2/distribute'],
+                                  ['http://www.w3.org/ns/odrl/2/Asset', '=', 'http://example.com/data:77'],
+                                  ['http://www.w3.org/ns/odrl/2/dateTime', '>', '2018-01-01']],
+                   'duties': [{'conditions': [['http://www.w3.org/ns/odrl/2/Action',
+                                               '=',
+                                               'http://www.w3.org/ns/odrl/2/attribute'],
+                                              ['http://www.w3.org/ns/odrl/2/dateTime', '<', '2028-01-01']],
+                               'consequences': [{'conditions': [['http://www.w3.org/ns/odrl/2/Action',
+                                                                 '=',
+                                                                 'http://www.w3.org/ns/odrl/2/acceptTracking'],
+                                                                ['http://www.w3.org/ns/odrl/2/dateTime',
+                                                                 '<',
+                                                                 '2030-01-01']]},
+                                                {'conditions': [['http://www.w3.org/ns/odrl/2/Action',
+                                                                 '=',
+                                                                 'http://www.w3.org/ns/odrl/2/acceptTracking'],
+                                                                ['http://www.w3.org/ns/odrl/2/dateTime',
+                                                                 '<',
+                                                                 '2030-01-01']]}]}]}],
+  'prohibitions': [],
+  'obligations': []}]
+```
