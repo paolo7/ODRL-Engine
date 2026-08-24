@@ -14,14 +14,16 @@ on a large amount of configuration options.
 on a specific ODRL policy passed as input. The resulting State of the World objects, along with the policy used to 
 generate them, can be evaluated by the OVAL Evaluator.
 
+For info or queries please contact Paolo Pareti p.pareti@soton.ac.uk
+
 ### Try the ODRL Engine Online
 
-You can access a live demo of these functionalities on [DIPS](https://dips.soton.ac.uk/odrl-engine/odrl-engine-dashboard/). 
+You can access a live demo of these functionalities on [DIPS](https://dips.soton.ac.uk/odrl-engine/odrl-engine-dashboard/). Selected functionalities are also available at a 
+[Swagger API endpoint](https://dips.soton.ac.uk/odrl-engine/api/docs)
 
 This repository includes a [video demonstration](resources/Policy_Evaluation_Demo_July_2026.mp4) of the OVAL Policy Evaluator using a [sample policy](test_cases/evaluation/invalid/constraints1.ttl) and [state of the world](test_cases/evaluation/invalid/constraints1.csv).
 
 An older [Google Colab interface](https://colab.research.google.com/drive/19t7xmiLkL1RW3s77_HkhysE04W4DUNPc#scrollTo=yK6I-AKSrVZ5) is also available, but it won't be actively maintained anymore.
-
 
 ## Installation Instructions
 
@@ -60,6 +62,19 @@ These limit the stramlit app:
 * ODRL_STREAMLIT_WS_TIMEOUT_SECONDS
 * ODRL_STREAMLIT_MAX_CONN_PER_IP
 
+### Fast API Endpoint
+
+When deployed, the ODRL Engine provides selected functionalities through a FastAPI Endpoint.
+A demo  endpoint is available [here](https://dips.soton.ac.uk/odrl-engine/api/docs). 
+Currently, the functionalities exposed are the following.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/evaluate_policy_on_sotw` | Evaluate Policy on SOTW |
+| `POST` | `/get_policy_features` | Get Policy Features |
+| `POST` | `/validate_ODRL` | Validate ODRL |
+
+
 ### Manual Installation
 
 You can also use the ODRL Engine as a library of functions. 
@@ -74,7 +89,6 @@ You can also use the ODRL Engine as a library of functions.
 Please see the [Python Functions](documentation/python_interface.md) document for details of the main functions you might
 want to use.
 
-
 ## Additional Documentation
 
 * [Unit Tests](documentation/unit_tests.md)
@@ -82,7 +96,7 @@ want to use.
 * [Internal JSON Data Model](documentation/internal_data_model.md)
 * [Python Functions](documentation/python_interface.md)
 
-## Contact
+## Contributors
 * Paolo Pareti p.pareti@soton.ac.uk
 * Adeel Aslam A.Aslam@soton.ac.uk
 * Jaime Salas J.O.Salas@soton.ac.uk
