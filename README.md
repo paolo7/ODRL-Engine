@@ -1,22 +1,29 @@
-# Policy Engine and Evaluator
+# ODRL Engine and OVAL Evaluator
 
-The Policy Engine provides a suite of functionality to inspect, process and use ODRL policies, including the OVAL Policy Evaluator.
+The ODRL Engine provides an integrated suite of functionalities to inspect, process and use ODRL policies. 
+The core components of the ODRL Engine are:
+* __The OVAL Policy Evaluator__ A comprehensive and semantically-grounded ODRL Evaluator. It can parse CSV files 
+containing a log of events and compute whether such events comply or not with a given ODRL policy.
+* __The DIPS ODRL Validator__ A utility validator that inspects ODRL files to determine if they are correct RDF files 
+containing syntactically correct ODRL files, using SHACL shapes for validation. Generates policy macro-statistics (e.g. 
+number and types of rules) if the ODRL file is valid, or else generates a SHACL validation report showing the validation 
+errors.
+* __The DIPS ODRL Generator__ A generator of synthetic ODRL policies that can generate ODRL policies of any size based 
+on a large amount of configuration options.
+* __The DIPS State of the World Generator__ A generator capable of creating synthetic logs of events of any size based 
+on a specific ODRL policy passed as input. The resulting State of the World objects, along with the policy used to 
+generate them, can be evaluated by the OVAL Evaluator.
+
+### Try the ODRL Engine Online
 
 You can access a live demo of these functionalities on [DIPS](https://dips.soton.ac.uk/odrl-engine/odrl-engine-dashboard/). 
-An older [Google Colab interface](https://colab.research.google.com/drive/19t7xmiLkL1RW3s77_HkhysE04W4DUNPc#scrollTo=yK6I-AKSrVZ5) is also available, but it won't be actively maintained anymore.
 
 This repository includes a [video demonstration](resources/Policy_Evaluation_Demo_July_2026.mp4) of the OVAL Policy Evaluator using a [sample policy](test_cases/evaluation/invalid/constraints1.ttl) and [state of the world](test_cases/evaluation/invalid/constraints1.csv).
 
-## **Main Goal/Functionalities**
+An older [Google Colab interface](https://colab.research.google.com/drive/19t7xmiLkL1RW3s77_HkhysE04W4DUNPc#scrollTo=yK6I-AKSrVZ5) is also available, but it won't be actively maintained anymore.
 
-Currently the following main functionalities are supported: 
 
-* Visualising an ODRL policy to inspect it
-* Validating the correctness of an ODRL policy file against the specification
-* Evaluating one or more ODRL policies against a State of the World (like an event log, or a data access request)
-* Generating synthetic ODRL policies, and generating synthetic States of the World about policies to be used for testing purposes.
-
-## **How To Install With Docker**
+## Installation Instructions
 
 This project comes with a docker image which you can start on port 8031 (or choose another port by modifying `docker-compose.yml`).
 
@@ -53,59 +60,27 @@ These limit the stramlit app:
 * ODRL_STREAMLIT_WS_TIMEOUT_SECONDS
 * ODRL_STREAMLIT_MAX_CONN_PER_IP
 
-## **How To Install Without Docker**
+### Manual Installation
 
-### Requirements
+You can also use the ODRL Engine as a library of functions. 
 
-Python, rdflib, pyshacl, pandas, matplotlib
+#### Requirements
 
-## Usage
+* Python (tested on version 3.12) 
+* The python libraries defined in `requirements.txt`
 
-### Jupiter Notebook Interface
+#### Usage
 
-You can easily test the functions of this Policy Engine using the Jupiter Notebook `colab_notebook.ipynb`. This notebook is compatible with Google Colab, and contains instructions on how to use it. 
+Please see the [Python Functions](documentation/python_interface.md) document for details of the main functions you might
+want to use.
 
-### Programmatic use
-
-Currently the Policy Engine can be inported as a Python library to use its main functions.
-
-The main functions can be found in the following files (more details in the code):
-
-`validate.py`
-* `validate_SHACL`
-* `get_ODRL_macro_statistics`
-* `describe_ODRL_statistics`
-* `diagnose_ODRL`
-* `generate_ODRL_diagnostic_report`
-
-`rdf_utils.py`
-* `parse_string_to_graph`
-* `load`
-
-`ODRL_Evaluator.py`
-* `evaluate_ODRL_on_dataframe` core ODRL evaluation function, which takes as inputs an ODRL policy, a state of the world/event stream batch/access request, and optionally a previous saved state of the evaluation json object (this last parameter is only needed in online/stream evaluation) 
-* `evaluate_ODRL_from_files` wrapper of the function above, which loads the inputs from files instead of using in-memory objects
-* `evaluate_ODRL_from_files_merge_policies` utility function that allows for the processing of multiple policies at once, by merging their rules into a single policy
-* `evaluate_ODRL_from_files_streaming` variant test function, that simulates streaming of events by breaking down a single large state of the world into multiple batches, by default containing 1 event each, and evaluates them sequentially 
-
-`ODRL_generator.py`
-* `generate_ODRL`
-
-`SotW_generator.py`
-* `extract_features_list_from_policy`
-* `extract_rule_list`
-* `extract_rule_list_from_policy`
-* `extract_rule_list_from_policy_from_file`
-* `generate_pd_state_of_the_world_from_policies`
-* `generate_state_of_the_world_from_policies`
-* `extract_features_list_from_policy_from_file`
-* `generate_state_of_the_world_from_policies_from_file`
 
 ## Additional Documentation
 
 * [Unit Tests](documentation/unit_tests.md)
 * [Experimental Evaluation of the OVAL ODRL Evaluator](documentation/experiments.md)
 * [Internal JSON Data Model](documentation/internal_data_model.md)
+* [Python Functions](documentation/python_interface.md)
 
 ## Contact
 * Paolo Pareti p.pareti@soton.ac.uk

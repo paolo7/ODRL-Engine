@@ -100,19 +100,6 @@ def describe_ODRL_statistics(stats):
 
     return "ODRL entities summary:\n" + "\n".join(lines)
 
-def validate_ODRL_from_string(odrl_string):
-    graph = None
-    format = None
-    parsed_result = rdf_utils.parse_string_to_graph(odrl_string)
-    if parsed_result:
-        graph = parsed_result[0]
-        format = parsed_result[1]
-    return validate_ODRL(graph, format)
-
-def validate_ODRL_from_file(filepath):
-    graph, format = rdf_utils.load(filepath)
-    return validate_ODRL(graph, format)
-
 def validate_ODRL(graph, format=None):
     validation_report = {"ODRL_graph_size": 0, "errors": [], "warnings": [], "info": []}
     if graph:
@@ -152,6 +139,18 @@ def validate_ODRL(graph, format=None):
         validation_report["errors"].append("FORMAT ERROR: The provided string is not recognised as any ODRL graph formats, such as JSON-LD, Turtle or RDF/XML.")
     return validation_report
 
+def validate_ODRL_from_string(odrl_string):
+    graph = None
+    format = None
+    parsed_result = rdf_utils.parse_string_to_graph(odrl_string)
+    if parsed_result:
+        graph = parsed_result[0]
+        format = parsed_result[1]
+    return validate_ODRL(graph, format)
+
+def validate_ODRL_from_file(filepath):
+    graph, format = rdf_utils.load(filepath)
+    return validate_ODRL(graph, format)
 
 def diagnose_ODRL(filepath) -> str:
     graph, format = rdf_utils.load(filepath)

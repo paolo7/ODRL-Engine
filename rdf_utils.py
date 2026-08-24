@@ -184,7 +184,6 @@ refinement_contexts_incoming = {
     "http://www.w3.org/ns/odrl/2/Asset": ODRL.target,  # Asset if something has a :target -> node
 }
 
-# LIMITATIONS
 # returns an alphabetically ordered list of unique features (left operands) from the policies
 # refinements of assignee/action/target have Party/Action/Asset prepended to the IRI and space separated, to distinguish them
 # from constraints.
