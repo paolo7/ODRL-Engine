@@ -700,7 +700,7 @@ def evaluate_ODRL_access_request_on_dataframe(
         unfulfilled_duties = []
 
         for duty in permission.get("duties", []):
-            if duty.get("required", 0) == 1:
+            if duty.get("matches_count", 0) == 0:
                 unfulfilled_duties.append(duty)
 
         # -----------------------------------------------------
@@ -1005,42 +1005,42 @@ def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW
 #                                  "example_policies/GATE_Test/GATE_SotW_valid.csv")
 #print(result)
 
-access_request_result = evaluate_ODRL_access_request_from_string(
-    """{
-    "http://www.w3.org/ns/odrl/2/Action": "http://www.w3.org/ns/odrl/2/print"
-    }""",
-
-    """
-    @prefix odrl: <http://www.w3.org/ns/odrl/2/> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-
-<http://example.com/policy:6161>
-  a odrl:Offer ;
-  odrl:permission [
-    odrl:action [
-      rdf:value odrl:print ;
-      odrl:refinement [
-        odrl:leftOperand odrl:resolution ;
-        odrl:operator odrl:lteq ;
-        odrl:rightOperand 1200 ;
-        odrl:unit "http://dbpedia.org/resource/Dots_per_inch"^^xsd:string
-      ]
-    ] ;
-  ] ;
-  odrl:permission [
-    odrl:action [
-      rdf:value odrl:uninstall ;
-    ] ;
-  ] ;
-  odrl:prohibition [
-    odrl:action [
-      rdf:value odrl:uninstall ;
-    ] ;
-    odrl:assignee <http://example.com/org:John> ;
-    odrl:target <http://example.com/document:1234> ;
-  ] ;
-  odrl:profile <http://example.com/odrl:profile:10> .
-  """
-)
-print(access_request_result)
+#access_request_result = evaluate_ODRL_access_request_from_string(
+#    """{
+#    "http://www.w3.org/ns/odrl/2/Action": "http://www.w3.org/ns/odrl/2/print"
+#    }""",
+#
+#    """
+#    @prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+#@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+#@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+#
+#<http://example.com/policy:6161>
+#  a odrl:Offer ;
+#  odrl:permission [
+#    odrl:action [
+#      rdf:value odrl:print ;
+#      odrl:refinement [
+#        odrl:leftOperand odrl:resolution ;
+#        odrl:operator odrl:lteq ;
+#        odrl:rightOperand 1200 ;
+#        odrl:unit "http://dbpedia.org/resource/Dots_per_inch"^^xsd:string
+#      ]
+#    ] ;
+#  ] ;
+#  odrl:permission [
+#    odrl:action [
+#      rdf:value odrl:uninstall ;
+#    ] ;
+#  ] ;
+#  odrl:prohibition [
+#    odrl:action [
+#      rdf:value odrl:uninstall ;
+#    ] ;
+#    odrl:assignee <http://example.com/org:John> ;
+#    odrl:target <http://example.com/document:1234> ;
+#  ] ;
+#  odrl:profile <http://example.com/odrl:profile:10> .
+#  """
+#)
+#print(access_request_result)

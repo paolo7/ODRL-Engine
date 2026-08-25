@@ -99,6 +99,36 @@ st.markdown(
         margin-bottom: 0.25rem;
     }
 
+    .odrl-rule-list {
+        margin-top: 0.25rem;
+        margin-bottom: 0.75rem;
+        padding-left: 1.5rem;
+    }
+
+    .odrl-rule-list li {
+        margin-bottom: 0.2rem;
+    }
+
+    .odrl-original-rule {
+        margin-top: 1rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.12);
+    }
+
+    .odrl-original-rule-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        opacity: 0.7;
+        margin-bottom: 0.25rem;
+    }
+
+    .odrl-original-rule-text {
+        font-size: 0.85rem;
+        font-style: italic;
+        opacity: 0.75;
+        white-space: pre-line;
+    }
+
     </style>
     """,
     unsafe_allow_html=True
@@ -443,67 +473,27 @@ def humanise_rule(rule, rule_type="rule"):
     """
     Generate a human-readable description of an evaluator rule.
 
-    The evaluator represents the assignee, action and target as
-    conditions rather than necessarily returning them as explicit
-    rule fields.
+    Party eq <party>  -> assignee
+    Action eq <action> -> action
+    Asset eq <asset>  -> target
 
-    Special conditions:
-
-        odrl:Party  eq  <party>
-            -> assignee
-
-        odrl:Action eq  <action>
-            -> action
-
-        odrl:Asset  eq  <asset>
-            -> target
-
-    All other conditions are retained as additional rule conditions.
+    All other conditions are retained as additional conditions.
     """
 
     if not isinstance(rule, dict):
         return str(rule)
-
-    # --------------------------------------------------------
-    # Explicit description, if one exists.
-    # --------------------------------------------------------
 
     description = rule.get("description")
 
     if description:
         return str(description)
 
-    conditions = rule.get(
-        "conditions",
-        []
-    )
+    conditions = rule.get("conditions", [])
 
-    # --------------------------------------------------------
-    # Known evaluator feature IRIs.
-    # --------------------------------------------------------
-
-    PARTY_IRI = (
-        f"{ODRL_NS}Party"
-    )
-
-    ACTION_IRI = (
-        f"{ODRL_NS}Action"
-    )
-
-    ASSET_IRI = (
-        f"{ODRL_NS}Asset"
-    )
-
-    EQ_IRI = (
-        f"{ODRL_NS}eq"
-    )
-
-    # --------------------------------------------------------
-    # Extract assignee, action and target from the conditions.
-    #
-    # There will be at most one of each, according to the
-    # evaluator's rule representation.
-    # --------------------------------------------------------
+    PARTY_IRI = f"{ODRL_NS}Party"
+    ACTION_IRI = f"{ODRL_NS}Action"
+    ASSET_IRI = f"{ODRL_NS}Asset"
+    EQ_IRI = f"{ODRL_NS}eq"
 
     assignee = None
     action = None
@@ -517,9 +507,7 @@ def humanise_rule(rule, rule_type="rule"):
             not isinstance(condition, list)
             or len(condition) != 3
         ):
-            additional_conditions.append(
-                condition
-            )
+            additional_conditions.append(condition)
             continue
 
         left, operator, right = condition
@@ -527,50 +515,19 @@ def humanise_rule(rule, rule_type="rule"):
         left = str(left)
         operator = str(operator)
 
-        # ----------------------------------------------------
-        # Party
-        # ----------------------------------------------------
-
-        if (
-            left == PARTY_IRI
-            and operator == EQ_IRI
-        ):
+        if left == PARTY_IRI and operator == EQ_IRI:
             assignee = right
             continue
 
-        # ----------------------------------------------------
-        # Action
-        # ----------------------------------------------------
-
-        if (
-            left == ACTION_IRI
-            and operator == EQ_IRI
-        ):
+        if left == ACTION_IRI and operator == EQ_IRI:
             action = right
             continue
 
-        # ----------------------------------------------------
-        # Asset
-        # ----------------------------------------------------
-
-        if (
-            left == ASSET_IRI
-            and operator == EQ_IRI
-        ):
+        if left == ASSET_IRI and operator == EQ_IRI:
             target = right
             continue
 
-        # ----------------------------------------------------
-        # Anything else is a real rule condition.
-        # ----------------------------------------------------
-
-        additional_conditions.append(
-            condition
-        )
-
-    # --------------------------------------------------------
-    # Humanise the extracted values.
-    # --------------------------------------------------------
+        additional_conditions.append(condition)
 
     party_text = (
         humanise_value(assignee)
@@ -590,27 +547,11 @@ def humanise_rule(rule, rule_type="rule"):
         else "any target"
     )
 
-    # --------------------------------------------------------
-    # Build the main rule description.
-    # --------------------------------------------------------
-
     rule_description = (
         f"{rule_type} for {party_text} "
         f"to perform action {action_text} "
         f"on {target_text}"
     )
-
-    # --------------------------------------------------------
-    # Add the remaining conditions.
-    #
-    # These are conditions such as:
-    #
-    # Action resolution <= 1200
-    # dateTime <= 2026-02-09T12:20:59+00:00
-    #
-    # Do NOT add Party / Action / Asset again because they
-    # have already been incorporated into the main sentence.
-    # --------------------------------------------------------
 
     if additional_conditions:
 
@@ -623,13 +564,9 @@ def humanise_rule(rule, rule_type="rule"):
         )
 
         for condition in readable_conditions:
-
-            rule_description += (
-                f"\n- {condition}"
-            )
+            rule_description += f"\n- {condition}"
 
     return rule_description
-
 
 
 # ============================================================
@@ -672,49 +609,6 @@ def render_duty_bullets(duties):
         )
 
 
-def render_show_rule_button(
-    rule,
-    rule_type,
-    key
-):
-    """
-    Render the Show Rule / Hide Rule button.
-
-    Returns the current visibility state.
-    """
-
-    state_key = f"show_rule_{key}"
-
-    if state_key not in st.session_state:
-        st.session_state[state_key] = False
-
-    button_label = (
-        "Hide Rule"
-        if st.session_state[state_key]
-        else "Show Rule"
-    )
-
-    if st.button(
-        button_label,
-        key=f"show_rule_button_{key}"
-    ):
-
-        st.session_state[state_key] = (
-            not st.session_state[state_key]
-        )
-
-    if st.session_state[state_key]:
-
-        rule_description = humanise_rule(
-            rule,
-            rule_type=rule_type
-        )
-
-        st.markdown(
-            f"**Rule:** {rule_description}"
-        )
-
-
 # ============================================================
 # EVALUATION NOTIFICATIONS
 # ============================================================
@@ -723,11 +617,9 @@ def render_evaluation_notifications(payload):
     """
     Render all matched permissions and prohibitions.
 
-    Every individual rule is rendered inside its own coloured
-    container so that the message, conditions/duties and
-    Show Rule button are visually grouped together.
-
-    Returns True if at least one matching rule exists.
+    Each complete result is rendered as a single HTML block so
+    that the message, conditions and original rule all appear
+    inside the same coloured background.
     """
 
     permissions = payload.get(
@@ -743,12 +635,18 @@ def render_evaluation_notifications(payload):
     displayed = False
 
     # ========================================================
+    # Helper for safely inserting text into HTML
+    # ========================================================
+
+    def escape_html(value):
+        import html
+        return html.escape(str(value))
+
+    # ========================================================
     # PERMISSIONS
     # ========================================================
 
-    for index, permission_match in enumerate(
-        permissions
-    ):
+    for permission_match in permissions:
 
         rule = permission_match.get(
             "rule",
@@ -766,108 +664,130 @@ def render_evaluation_notifications(payload):
         )
 
         # ----------------------------------------------------
-        # GREEN — explicit permission
+        # Determine colour / message
         # ----------------------------------------------------
 
         if not conditions and not duties:
 
-            st.markdown(
-                '<div class="odrl-rule odrl-rule-green">',
-                unsafe_allow_html=True
+            css_class = "odrl-rule-green"
+
+            message = (
+                "Your access request is explicitly "
+                "granted by a rule."
             )
-
-            st.markdown(
-                '<div class="odrl-rule-message">'
-                'Your access request is explicitly '
-                'granted by a rule.'
-                '</div>',
-                unsafe_allow_html=True
-            )
-
-            render_show_rule_button(
-                rule,
-                "permission",
-                f"permission_{index}"
-            )
-
-            st.markdown(
-                '</div>',
-                unsafe_allow_html=True
-            )
-
-            displayed = True
-
-        # ----------------------------------------------------
-        # YELLOW — conditional permission
-        # ----------------------------------------------------
 
         else:
 
-            st.markdown(
-                '<div class="odrl-rule odrl-rule-yellow">',
-                unsafe_allow_html=True
+            css_class = "odrl-rule-yellow"
+
+            message = (
+                "Your access request can be granted "
+                "by a permission rule if the following "
+                "conditions hold:"
             )
 
-            st.markdown(
-                '<div class="odrl-rule-message">'
-                'Your access request can be granted '
-                'by a permission rule if the following '
-                'conditions hold:'
-                '</div>',
-                unsafe_allow_html=True
+        # ----------------------------------------------------
+        # Build HTML
+        # ----------------------------------------------------
+
+        html_parts = []
+
+        html_parts.append(
+            f'<div class="odrl-rule {css_class}">'
+        )
+
+        # Main message
+
+        html_parts.append(
+            f'<div class="odrl-rule-message">'
+            f'{escape_html(message)}'
+            f'</div>'
+        )
+
+        # ----------------------------------------------------
+        # Conditions
+        # ----------------------------------------------------
+
+        if conditions:
+
+            html_parts.append(
+                '<ul class="odrl-rule-list">'
             )
 
-            # ------------------------------------------------
-            # Conditions
-            # ------------------------------------------------
+            for condition in humanise_conditions(
+                conditions
+            ):
 
-            if conditions:
-
-                render_condition_bullets(
-                    conditions
+                html_parts.append(
+                    f'<li>{escape_html(condition)}</li>'
                 )
 
-            # ------------------------------------------------
-            # Duties
-            # ------------------------------------------------
-
-            if duties:
-
-                st.markdown(
-                    '<div class="odrl-rule-heading">'
-                    'Subject to fulfillment of duties:'
-                    '</div>',
-                    unsafe_allow_html=True
-                )
-
-                render_duty_bullets(
-                    duties
-                )
-
-            # ------------------------------------------------
-            # Show Rule
-            # ------------------------------------------------
-
-            render_show_rule_button(
-                rule,
-                "permission",
-                f"permission_{index}"
+            html_parts.append(
+                '</ul>'
             )
 
-            st.markdown(
-                '</div>',
-                unsafe_allow_html=True
+        # ----------------------------------------------------
+        # Duties
+        # ----------------------------------------------------
+
+        if duties:
+
+            html_parts.append(
+                '<div class="odrl-rule-heading">'
+                'Subject to fulfillment of duties:'
+                '</div>'
             )
 
-            displayed = True
+            html_parts.append(
+                '<ul class="odrl-rule-list">'
+            )
+
+            for duty in humanise_duties(duties):
+
+                html_parts.append(
+                    f'<li>{escape_html(duty)}</li>'
+                )
+
+            html_parts.append(
+                '</ul>'
+            )
+
+        # ----------------------------------------------------
+        # Original rule
+        # ----------------------------------------------------
+
+        rule_description = humanise_rule(
+            rule,
+            rule_type="permission"
+        )
+
+        html_parts.append(
+            '<div class="odrl-original-rule">'
+            '<div class="odrl-original-rule-label">'
+            'Original Permission'
+            '</div>'
+            '<div class="odrl-original-rule-text">'
+            + escape_html(rule_description)
+            + '</div>'
+              '</div>'
+        )
+
+        html_parts.append(
+            '</div>'
+        )
+
+        st.markdown(
+            "".join(html_parts),
+            unsafe_allow_html=True
+        )
+
+        displayed = True
 
     # ========================================================
     # PROHIBITIONS
     # ========================================================
 
-    for index, prohibition_match in enumerate(
-        prohibitions
-    ):
+    for prohibition_match in prohibitions:
 
         rule = prohibition_match.get(
             "rule",
@@ -880,72 +800,95 @@ def render_evaluation_notifications(payload):
         )
 
         # ----------------------------------------------------
-        # YELLOW — conditional prohibition
+        # Determine colour / message
         # ----------------------------------------------------
 
         if conditions:
 
-            st.markdown(
-                '<div class="odrl-rule odrl-rule-yellow">',
-                unsafe_allow_html=True
+            css_class = "odrl-rule-yellow"
+
+            message = (
+                "Your access request might be prohibited "
+                "by a rule if the following conditions hold:"
             )
-
-            st.markdown(
-                '<div class="odrl-rule-message">'
-                'Your access request might be prohibited '
-                'by a rule if the following conditions hold:'
-                '</div>',
-                unsafe_allow_html=True
-            )
-
-            render_condition_bullets(
-                conditions
-            )
-
-            render_show_rule_button(
-                rule,
-                "prohibition",
-                f"prohibition_{index}"
-            )
-
-            st.markdown(
-                '</div>',
-                unsafe_allow_html=True
-            )
-
-            displayed = True
-
-        # ----------------------------------------------------
-        # RED — explicit prohibition
-        # ----------------------------------------------------
 
         else:
 
-            st.markdown(
-                '<div class="odrl-rule odrl-rule-red">',
-                unsafe_allow_html=True
+            css_class = "odrl-rule-red"
+
+            message = (
+                "Your access request is explicitly "
+                "prohibited by a rule."
             )
 
-            st.markdown(
-                '<div class="odrl-rule-message">'
-                'Your access request is explicitly '
-                'prohibited by a rule.'
-                '</div>',
-                unsafe_allow_html=True
+        # ----------------------------------------------------
+        # Build HTML
+        # ----------------------------------------------------
+
+        html_parts = []
+
+        html_parts.append(
+            f'<div class="odrl-rule {css_class}">'
+        )
+
+        html_parts.append(
+            f'<div class="odrl-rule-message">'
+            f'{escape_html(message)}'
+            f'</div>'
+        )
+
+        # ----------------------------------------------------
+        # Conditions
+        # ----------------------------------------------------
+
+        if conditions:
+
+            html_parts.append(
+                '<ul class="odrl-rule-list">'
             )
 
-            render_show_rule_button(
-                rule,
-                "prohibition",
-                f"prohibition_{index}"
+            for condition in humanise_conditions(
+                conditions
+            ):
+
+                html_parts.append(
+                    f'<li>{escape_html(condition)}</li>'
+                )
+
+            html_parts.append(
+                '</ul>'
             )
 
-            st.markdown(
-                '</div>',
-                unsafe_allow_html=True
-            )
+        # ----------------------------------------------------
+        # Original prohibition
+        # ----------------------------------------------------
 
-            displayed = True
+        rule_description = humanise_rule(
+            rule,
+            rule_type="prohibition"
+        )
+
+        html_parts.append(
+            '<div class="odrl-original-rule">'
+            '<div class="odrl-original-rule-label">'
+            'Original Prohibition'
+            '</div>'
+            '<div class="odrl-original-rule-text">'
+            + escape_html(rule_description)
+            + '</div>'
+              '</div>'
+        )
+
+        html_parts.append(
+            '</div>'
+        )
+
+        st.markdown(
+            "".join(html_parts),
+            unsafe_allow_html=True
+        )
+
+        displayed = True
 
     return displayed
 
@@ -1184,6 +1127,31 @@ st.markdown(
     "Create an access request from an ODRL policy and evaluate "
     "whether the request matches the policy's permissions and "
     "prohibitions."
+)
+
+st.markdown(
+    """
+    Instructions:
+    1) Upload an ODRL Policy
+    2) Optionally, upload a State of the World object if you want to factor in previously executed duties.
+    3) Fill in the `Access Request Form`, to specify the action you want permission for.
+    4) As an alternative to 3), you can upload an access request as a JSON file.
+    5) Press the `Evaluate Access Request` button
+    6) The result of the evaluation of the access request will be shown below. Green and Red reports signify permissions
+    or prohibitions that directly affect your request. Yellow reports signify permissions and prohibitions that might
+    affect your access request, depending on certain conditions. For example, a prohibition might only apply if the value
+    of a feature you left blank has a value sufficiently low, or a permission might apply only if you are going to fulfill
+    a certain duty.
+    """
+)
+
+st.markdown(
+    """
+    Depending on the use case, an access request can be granted depending on different interpretations of the policy. 
+    This evaluator does not mandate specific semantics (such as only accept requests if there is an explicit permission, 
+    or only accept requests if there is no explicit prohibition, or etc.) but provides the necessary information to make
+    a decision based on domain specific requirements.
+    """
 )
 
 

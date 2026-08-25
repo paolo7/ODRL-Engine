@@ -2,9 +2,11 @@
 
 The ODRL Engine provides an integrated suite of functionalities to inspect, process and use ODRL policies. 
 The core components of the ODRL Engine are:
-* __The OVAL Policy Evaluator__ A comprehensive and semantically-grounded ODRL Evaluator. It can parse CSV files 
+* __The OVAL Policy Evaluator__ A comprehensive and semantically-grounded ODRL Evaluator that supports both the Monitoring 
+and the Access Control scenarios. It can parse CSV files 
 containing a log of events and compute whether such events comply or not with a given ODRL policy. A list of supported 
-features can be found [here](documentation/evaluator_feature_support.md).
+features can be found [here](documentation/evaluator_feature_support.md). For access control, it can ingest an access 
+request and a policy and provides a report on whether the access request can be granted, and if yes, under which conditions.
 * __The DIPS ODRL Validator__ A utility validator that inspects ODRL files to determine if they are correct RDF files 
 containing syntactically correct ODRL files, using SHACL shapes for validation. Generates policy macro-statistics (e.g. 
 number and types of rules) if the ODRL file is valid, or else generates a SHACL validation report showing the validation 
@@ -44,10 +46,11 @@ Streamlit apps found in the `apps` subfolder will be automatically loaded when t
 4. Open the dashboard that gives you access to all the apps here: http://localhost:8031/odrl-engine-dashboard/ or access the Swagger API here http://localhost:8031/api/docs
 
 You can also access individual apps here:
-* Navigate to http://localhost:8031/evaluator/ to access the evaluator demo
-* Navigate to http://localhost:8031/validator/ to access the validator demo
-* Navigate to http://localhost:8031/odrl-generator/ to access the ODRL generator demo 
-* Navigate to http://localhost:8031/sotw-generator/ to access the State of the World generator demo 
+* Navigate to http://localhost:8031/evaluator/ to access the evaluator for monitoring
+* Navigate to http://localhost:8031/evaluator-for-access-requests/ to access the evaluator for monitoring demo
+* Navigate to http://localhost:8031/validator/ to access the validator
+* Navigate to http://localhost:8031/odrl-generator/ to access the ODRL generator
+* Navigate to http://localhost:8031/sotw-generator/ to access the State of the World generator
 * Navigate to http://localhost:8031/api/docs to access the evaluation API swagger interface
 
 You can test these functionalities with the sample ODRL policies and states of the world available [here](https://github.com/DIPS-Tools/ODRL-Engine/tree/main/test_cases/evaluation/valid).

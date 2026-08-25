@@ -29,12 +29,41 @@ This assumes that events are evaluated in chronological order.
 
 The evaluation guides provided are:
 
-* Evaluating a Policy Through the GUI
-* Evaluating a Policy Through the API
-* Evaluating a Policy Programmatically through Python
+* Evaluating a Policy For Access Control Through the GUI
+* Evaluating a Policy For Access Control Programmatically through Python
+* Evaluating a Policy for Monitoring Through the GUI
+* Evaluating a Policy for Monitoring Through the API
+* Evaluating a Policy for Monitoring Programmatically through Python
 
 
-## Evaluating a Policy Through the GUI
+## Evaluating a Policy For Access Control Through the GUI
+
+_Last Updated 26/08/2026_
+
+1) Upload an ODRL Policy
+2) Optionally, upload a State of the World object if you want to factor in previously executed duties.
+3) Fill in the `Access Request Form`, to specify the action you want permission for.
+4) As an alternative to 3), you can upload an access request as a JSON file.
+![Access Control Evaluator screen](screenshot_ac_1.png)
+5) Press the `Evaluate Access Request` button
+6) The result of the evaluation of the access request will be shown below. Green and Red reports signify permissions
+or prohibitions that directly affect your request. Yellow reports signify permissions and prohibitions that might
+affect your access request, depending on certain conditions. For example, a prohibition might only apply if the value
+of a feature you left blank has a value sufficiently low, or a permission might apply only if you are going to fulfill
+a certain duty.
+![Access Control Evaluator screen](screenshot_ac_2.png)
+
+## Evaluating a Policy For Access Control Programmatically through Python
+
+_Last Updated 26/08/2026_
+
+* Obtain the Policy file, the access request JSON file, (optionally) State of the World file and (optionally) Evaluation State file to be used as inputs.
+* Make sure you have Python and all the modules of requirements.txt available.
+* Clone the project and in your python function import the `ODRL_Evaluator.py` script
+* Call the function `ODRL_Evaluator.evaluate_ODRL_access_request_from_files`
+* Call function `evaluate_ODRL_access_request_from_strings` if you want to pass raw strings as input.
+
+## Evaluating a Policy for Monitoring Through the GUI
 
 _Last Updated 25/08/2026_
 
