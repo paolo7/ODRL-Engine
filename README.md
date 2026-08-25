@@ -3,7 +3,8 @@
 The ODRL Engine provides an integrated suite of functionalities to inspect, process and use ODRL policies. 
 The core components of the ODRL Engine are:
 * __The OVAL Policy Evaluator__ A comprehensive and semantically-grounded ODRL Evaluator. It can parse CSV files 
-containing a log of events and compute whether such events comply or not with a given ODRL policy.
+containing a log of events and compute whether such events comply or not with a given ODRL policy. A list of supported 
+features can be found [here](documentation/evaluator_feature_support.md).
 * __The DIPS ODRL Validator__ A utility validator that inspects ODRL files to determine if they are correct RDF files 
 containing syntactically correct ODRL files, using SHACL shapes for validation. Generates policy macro-statistics (e.g. 
 number and types of rules) if the ODRL file is valid, or else generates a SHACL validation report showing the validation 
@@ -95,6 +96,7 @@ want to use.
 * [Experimental Evaluation of the OVAL ODRL Evaluator](documentation/experiments.md)
 * [Internal JSON Data Model](documentation/internal_data_model.md)
 * [Python Functions](documentation/python_interface.md)
+* [Evaluator Feature Support](documentation/evaluator_feature_support.md)
 
 ## Contributors
 * Paolo Pareti p.pareti@soton.ac.uk
