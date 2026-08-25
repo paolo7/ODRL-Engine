@@ -11,6 +11,9 @@ The evaluation guides provided are:
 
 _Last Updated 25/08/2026_
 
+You try a live version on on [DIPS](https://dips.soton.ac.uk/odrl-engine/odrl-engine-dashboard/).
+
+
 * Open the Validator app.
 ![Validation screenshot](screenshot_1.png)
 * Click on the "Upload" button and upload the ODRL file to validate (it can contain multiple policies)

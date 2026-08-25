@@ -40,6 +40,8 @@ _Last Updated 25/08/2026_
 
 A video walktrough of this example is available [here](../../../resources/Policy_Evaluation_Demo_July_2026.mp4).
 
+You try a live version on on [DIPS](https://dips.soton.ac.uk/odrl-engine/odrl-engine-dashboard/).
+
 * After installation, open the Evaluator app (by default http://localhost:8031/evaluator/ on a localhost docker deployment)
 ![Evaluator screen](screenshot_1.png)
 * Click the "Upload" button under "ODRL Policy" and upload an RDF file containing an ODRL policy 
@@ -73,6 +75,8 @@ Please see the [Swagger documentation](https://dips.soton.ac.uk/odrl-engine/api/
 and examples.
 
 ## Evaluating a Policy Programmatically through Python
+
+_Last Updated 25/08/2026_
 
 * Obtain the Policy file, State of the World file and (optionally) Evaluation State file to be used as inputs.
 * Make sure you have Python and all the modules of requirements.txt available.
