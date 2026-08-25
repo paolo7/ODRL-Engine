@@ -607,13 +607,21 @@ def evaluate_ODRL_access_request_on_dataframe(
 
     Returns
     -------
-    permissions_matched : list
-        A list of dictionaries of the form:
-
+    dict
         {
-            "rule": <permission rule>,
-            "conditions": <conditions satisfied only through null matching>,
-            "duties": <unfulfilled duties>
+            "permissions_matched": [
+                {
+                    "rule": <permission rule>,
+                    "conditions": <conditions satisfied only through null matching>,
+                    "duties": <unfulfilled duties>
+                }
+            ],
+            "prohibitions_matched": [
+                {
+                    "rule": <prohibition rule>,
+                    "conditions": <conditions satisfied only through null matching>
+                }
+            ]
         }
     """
 
@@ -643,10 +651,11 @@ def evaluate_ODRL_access_request_on_dataframe(
     access_request_row = pd.Series(access_request)
 
     permissions_matched = []
+    prohibitions_matched = []
 
-    # ---------------------------------------------------------
-    # 4) Evaluate every permission
-    # ---------------------------------------------------------
+    # =========================================================
+    # 4) Evaluate all permissions
+    # =========================================================
     for permission in evaluation_state.get("permissions", []):
 
         # -----------------------------------------------------
@@ -669,8 +678,7 @@ def evaluate_ODRL_access_request_on_dataframe(
 
         else:
             # -------------------------------------------------
-            # If normal matching fails, try again allowing
-            # null values to match.
+            # Try again allowing missing/null values to match.
             # -------------------------------------------------
             null_match = eval_rule(
                 access_request_row,
@@ -682,23 +690,21 @@ def evaluate_ODRL_access_request_on_dataframe(
             )
 
             if not null_match:
-                # Permission does not match, even with nulls.
                 continue
 
             matched_conditions = null_conditions
 
         # -----------------------------------------------------
-        # 5) Determine unfulfilled duties
+        # Determine unfulfilled duties
         # -----------------------------------------------------
         unfulfilled_duties = []
 
         for duty in permission.get("duties", []):
-
             if duty.get("required", 0) == 1:
                 unfulfilled_duties.append(duty)
 
         # -----------------------------------------------------
-        # 6) Store matching permission
+        # Store matching permission
         # -----------------------------------------------------
         permissions_matched.append({
             "rule": permission,
@@ -706,7 +712,65 @@ def evaluate_ODRL_access_request_on_dataframe(
             "duties": unfulfilled_duties
         })
 
-    return {"permissions_matched":permissions_matched}
+    # =========================================================
+    # 5) Evaluate all prohibitions
+    # =========================================================
+    for prohibition in evaluation_state.get("prohibitions", []):
+
+        # -----------------------------------------------------
+        # First try normal matching.
+        # -----------------------------------------------------
+        normal_match = eval_rule(
+            access_request_row,
+            prohibition,
+            OPS_MAP,
+            FEATURE_TYPE_MAP,
+            match_nulls=False,
+            null_conditions=None
+        )
+
+        null_conditions = []
+
+        if normal_match:
+            # No null-based conditions were needed.
+            matched_conditions = []
+
+        else:
+            # -------------------------------------------------
+            # Try again allowing missing/null values to match.
+            # -------------------------------------------------
+            null_match = eval_rule(
+                access_request_row,
+                prohibition,
+                OPS_MAP,
+                FEATURE_TYPE_MAP,
+                match_nulls=True,
+                null_conditions=null_conditions
+            )
+
+            if not null_match:
+                continue
+
+            matched_conditions = null_conditions
+
+        # -----------------------------------------------------
+        # Store matching prohibition.
+        #
+        # Unlike permissions, prohibitions do not need duties.
+        # -----------------------------------------------------
+        prohibitions_matched.append({
+            "rule": prohibition,
+            "conditions": matched_conditions
+        })
+
+    # ---------------------------------------------------------
+    # 6) Return results
+    # ---------------------------------------------------------
+    return {
+        "permissions_matched": permissions_matched,
+        "prohibitions_matched": prohibitions_matched
+    }
+
 
 def evaluate_ODRL_access_request_from_string(
     access_request_string,
@@ -941,3 +1005,42 @@ def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW
 #                                  "example_policies/GATE_Test/GATE_SotW_valid.csv")
 #print(result)
 
+access_request_result = evaluate_ODRL_access_request_from_string(
+    """{
+    "http://www.w3.org/ns/odrl/2/Action": "http://www.w3.org/ns/odrl/2/print"
+    }""",
+
+    """
+    @prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.com/policy:6161>
+  a odrl:Offer ;
+  odrl:permission [
+    odrl:action [
+      rdf:value odrl:print ;
+      odrl:refinement [
+        odrl:leftOperand odrl:resolution ;
+        odrl:operator odrl:lteq ;
+        odrl:rightOperand 1200 ;
+        odrl:unit "http://dbpedia.org/resource/Dots_per_inch"^^xsd:string
+      ]
+    ] ;
+  ] ;
+  odrl:permission [
+    odrl:action [
+      rdf:value odrl:uninstall ;
+    ] ;
+  ] ;
+  odrl:prohibition [
+    odrl:action [
+      rdf:value odrl:uninstall ;
+    ] ;
+    odrl:assignee <http://example.com/org:John> ;
+    odrl:target <http://example.com/document:1234> ;
+  ] ;
+  odrl:profile <http://example.com/odrl:profile:10> .
+  """
+)
+print(access_request_result)

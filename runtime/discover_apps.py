@@ -11,7 +11,7 @@ def discover_apps(start_port=8501):
         if file.name.startswith("_"):
             continue
 
-        name = file.stem  # evaluator_demo
+        name = file.stem
         route = name.replace("_", "-")
 
         apps.append({
