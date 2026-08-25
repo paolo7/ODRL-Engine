@@ -1,6 +1,6 @@
 # OVAL Evaluator User Guide
 
-This guide explains how to use the OVAL evaluator. The main inputs for the Evaluation functions are:
+These guides explains how to use the OVAL evaluator. The main inputs for the Evaluation functions are:
 * An ODRL Policy
 * A State of the World CSV file (described below)
 * Optionally, an Evaluation State file (described below)
@@ -28,8 +28,10 @@ can evaluate one event at a time, and the result will be the same as if you had 
 This assumes that events are evaluated in chronological order.
 
 The evaluation guides provided are:
+
 * Evaluating a Policy Through the GUI
 * Evaluating a Policy Through the API
+* Evaluating a Policy Programmatically through Python
 
 
 ## Evaluating a Policy Through the GUI
@@ -39,21 +41,21 @@ _Last Updated 25/08/2026_
 A video walktrough of this example is available [here](../../../resources/Policy_Evaluation_Demo_July_2026.mp4).
 
 * After installation, open the Evaluator app (by default http://localhost:8031/evaluator/ on a localhost docker deployment)
-![Graphs showing the scalability of OVAL under different metrics.](screenshot_1.png)
+![Evaluator screen](screenshot_1.png)
 * Click the "Upload" button under "ODRL Policy" and upload an RDF file containing an ODRL policy 
 (in any RDF serialisation), for example [this policy](../../../test_cases/evaluation/invalid/constraints1.ttl)
-![Graphs showing the scalability of OVAL under different metrics.](screenshot_2.png)
+![Evaluator screen with policy uploaded](screenshot_2.png)
 * Optionally, view the required features for this policy. These are the column names that the evaluator
 will look for in the State of the World to evaluate the log of events.
-![Graphs showing the scalability of OVAL under different metrics.](screenshot_3.png)
+![Evaluator screen with expected column names](screenshot_3.png)
 * Click the "Upload" button under "State of the World" and upload a CSV file containing the State of the World with the
 required column names (the order of the columns does not matter, and there can be extra columns). The State of the World
 from the example can be found [here](../../../test_cases/evaluation/invalid/constraints1.csv).
-![Graphs showing the scalability of OVAL under different metrics.](screenshot_4.png)
+![Evaluator screen with state of the world uploaded](screenshot_4.png)
 * Click the "Evaluate Policy" button. The result of the evaluation will be displayed below. If there are violations, the
 list of events violating a given type of rule will be displayed as a list of indexes (the indexes of the violating rows).
 If there are rules that are violated, like missing obligations, these will also be displayed below.
-![Graphs showing the scalability of OVAL under different metrics.](screenshot_5.png)
+![Evaluation screen with evaluation result](screenshot_5.png)
 
 ## Evaluating a Policy Through the API
 
@@ -69,3 +71,12 @@ in the `valid` field.
 
 Please see the [Swagger documentation](https://dips.soton.ac.uk/odrl-engine/api/docs#/default/evaluate_policy_on_sotw_evaluate_policy_on_sotw_post) for more details on the inputs and outputs of functions, the schema of the datatypes
 and examples.
+
+## Evaluating a Policy Programmatically through Python
+
+* Obtain the Policy file, State of the World file and (optionally) Evaluation State file to be used as inputs.
+* Make sure you have Python and all the modules of requirements.txt available.
+* Clone the project and in your python function import the `ODRL_Evaluator.py` script
+* Call the function `ODRL_Evaluator.evaluate_ODRL_from_files` with the path to the policy file, State of the World file
+  (and optionally Evaluation State file) as input.
+* Call function `evaluate_ODRL_from_strings` if you want to pass raw strings as input.

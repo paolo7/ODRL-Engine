@@ -93,6 +93,7 @@ want to use.
 ## User Guides
 
 * [User Guide for the Evaluator](documentation/user_guides/evaluator/user_guide_evaluator.md)
+* [User Guide for the Validator](documentation/user_guides/validator/user_guide_validator.md)
 
 ## Additional Documentation
 
