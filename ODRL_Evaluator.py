@@ -113,7 +113,7 @@ def is_parseable_date(value):
     except ValueError:
         return False
 
-def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP):
+def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, null_conditions=None):
     # ----------------------------------------
     # 0) LOGIC CONSTRAINT HANDLING
     # ----------------------------------------
@@ -128,8 +128,9 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP):
 
         results = []
 
+
         for sub in subconstraints:
-            result = eval_constraint(row, rule, sub, OPS_MAP, FEATURE_TYPE_MAP)
+            result = eval_constraint(row, rule, sub, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, null_conditions=None)
             results.append(result)
 
             # ---- SHORT-CIRCUIT ----
@@ -150,6 +151,45 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP):
         if logic_op.endswith("xone"):
             return sum(results) == 1
 
+        # ---- RE-EVALUATE IF WE CAN MATCH NULLS ----
+        if match_nulls:
+            for sub in subconstraints:
+
+                sub_null_conditions = []
+                result = eval_constraint(row, rule, sub, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=match_nulls,
+                                         null_conditions=None)
+                results.append(result)
+
+                # ---- SHORT-CIRCUIT ----
+                if not sub_null_conditions:
+                    if logic_op.endswith("or") and result:
+                        if null_conditions is not None:
+                            null_conditions.append(constraint)
+                        return True
+                    if logic_op.endswith("and") and not result:
+                        return False
+                    if logic_op.endswith("andSequence") and not result:
+                        return False
+
+            # ---- FINAL EVALUATION WITH NULL MATCHES ----
+            if logic_op.endswith("and") or logic_op.endswith("andSequence"):
+                if all(results):
+                    if null_conditions is not None:
+                        null_conditions.append(constraint)
+                    return True
+
+            if logic_op.endswith("or"):
+                if any(results):
+                    if null_conditions is not None:
+                        null_conditions.append(constraint)
+                    return True
+
+            if logic_op.endswith("xone"):
+                if sum(results) == 1:
+                    if null_conditions is not None:
+                        null_conditions.append(constraint)
+                    return True
+
         return False
 
     left, op_symbol, right = constraint
@@ -163,30 +203,30 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP):
             return OPS_MAP[op_symbol](float(current_count), float(right))
         except Exception:
             return False
-    
+
+    resolved_left = None
     if left in row:
         resolved_left = left
     else:
         if isinstance(left, str):
-            parts = left.split()
-
-            resolved_left = None
-            for part in reversed(parts):
-                if part in row:
-                    resolved_left = part
-                    break
-
-            if resolved_left is None:
+            if match_nulls:
+                # Missing access-request field is treated as null.
+                if null_conditions is not None:
+                    null_conditions.append(constraint)
+                return True
+            else:
                 return False
     left = resolved_left
 
     value = row[left]
 
     if pd.isna(value) or value == "":
-        return False
-
-    #if value is None or value == "":
-    #    return False
+        if match_nulls:
+            if null_conditions is not None:
+                null_conditions.append(constraint)
+            return True
+        else:
+            return False
 
     if op_symbol not in OPS_MAP:
         return False
@@ -219,7 +259,7 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP):
     except Exception:
         return False
 
-def eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
+def eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, null_conditions=None):
 
     if not isinstance(rule, dict):
         return False
@@ -230,7 +270,7 @@ def eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP):
         return False
 
     return all(
-        eval_constraint(row, rule, c, OPS_MAP, FEATURE_TYPE_MAP)
+        eval_constraint(row, rule, c, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=match_nulls,null_conditions=null_conditions)
         for c in conditions
     )
 
@@ -284,9 +324,9 @@ def initialise_evaluation_state(policy):
 
     return state
 
-def check_match(row, rule_state, OPS_MAP, FEATURE_TYPE_MAP):
+def check_match(row, rule_state, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, null_conditions=None):
 
-    if eval_rule(row, rule_state, OPS_MAP, FEATURE_TYPE_MAP):
+    if eval_rule(row, rule_state, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=match_nulls, null_conditions=null_conditions):
 
         rule_state["matches_count"] += 1
 
@@ -534,6 +574,279 @@ def evaluate_ODRL_from_strings(
         evaluation_state
     )
 
+def evaluate_ODRL_access_request_on_dataframe(
+    access_request,
+    policy,
+    FEATURE_TYPE_MAP,
+    df=None,
+    evaluation_state=None
+):
+    """
+    Evaluate a prospective access request against an ODRL policy.
+
+    Parameters
+    ----------
+    access_request : dict
+        Dictionary representing the prospective new row. Keys should match
+        the State-of-the-World dataframe column names.
+
+    policy : dict or list
+        ODRL policy, in the same format expected by
+        evaluate_ODRL_on_dataframe() / initialise_evaluation_state().
+
+    df : pandas.DataFrame or None
+        Existing State-of-the-World data. If supplied, the policy is first
+        evaluated against it to establish the current evaluation state.
+
+    FEATURE_TYPE_MAP : dict
+        Mapping from feature IRI / column name to its datatype.
+
+    evaluation_state : dict or None
+        Optional existing evaluation state. If supplied, it is used as the
+        starting state instead of evaluating df.
+
+    Returns
+    -------
+    permissions_matched : list
+        A list of dictionaries of the form:
+
+        {
+            "rule": <permission rule>,
+            "conditions": <conditions satisfied only through null matching>,
+            "duties": <unfulfilled duties>
+        }
+    """
+
+    # ---------------------------------------------------------
+    # 1) Normalise policy
+    # ---------------------------------------------------------
+    if isinstance(policy, list):
+        policy = policy[0]
+
+    # ---------------------------------------------------------
+    # 2) Create / establish evaluation state
+    # ---------------------------------------------------------
+    if evaluation_state is None:
+        if df is not None:
+            result = evaluate_ODRL_on_dataframe(
+                policy,
+                df,
+                FEATURE_TYPE_MAP
+            )
+            evaluation_state = result[0]
+        else:
+            evaluation_state = initialise_evaluation_state(policy)
+
+    # ---------------------------------------------------------
+    # 3) Convert access request into a pandas Series
+    # ---------------------------------------------------------
+    access_request_row = pd.Series(access_request)
+
+    permissions_matched = []
+
+    # ---------------------------------------------------------
+    # 4) Evaluate every permission
+    # ---------------------------------------------------------
+    for permission in evaluation_state.get("permissions", []):
+
+        # -----------------------------------------------------
+        # First try normal matching.
+        # -----------------------------------------------------
+        normal_match = eval_rule(
+            access_request_row,
+            permission,
+            OPS_MAP,
+            FEATURE_TYPE_MAP,
+            match_nulls=False,
+            null_conditions=None
+        )
+
+        null_conditions = []
+
+        if normal_match:
+            # No null-based conditions were needed.
+            matched_conditions = []
+
+        else:
+            # -------------------------------------------------
+            # If normal matching fails, try again allowing
+            # null values to match.
+            # -------------------------------------------------
+            null_match = eval_rule(
+                access_request_row,
+                permission,
+                OPS_MAP,
+                FEATURE_TYPE_MAP,
+                match_nulls=True,
+                null_conditions=null_conditions
+            )
+
+            if not null_match:
+                # Permission does not match, even with nulls.
+                continue
+
+            matched_conditions = null_conditions
+
+        # -----------------------------------------------------
+        # 5) Determine unfulfilled duties
+        # -----------------------------------------------------
+        unfulfilled_duties = []
+
+        for duty in permission.get("duties", []):
+
+            if duty.get("required", 0) == 1:
+                unfulfilled_duties.append(duty)
+
+        # -----------------------------------------------------
+        # 6) Store matching permission
+        # -----------------------------------------------------
+        permissions_matched.append({
+            "rule": permission,
+            "conditions": matched_conditions,
+            "duties": unfulfilled_duties
+        })
+
+    return {"permissions_matched":permissions_matched}
+
+def evaluate_ODRL_access_request_from_string(
+    access_request_string,
+    policy_string,
+    state_of_the_world_string=None,
+    evaluation_state_string=None
+):
+
+    # ---------------------------------------------------------
+    # 1) Parse access request
+    # ---------------------------------------------------------
+    access_request = json.loads(access_request_string)
+
+    if not isinstance(access_request, dict):
+        raise ValueError(
+            "access_request_string must contain a JSON object."
+        )
+
+    # ---------------------------------------------------------
+    # 2) Parse policy
+    # ---------------------------------------------------------
+    graph, _ = rdf_utils.parse_string_to_graph(
+        policy_string
+    )
+
+    policies = extract_rule_list_from_policy(graph)
+    features = extract_features_list_from_policy(graph)
+
+    if not policies:
+        raise ValueError("No policy could be extracted from policy_string.")
+
+    feature_type_map = {
+        f["iri"]: f["type"]
+        for f in features
+    }
+
+    # ---------------------------------------------------------
+    # 3) Parse State of the World, if supplied
+    # ---------------------------------------------------------
+    df = None
+
+    if state_of_the_world_string is not None:
+        df = pd.read_csv(
+            StringIO(state_of_the_world_string)
+        )
+
+    # ---------------------------------------------------------
+    # 4) Parse evaluation state, if supplied
+    # ---------------------------------------------------------
+    evaluation_state = None
+
+    if evaluation_state_string is not None:
+        evaluation_state = json.loads(evaluation_state_string)
+
+        if not isinstance(evaluation_state, dict):
+            raise ValueError(
+                "evaluation_state_string must contain a JSON object."
+            )
+
+    # ---------------------------------------------------------
+    # 5) Evaluate access request
+    # ---------------------------------------------------------
+    return evaluate_ODRL_access_request_on_dataframe(
+        access_request,
+        policies[0],
+        feature_type_map,
+        df=df,
+        evaluation_state=evaluation_state
+    )
+
+
+def evaluate_ODRL_access_request_from_files(
+    access_request_file,
+    policy_file,
+    state_of_the_world_file=None,
+    evaluation_state_file=None
+):
+
+    # ---------------------------------------------------------
+    # 1) Load access request
+    # ---------------------------------------------------------
+    with open(access_request_file, "r") as f:
+        access_request = json.load(f)
+
+    if not isinstance(access_request, dict):
+        raise ValueError(
+            "access_request_file must contain a JSON object."
+        )
+
+    # ---------------------------------------------------------
+    # 2) Load policy
+    # ---------------------------------------------------------
+    graph = rdf_utils.load(policy_file)[0]
+
+    policies = extract_rule_list_from_policy(graph)
+    features = extract_features_list_from_policy(graph)
+
+    if not policies:
+        raise ValueError(
+            "No policy could be extracted from policy_file."
+        )
+
+    feature_type_map = {
+        f["iri"]: f["type"]
+        for f in features
+    }
+
+    # ---------------------------------------------------------
+    # 3) Load State of the World, if supplied
+    # ---------------------------------------------------------
+    df = None
+
+    if state_of_the_world_file is not None:
+        df = pd.read_csv(state_of_the_world_file)
+
+    # ---------------------------------------------------------
+    # 4) Load evaluation state, if supplied
+    # ---------------------------------------------------------
+    evaluation_state = None
+
+    if evaluation_state_file is not None:
+        with open(evaluation_state_file, "r") as f:
+            evaluation_state = json.load(f)
+
+        if not isinstance(evaluation_state, dict):
+            raise ValueError(
+                "evaluation_state_file must contain a JSON object."
+            )
+
+    # ---------------------------------------------------------
+    # 5) Evaluate access request
+    # ---------------------------------------------------------
+    return evaluate_ODRL_access_request_on_dataframe(
+        access_request,
+        policies[0],
+        feature_type_map,
+        df=df,
+        evaluation_state=evaluation_state
+    )
+
 
 def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW=1, normalise=False):
 
@@ -627,3 +940,4 @@ def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW
 #result = evaluate_ODRL_from_files("example_policies/GATE_Test/GATE_Policy_Test_Edited.jsonld",
 #                                  "example_policies/GATE_Test/GATE_SotW_valid.csv")
 #print(result)
+
