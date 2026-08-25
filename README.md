@@ -90,6 +90,10 @@ You can also use the ODRL Engine as a library of functions.
 Please see the [Python Functions](documentation/python_interface.md) document for details of the main functions you might
 want to use.
 
+## User Guides
+
+* [User Guide for the Evaluator](documentation/user_guides/evaluator/user_guide_evaluator.md)
+
 ## Additional Documentation
 
 * [Unit Tests](documentation/unit_tests.md)
