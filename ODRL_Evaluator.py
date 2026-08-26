@@ -579,7 +579,9 @@ def evaluate_ODRL_access_request_on_dataframe(
     policy,
     FEATURE_TYPE_MAP,
     df=None,
-    evaluation_state=None
+    evaluation_state=None,
+    semantics_for_duties=1,
+    semantics_by_default=-1
 ):
     """
     Evaluate a prospective access request against an ODRL policy.
@@ -605,6 +607,16 @@ def evaluate_ODRL_access_request_on_dataframe(
         Optional existing evaluation state. If supplied, it is used as the
         starting state instead of evaluating df.
 
+    semantics_for_duties : either 1 or -1
+        With 1 (default value), the access request is to be accepted even if duties are not satisfied, on the promise that they will be.
+        With -1, the access request is to be rejected if duties are not explicitly satisfied in the State of the World.
+
+    semantics_by_default : either 1, 0 or -1
+        With 1 permitted-by-default: the access request is to be accepted unless it matches a prohibition.
+        With -1 prohibited-by-default (default value): the access request is to be rejected unless it matches a permission.
+        With 0 unspecified-by-default: the response to the access request will be unspecified if it does not match a permission or a prohibition.
+
+
     Returns
     -------
     dict
@@ -624,6 +636,30 @@ def evaluate_ODRL_access_request_on_dataframe(
             ]
         }
     """
+
+    # ---------------------------------------------------------
+    # 0) Read ODRL conflict strategy from the policy
+    # ---------------------------------------------------------
+    conflict = 0
+
+    ODRL_CONFLICT = "http://www.w3.org/ns/odrl/2/conflict"
+    ODRL_PERM = "http://www.w3.org/ns/odrl/2/perm"
+    ODRL_PROHIBIT = "http://www.w3.org/ns/odrl/2/prohibit"
+    ODRL_INVALID = "http://www.w3.org/ns/odrl/2/invalid"
+
+    policy_for_conflict = policy[0] if isinstance(policy, list) else policy
+
+    conflict_value = policy_for_conflict.get(ODRL_CONFLICT)
+
+    if conflict_value == ODRL_PERM:
+        conflict = -1
+    elif conflict_value == ODRL_PROHIBIT:
+        conflict = 1
+    elif conflict_value == ODRL_INVALID or conflict_value is None:
+        conflict = 0
+    else:
+        # Unknown / unsupported conflict value
+        conflict = 0
 
     # ---------------------------------------------------------
     # 1) Normalise policy
@@ -764,11 +800,271 @@ def evaluate_ODRL_access_request_on_dataframe(
         })
 
     # ---------------------------------------------------------
-    # 6) Return results
+    # 6) Process conflicts and compute access decision
+    # ---------------------------------------------------------
+
+    accept_decision = None
+    accept_explanation = []
+    inconsistent_policy = False
+
+    # ---------------------------------------------------------
+    # 6.1) Determine full matches
+    #
+    # A rule is a "full match" when it matched without needing
+    # any null / unspecified access-request features.
+    # ---------------------------------------------------------
+    full_match_permission = any(
+        len(permission.get("conditions", [])) == 0
+        for permission in permissions_matched
+    )
+
+    full_match_prohibition = any(
+        len(prohibition.get("conditions", [])) == 0
+        for prohibition in prohibitions_matched
+    )
+
+    # ---------------------------------------------------------
+    # 6.2) Process policy conflict strategy
+    # ---------------------------------------------------------
+
+    # conflict =  1  -> permissions override prohibitions
+    # conflict = -1  -> prohibitions override permissions
+    # conflict =  0  -> conflicts invalidate the policy
+
+    if conflict == 1 and full_match_permission:
+
+        if full_match_prohibition:
+            accept_explanation.append(
+                "Your request would have matched a prohibition, but since it also "
+                "matched a permission, and the conflict strategy of your policy is "
+                "that permissions override prohibitions, that prohibition was ignored."
+            )
+
+        # Permissions override prohibitions.
+        prohibitions_matched.clear()
+
+    elif conflict == -1 and full_match_prohibition:
+
+        if full_match_permission:
+            accept_explanation.append(
+                "Your request would have matched a permission, but since it also "
+                "matched a prohibition, and the conflict strategy of your policy is "
+                "that prohibitions override permissions, that permission was ignored."
+            )
+
+        # Prohibitions override permissions.
+        permissions_matched.clear()
+
+    elif (
+            conflict == 0
+            and full_match_permission
+            and full_match_prohibition
+    ):
+
+        inconsistent_policy = True
+
+        accept_explanation.append(
+            "A rule conflict was detected as your request matched both a permission "
+            "and a prohibition. Since the conflict strategy of your policy is to "
+            "invalidate policies with conflicts, your request cannot be processed "
+            "as the policy is invalid. Either set a different conflict strategy "
+            "to the policy, or resolve the conflict between rules before "
+            "re-evaluating."
+        )
+
+    conditional_match_permission = any(
+        len(permission.get("conditions", [])) > 0
+        for permission in permissions_matched
+    )
+
+    conditional_match_prohibition = any(
+        len(prohibition.get("conditions", [])) > 0
+        for prohibition in prohibitions_matched
+    )
+
+    # ---------------------------------------------------------
+    # 6.3) Warn about conditional / null-based matches
+    #
+    # This warning is only relevant when the policy is not inconsistent
+    # ---------------------------------------------------------
+    if (
+            not inconsistent_policy
+            and (
+            conditional_match_permission
+            or conditional_match_prohibition
+    )
+    ):
+        accept_explanation.append(
+            "Warning, some rules of the policy could match your request if some "
+            "of the unspeficied details (null features) of your request were "
+            "given certain values. Please see the evaluation details for more "
+            "information on rules that matched subject to conditions. You might "
+            "want to specify those features better to gain a more precise decision."
+        )
+
+    # ---------------------------------------------------------
+    # 6.4) If the policy is inconsistent, do not make a decision
+    # ---------------------------------------------------------
+    if inconsistent_policy:
+        return {
+            "permissions_matched": permissions_matched,
+            "prohibitions_matched": prohibitions_matched,
+            "accept_decision": accept_decision,
+            "accept_explanation": accept_explanation
+        }
+
+    # ---------------------------------------------------------
+    # 6.6) No full permission and no full prohibition
+    # ---------------------------------------------------------
+    if (
+            not full_match_permission
+            and not full_match_prohibition
+    ):
+
+        # -----------------------------------------------------
+        # A) Permission-by-default
+        # -----------------------------------------------------
+        if semantics_by_default == 1:
+
+            accept_decision = True
+
+            accept_explanation.append(
+                "Your request did not match any permissions or prohibitions "
+                "of the policy. Since this evaluation was set to use "
+                "permission-by-default semantics, your request is automatically "
+                "accepted as it is not explicitly prohibited."
+            )
+
+        # -----------------------------------------------------
+        # B) Prohibition-by-default
+        # -----------------------------------------------------
+        elif semantics_by_default == -1:
+
+            accept_decision = False
+
+            accept_explanation.append(
+                "Your request did not match any permissions or prohibitions "
+                "of the policy. Since this evaluation was set to use "
+                "prohibition-by-default semantics, your request is automatically "
+                "rejected as it is not explicitly permitted."
+            )
+
+        # -----------------------------------------------------
+        # C) Unspecified-by-default
+        # -----------------------------------------------------
+        elif semantics_by_default == 0:
+
+            accept_decision = None
+
+            accept_explanation.append(
+                "Your request did not match any permissions or prohibitions "
+                "of the policy. Since this evaluation was set to use "
+                "unspecified-by-default semantics, a reject or accept decision "
+                "cannot be reached, as your request lies outside of what the "
+                "given policy regulates."
+            )
+
+    # ---------------------------------------------------------
+    # 6.7) Exactly one side has a full match
+    # ---------------------------------------------------------
+    elif (
+            full_match_permission
+            and not full_match_prohibition
+    ):
+
+        # -----------------------------------------------------
+        # D) Permission matched
+        # -----------------------------------------------------
+
+        # Start by assuming duties are required.
+        required_duties_exist = True
+
+        # If ANY fully matched permission has no duties, then
+        # there is at least one permission that can be granted
+        # without requiring duties to be satisfied.
+        for permission in permissions_matched:
+
+            conditions = permission.get("conditions", [])
+            duties = permission.get("duties", [])
+
+            if (
+                    len(conditions) == 0
+                    and len(duties) == 0
+            ):
+                required_duties_exist = False
+                break
+
+        # -----------------------------------------------------
+        # Duties must already be satisfied
+        # -----------------------------------------------------
+        if (
+                semantics_for_duties == -1
+                and required_duties_exist
+        ):
+
+            accept_decision = False
+
+            accept_explanation.append(
+                "Your request only matched a permission subject to duties. "
+                "Since there is no evidence that such duties have been "
+                "satisfied in the event log in the State of the World, and "
+                "the evaluator semantics has been set to only accept "
+                "permissions with duties already satisfied, your request "
+                "has been rejected."
+            )
+
+        # -----------------------------------------------------
+        # Duties may be fulfilled on the promise they will be
+        # -----------------------------------------------------
+        elif required_duties_exist:
+
+            accept_decision = True
+
+            accept_explanation.append(
+                "Your request only matched a permission subject to duties. "
+                "Since there is no evidence that such duties have been "
+                "satisfied in the event log in the State of the World, "
+                "the access request is granted on the promise that the "
+                "required duties will be fulfilled before the requested "
+                "action is performed"
+            )
+
+        # -----------------------------------------------------
+        # No duties required
+        # -----------------------------------------------------
+        else:
+
+            accept_decision = True
+
+            accept_explanation.append(
+                "Your request matched a permission so it can be accepted. No duties are required to be fulfilled."
+            )
+
+    # ---------------------------------------------------------
+    # 6.8) Prohibition only
+    # ---------------------------------------------------------
+    elif (
+            not full_match_permission
+            and full_match_prohibition
+    ):
+
+        # -----------------------------------------------------
+        # E) Prohibition matched
+        # -----------------------------------------------------
+        accept_decision = False
+
+        accept_explanation.append(
+            "Your request matched a prohibition of the policy and it is thus rejected."
+        )
+
+    # ---------------------------------------------------------
+    # 6.9) Return final evaluation
     # ---------------------------------------------------------
     return {
         "permissions_matched": permissions_matched,
-        "prohibitions_matched": prohibitions_matched
+        "prohibitions_matched": prohibitions_matched,
+        "accept_decision": accept_decision,
+        "accept_explanation": accept_explanation
     }
 
 
@@ -776,7 +1072,10 @@ def evaluate_ODRL_access_request_from_string(
     access_request_string,
     policy_string,
     state_of_the_world_string=None,
-    evaluation_state_string=None
+    evaluation_state_string=None,
+    semantics_for_duties=1,
+    semantics_by_default=-1
+
 ):
 
     # ---------------------------------------------------------
@@ -838,7 +1137,9 @@ def evaluate_ODRL_access_request_from_string(
         policies[0],
         feature_type_map,
         df=df,
-        evaluation_state=evaluation_state
+        evaluation_state=evaluation_state,
+        semantics_for_duties=semantics_for_duties,
+        semantics_by_default=semantics_by_default
     )
 
 
@@ -846,7 +1147,9 @@ def evaluate_ODRL_access_request_from_files(
     access_request_file,
     policy_file,
     state_of_the_world_file=None,
-    evaluation_state_file=None
+    evaluation_state_file=None,
+    semantics_for_duties=1,
+    semantics_by_default=-1
 ):
 
     # ---------------------------------------------------------
@@ -908,7 +1211,9 @@ def evaluate_ODRL_access_request_from_files(
         policies[0],
         feature_type_map,
         df=df,
-        evaluation_state=evaluation_state
+        evaluation_state=evaluation_state,
+        semantics_for_duties=semantics_for_duties,
+        semantics_by_default=semantics_by_default
     )
 
 

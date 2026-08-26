@@ -128,6 +128,43 @@ st.markdown(
         opacity: 0.75;
         white-space: pre-line;
     }
+    
+    .odrl-outcome {
+        border-radius: 0.5rem;
+        padding: 1rem 1.25rem;
+        margin: 1rem 0 1.5rem 0;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        font-size: 1.15rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .odrl-outcome-granted {
+        background-color: rgba(40, 167, 69, 0.12);
+        border-left: 5px solid #28a745;
+    }
+
+    .odrl-outcome-denied {
+        background-color: rgba(220, 53, 69, 0.12);
+        border-left: 5px solid #dc3545;
+    }
+
+    .odrl-outcome-unknown {
+        background-color: rgba(255, 193, 7, 0.16);
+        border-left: 5px solid #ffc107;
+    }
+
+    .odrl-outcome-icon {
+        font-size: 1.5rem;
+        line-height: 1;
+    }
+
+    .odrl-outcome-explanation {
+        margin-top: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
 
     </style>
     """,
@@ -1195,6 +1232,11 @@ if "access_request_form_values" not in st.session_state:
 if "evaluation_result_text" not in st.session_state:
     st.session_state.evaluation_result_text = ""
 
+if "evaluation_accept_decision" not in st.session_state:
+    st.session_state.evaluation_accept_decision = None
+
+if "evaluation_accept_explanation" not in st.session_state:
+    st.session_state.evaluation_accept_explanation = []
 
 # ============================================================
 # ABCD LAYOUT
@@ -1768,12 +1810,148 @@ if evaluate_button:
             result_text
         )
 
+        # ----------------------------------------------------
+        # Store the evaluator's access decision and explanation
+        #
+        # Expected evaluator return structure:
+        #
+        # {
+        #     "permissions_matched": ...,
+        #     "prohibitions_matched": ...,
+        #     "accept_decision": True / False / None,
+        #     "accept_explanation": [...]
+        # }
+        # ----------------------------------------------------
+
+        st.session_state.evaluation_accept_decision = (
+            payload.get("accept_decision")
+        )
+
+        accept_explanation = payload.get(
+            "accept_explanation",
+            []
+        )
+
+        # Normalise the explanation so the UI can safely render
+        # it as a bullet-point list.
+        if accept_explanation is None:
+            accept_explanation = []
+
+        elif isinstance(accept_explanation, str):
+            accept_explanation = [accept_explanation]
+
+        else:
+            accept_explanation = list(
+                accept_explanation
+            )
+
+        st.session_state.evaluation_accept_explanation = (
+            accept_explanation
+        )
+
 
 # ============================================================
-# RESULT
+# EVALUATION OUTCOME
 # ============================================================
 
-st.subheader("Evaluation Result")
+st.subheader("Evaluation Outcome")
+
+if st.session_state.evaluation_result_text:
+
+    accept_decision = (
+        st.session_state.evaluation_accept_decision
+    )
+
+    accept_explanation = (
+        st.session_state.evaluation_accept_explanation
+    )
+
+    # --------------------------------------------------------
+    # Determine outcome presentation
+    # --------------------------------------------------------
+
+    if accept_decision is True:
+
+        outcome_css_class = (
+            "odrl-outcome odrl-outcome-granted"
+        )
+
+        outcome_icon = "✅"
+        outcome_text = "Request Granted"
+
+    elif accept_decision is False:
+
+        outcome_css_class = (
+            "odrl-outcome odrl-outcome-denied"
+        )
+
+        outcome_icon = "⛔"
+        outcome_text = "Request Denied"
+
+    else:
+
+        outcome_css_class = (
+            "odrl-outcome odrl-outcome-unknown"
+        )
+
+        outcome_icon = "⚠️"
+        outcome_text = "Request Could Not be Computed"
+
+    # --------------------------------------------------------
+    # Prominent outcome banner
+    # --------------------------------------------------------
+
+    st.markdown(
+        f"""
+        <div class="{outcome_css_class}">
+            <span class="odrl-outcome-icon">
+                {outcome_icon}
+            </span>
+            <span>
+                {outcome_text}
+            </span>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # --------------------------------------------------------
+    # Outcome explanation
+    # --------------------------------------------------------
+
+    st.markdown(
+        "#### Outcome Explanation"
+    )
+
+    if accept_explanation:
+
+        st.markdown(
+            '<div class="odrl-outcome-explanation">',
+            unsafe_allow_html=True
+        )
+
+        for explanation in accept_explanation:
+            st.markdown(
+                f"- {explanation}"
+            )
+
+        st.markdown(
+            "</div>",
+            unsafe_allow_html=True
+        )
+
+    else:
+
+        st.info(
+            "No outcome explanation was provided."
+        )
+
+
+# ============================================================
+# EVALUATION DETAILS
+# ============================================================
+
+st.subheader("Evaluation Details")
 
 if st.session_state.evaluation_result_text:
 
@@ -1784,7 +1962,7 @@ if st.session_state.evaluation_result_text:
         )
 
         # ----------------------------------------------------
-        # Human-readable result
+        # Human-readable permission/prohibition details
         # ----------------------------------------------------
 
         displayed = render_evaluation_notifications(
