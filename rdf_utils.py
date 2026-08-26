@@ -460,6 +460,53 @@ def extract_rule_list(
 def extract_rule_list_from_policy(odrl_graph: rdflib.Graph):
     policy_list = []
 
+    # --------------------------------------------------------
+    # ODRL conflict strategy
+    #
+    # -1 = permission takes precedence
+    #  0 = no conflict strategy / invalid / unsupported
+    #  1 = prohibition takes precedence
+    # --------------------------------------------------------
+
+    ODRL_CONFLICT = ODRL.conflict
+    ODRL_PERM = ODRL.perm
+    ODRL_PROHIBIT = ODRL.prohibit
+    ODRL_INVALID = ODRL.invalid
+
+    def get_policy_conflict(policy_node):
+        """
+        Read the ODRL conflict strategy from a policy node and
+        convert it to the simplified evaluator representation.
+
+        Returns:
+            1 : perm
+            0 : invalid
+            -1 : prohibit
+        """
+
+        conflict_value = next(
+            odrl_graph.objects(
+                policy_node,
+                ODRL_CONFLICT
+            ),
+            None
+        )
+
+        if conflict_value == ODRL_PERM:
+            return 1
+
+        elif conflict_value == ODRL_PROHIBIT:
+            return -1
+
+        elif (
+                conflict_value == ODRL_INVALID
+                or conflict_value is None
+        ):
+            return 0
+
+        # Unknown / unsupported conflict value
+        return 0
+
     def build_rule_structure(
             rule_node,
             policy_target=None,
@@ -523,6 +570,8 @@ def extract_rule_list_from_policy(odrl_graph: rdflib.Graph):
         for s in odrl_graph.subjects(predicate=p)
     ):
 
+        conflict = get_policy_conflict(policy)
+
         permissions = []
         prohibitions = []
         obligations = []
@@ -573,6 +622,7 @@ def extract_rule_list_from_policy(odrl_graph: rdflib.Graph):
 
         policy_list.append({
             "policy_iri": str(policy),
+            "conflict": conflict,
             "permissions": permissions,
             "prohibitions": prohibitions,
             "obligations": obligations

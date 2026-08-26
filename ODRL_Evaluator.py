@@ -637,29 +637,16 @@ def evaluate_ODRL_access_request_on_dataframe(
         }
     """
 
-    # ---------------------------------------------------------
-    # 0) Read ODRL conflict strategy from the policy
-    # ---------------------------------------------------------
-    conflict = 0
+    policy_for_conflict = (
+        policy[0]
+        if isinstance(policy, list)
+        else policy
+    )
 
-    ODRL_CONFLICT = "http://www.w3.org/ns/odrl/2/conflict"
-    ODRL_PERM = "http://www.w3.org/ns/odrl/2/perm"
-    ODRL_PROHIBIT = "http://www.w3.org/ns/odrl/2/prohibit"
-    ODRL_INVALID = "http://www.w3.org/ns/odrl/2/invalid"
-
-    policy_for_conflict = policy[0] if isinstance(policy, list) else policy
-
-    conflict_value = policy_for_conflict.get(ODRL_CONFLICT)
-
-    if conflict_value == ODRL_PERM:
-        conflict = -1
-    elif conflict_value == ODRL_PROHIBIT:
-        conflict = 1
-    elif conflict_value == ODRL_INVALID or conflict_value is None:
-        conflict = 0
-    else:
-        # Unknown / unsupported conflict value
-        conflict = 0
+    conflict = policy_for_conflict.get(
+        "conflict",
+        0
+    )
 
     # ---------------------------------------------------------
     # 1) Normalise policy
@@ -914,11 +901,35 @@ def evaluate_ODRL_access_request_on_dataframe(
         }
 
     # ---------------------------------------------------------
+    # 6.5) Recompute whether effective full matches remain
+    #
+    # Conflict resolution above may have cleared one of the
+    # matched-rule sets.
+    # ---------------------------------------------------------
+    if full_match_permission and full_match_prohibition:
+        if conflict == 1:
+            # Permission won.
+            effective_full_match_permission = True
+            effective_full_match_prohibition = False
+
+        elif conflict == -1:
+            # Prohibition won.
+            effective_full_match_permission = False
+            effective_full_match_prohibition = True
+
+        else:
+            effective_full_match_permission = full_match_permission
+            effective_full_match_prohibition = full_match_prohibition
+    else:
+        effective_full_match_permission = full_match_permission
+        effective_full_match_prohibition = full_match_prohibition
+
+    # ---------------------------------------------------------
     # 6.6) No full permission and no full prohibition
     # ---------------------------------------------------------
     if (
-            not full_match_permission
-            and not full_match_prohibition
+            not effective_full_match_permission
+            and not effective_full_match_prohibition
     ):
 
         # -----------------------------------------------------
@@ -968,8 +979,8 @@ def evaluate_ODRL_access_request_on_dataframe(
     # 6.7) Exactly one side has a full match
     # ---------------------------------------------------------
     elif (
-            full_match_permission
-            and not full_match_prohibition
+            effective_full_match_permission
+            and not effective_full_match_prohibition
     ):
 
         # -----------------------------------------------------
@@ -1044,8 +1055,8 @@ def evaluate_ODRL_access_request_on_dataframe(
     # 6.8) Prohibition only
     # ---------------------------------------------------------
     elif (
-            not full_match_permission
-            and full_match_prohibition
+            not effective_full_match_permission
+            and effective_full_match_prohibition
     ):
 
         # -----------------------------------------------------
@@ -1311,41 +1322,10 @@ def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW
 #print(result)
 
 #access_request_result = evaluate_ODRL_access_request_from_string(
-#    """{
-#    "http://www.w3.org/ns/odrl/2/Action": "http://www.w3.org/ns/odrl/2/print"
-#    }""",
-#
 #    """
-#    @prefix odrl: <http://www.w3.org/ns/odrl/2/> .
-#@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-#@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 #
-#<http://example.com/policy:6161>
-#  a odrl:Offer ;
-#  odrl:permission [
-#    odrl:action [
-#      rdf:value odrl:print ;
-#      odrl:refinement [
-#        odrl:leftOperand odrl:resolution ;
-#        odrl:operator odrl:lteq ;
-#        odrl:rightOperand 1200 ;
-#        odrl:unit "http://dbpedia.org/resource/Dots_per_inch"^^xsd:string
-#      ]
-#    ] ;
-#  ] ;
-#  odrl:permission [
-#    odrl:action [
-#      rdf:value odrl:uninstall ;
-#    ] ;
-#  ] ;
-#  odrl:prohibition [
-#    odrl:action [
-#      rdf:value odrl:uninstall ;
-#    ] ;
-#    odrl:assignee <http://example.com/org:John> ;
-#    odrl:target <http://example.com/document:1234> ;
-#  ] ;
-#  odrl:profile <http://example.com/odrl:profile:10> .
+#""",
+#    """
 #  """
 #)
 #print(access_request_result)
