@@ -1042,17 +1042,22 @@ def _run_access_request_evaluation(
     access_request_string,
     policy_string,
     state_of_the_world_string,
+    unspecified_action_semantics,
+    duty_semantics,
     result_queue
 ):
     """
-    Evaluate the prospective access request.
+    Evaluate the prospective access request using the selected
+    policy semantics.
     """
     try:
 
         result = Evaluator.evaluate_ODRL_access_request_from_string(
             access_request_string,
             policy_string,
-            state_of_the_world_string=state_of_the_world_string
+            state_of_the_world_string=state_of_the_world_string,
+            semantics_by_default=unspecified_action_semantics,
+            semantics_for_duties=duty_semantics
         )
 
         result_queue.put(("ok", result))
@@ -1237,6 +1242,71 @@ if "evaluation_accept_decision" not in st.session_state:
 
 if "evaluation_accept_explanation" not in st.session_state:
     st.session_state.evaluation_accept_explanation = []
+
+if "unspecified_action_semantics" not in st.session_state:
+    st.session_state.unspecified_action_semantics = -1
+
+if "duty_semantics" not in st.session_state:
+    st.session_state.duty_semantics = 1
+
+
+# ============================================================
+# SEMANTICS SETTINGS
+# ============================================================
+
+settings_left, settings_right = st.columns(2)
+
+# ------------------------------------------------------------
+# Unspecified Actions Semantics
+# ------------------------------------------------------------
+
+with settings_left:
+
+    unspecified_action_options = {
+        "Permitted-By-Default (accept unless explicitly prohibited)": 1,
+        "Prohibited-By-Default (reject unless explicitly permitted)": -1,
+        "Unspecified-By-Default (do not compute unless explicitly regulated)": 0,
+    }
+
+    selected_unspecified_action_semantics = st.selectbox(
+        "**Semantics for Unspecified Actions** — "
+        "How to treat requests for actions that are not "
+        "regulated by the policy",
+        options=list(unspecified_action_options.keys()),
+        index=1,  # Prohibited-By-Default
+        key="unspecified_action_semantics_select"
+    )
+
+    st.session_state.unspecified_action_semantics = (
+        unspecified_action_options[
+            selected_unspecified_action_semantics
+        ]
+    )
+
+
+# ------------------------------------------------------------
+# Duties Semantics
+# ------------------------------------------------------------
+
+with settings_right:
+
+    duty_options = {
+        "Grant Access on Promise of Duty Completion": 1,
+        "Reject Requests with Unfulfilled Duties": -1,
+    }
+
+    selected_duty_semantics = st.selectbox(
+        "**Semantics for Duties** — "
+        "How to treat unfulfilled duties",
+        options=list(duty_options.keys()),
+        index=0,
+        key="duty_semantics_select"
+    )
+
+    st.session_state.duty_semantics = (
+        duty_options[selected_duty_semantics]
+    )
+
 
 # ============================================================
 # ABCD LAYOUT
@@ -1750,6 +1820,8 @@ if evaluate_button:
                 access_request_text,
                 policy_text,
                 sotw_text if sotw_text.strip() else None,
+                st.session_state.unspecified_action_semantics,
+                st.session_state.duty_semantics,
                 result_queue
             )
         )
