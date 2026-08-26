@@ -1,4 +1,19 @@
-# ODRL 2.2 Feature Support
+# ODRL 2.2 Feature Support for the OVAL Evaluator
+
+Summary of what the OVAL evaluator supports:
+* All policy types
+* All rule types
+* Any domain-specific vocabulary
+* Compact ODRL policy format (rule components defined at the policy level)
+* Constraints and refinements over IDs, strings and dates
+* Full support for the special semantics of the `count` Left Operand
+* Nested Logic Constraints of arbitrary complexity
+
+Summary of what the OVAL Evaluator does not support yet:
+* Refinements and constraints using set operators
+* Semantic Reasoning
+* Special semantics of certain Left Operands, like those about spatial data
+
 
 ### Core Policy Feature Support
 
