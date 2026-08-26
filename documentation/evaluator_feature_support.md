@@ -7,6 +7,8 @@ Summary of what the OVAL evaluator supports:
 * Compact ODRL policy format (rule components defined at the policy level)
 * Constraints and refinements over IDs, strings and dates
 * Full support for the special semantics of the `count` Left Operand
+* Support for ODRL `conflict` strategy within the Access Control mode
+* Support for configurable semantics in the Access control mode, including different semantics for duties, and permission-by-default / prohibition-by-default / unspecified-by-default semantics 
 * Nested Logic Constraints of arbitrary complexity
 
 Summary of what the OVAL Evaluator does not support yet:
@@ -17,59 +19,59 @@ Summary of what the OVAL Evaluator does not support yet:
 
 ### Core Policy Feature Support
 
-| Feature name                                                   | Supported | Notes                                                                                                               | Tests |
-|----------------------------------------------------------------|---------|---------------------------------------------------------------------------------------------------------------------|-|
-| [Policy](http://www.w3.org/ns/odrl/2/Policy)                   | 🟢 Yes  |                                                                                                                     | ✓|
-| [Set](http://www.w3.org/ns/odrl/2/Set)                         | 🟢 Yes  |                                                                                                                     | ✓|
-| [Offer](http://www.w3.org/ns/odrl/2/Offer)                     | 🟢 Yes  |                                                                                                                     | ✓|
-| [Agreement](http://www.w3.org/ns/odrl/2/Agreement)             | 🟢 Yes  |                                                                                                                     | ✓|
-| [Profile](http://www.w3.org/ns/odrl/2/profile)                 | 🟡      | The evaluator natively supports any domain specific terminology, without requiring explicit profile specifications. | |
-| [Permission](http://www.w3.org/ns/odrl/2/Permission)           | 🟢 Yes  |                                                                                                                     | ✓|
-| [Prohibition](http://www.w3.org/ns/odrl/2/Prohibition)         | 🟢 Yes  |                                                                                                                     | ✓|
-| [Duty](http://www.w3.org/ns/odrl/2/Duty)                       | 🟢 Yes  |                                                                                                                     | ✓|
-| [Obligation](http://www.w3.org/ns/odrl/2/obligation)           | 🟢 Yes  |                                                                                                                     | ✓|
-| [Target](http://www.w3.org/ns/odrl/2/target)                   | 🟢 Yes  |                                                                                                                     | ✓|
-| [Assigner](http://www.w3.org/ns/odrl/2/assigner)               | 🟡      | Not relevant to the evaluation semantics.                                                                           | |
-| [Assignee](http://www.w3.org/ns/odrl/2/assignee)               | 🟢 Yes  |                                                                                                                     | ✓|
-| [Asset](http://www.w3.org/ns/odrl/2/Asset)                     | 🟢 Yes  |                                                                                                                     | ✓|
-| [Asset Collection](http://www.w3.org/ns/odrl/2/AssetCollection) | 🟢 Yes  |                                                                                                                     | ✓|
-| [Party](http://www.w3.org/ns/odrl/2/Party)                     | 🟢 Yes  |                                                                                                                     | ✓|
-| [Party Collection](http://www.w3.org/ns/odrl/2/PartyCollection) | 🟢 Yes  |                                                                                                                     | ✓|
-| [Collection Parts](http://www.w3.org/ns/odrl/2/partOf)         | 🔴 No  |                                                                                                                     | |
-| [Action](http://www.w3.org/ns/odrl/2/Action)                   | 🟢 Yes  |                                                                                                                     | ✓|
-| [Action Included In](http://www.w3.org/ns/odrl/2/includedIn)   | 🔴 No  |                                                                                                                     | |
-| [Action Implies](http://www.w3.org/ns/odrl/2/implies)          | 🔴 No  |                                                                                                                     | |
-| [Action Refinement](http://www.w3.org/ns/odrl/2/refinement)    | 🟢 Yes  |                                                                                                                     | ✓|
-| [Asset Collection Refinement](http://www.w3.org/ns/odrl/2/refinement) | 🟢 Yes  |                                                                                                                     |✓ |
-| [Party Collection Refinement](http://www.w3.org/ns/odrl/2/refinement) | 🟢 Yes  |                                                                                                                     | ✓|
-| [Constraint](http://www.w3.org/ns/odrl/2/Constraint)           | 🟢 Yes  |                                                                                                                     | ✓|
-| [Logical Constraint](http://www.w3.org/ns/odrl/2/LogicalConstraint) | 🟢 Yes  |                                                                                                                     | ✓|
-| [Left Operand](http://www.w3.org/ns/odrl/2/leftOperand)        | 🟢 Yes  |                                                                                                                     | ✓|
-| [Right Operand](http://www.w3.org/ns/odrl/2/rightOperand)      | 🟢 Yes  |                                                                                                                     | ✓|
-| [Right Operand Reference](http://www.w3.org/ns/odrl/2/rightOperandReference) | 🔴 No  |                                                                                                                     | |
-| [Data Type](http://www.w3.org/ns/odrl/2/dataType)              | 🔴 No  |                                                                                                                     | |
-| [Unit](http://www.w3.org/ns/odrl/2/unit)                       | 🔴 No  |                                                                                                                     | |
-| [Status](http://www.w3.org/ns/odrl/2/status)                   | 🔴 No  |                                                                                                                     | |
-| [Operator](http://www.w3.org/ns/odrl/2/Operator)               | 🟢 Yes  |                                                                                                                     | ✓|
-| [Equal To](http://www.w3.org/ns/odrl/2/eq)                     | 🟢 Yes  |                                                                                                                     | ✓|
-| [Not Equal To](http://www.w3.org/ns/odrl/2/neq)                | 🟢 Yes  |                                                                                                                     | |
-| [Less Than](http://www.w3.org/ns/odrl/2/lt)                    | 🟢 Yes  |                                                                                                                     | ✓|
-| [Less Than or Equal To](http://www.w3.org/ns/odrl/2/lteq)      | 🟢 Yes  |                                                                                                                     | ✓|
-| [Greater Than](http://www.w3.org/ns/odrl/2/gt)                 | 🟢 Yes  |                                                                                                                     | ✓|
-| [Greater Than or Equal To](http://www.w3.org/ns/odrl/2/gteq)   | 🟢 Yes  |                                                                                                                     | ✓|
-| [Is A](http://www.w3.org/ns/odrl/2/isA)                        | 🔴 No  |                                                                                                                     | |
-| [Is All Of](http://www.w3.org/ns/odrl/2/isAllOf)               | 🔴 No  |                                                                                                                     | |
-| [Is Any Of](http://www.w3.org/ns/odrl/2/isAnyOf)               | 🔴 No  |                                                                                                                     | |
-| [Is None Of](http://www.w3.org/ns/odrl/2/isNoneOf)             | 🔴 No  |                                                                                                                     | |
-| [OR](http://www.w3.org/ns/odrl/2/or)                           | 🟢 Yes  |                                                                                                                     | ✓|
-| [XONE](http://www.w3.org/ns/odrl/2/xone)                       | 🟢 Yes  |                                                                                                                     | ✓|
-| [AND](http://www.w3.org/ns/odrl/2/and)                         | 🟢 Yes  |                                                                                                                     | ✓|
-| [AND Sequence](http://www.w3.org/ns/odrl/2/andSequence)        | 🟡  | Interpreted as a simple AND, as the sequence of evaluation does not affect the evaluation semantics used.           | |
-| [Permission Duty](http://www.w3.org/ns/odrl/2/duty)            | 🟢 Yes  |                                                                                                                     | ✓|
-| [Duty Consequence](http://www.w3.org/ns/odrl/2/consequence)    | 🟢 Yes  |                                                                                                                     | ✓|
-| [Prohibition Remedy](http://www.w3.org/ns/odrl/2/remedy)       | 🟢 Yes  |                                                                                                                     | ✓|
-| [Policy Inheritance](http://www.w3.org/ns/odrl/2/inheritFrom)  | 🔴 No  |                                                                                                                     | |
-| [Conflict Strategy](http://www.w3.org/ns/odrl/2/conflict)      | 🔴 No  | Currently defaults to prohibitions overriding permissions.                                                          | | | |
+| Feature name                                                   | Supported | Notes                                                                                                                                 | Tests |
+|----------------------------------------------------------------|-----------|---------------------------------------------------------------------------------------------------------------------------------------|-|
+| [Policy](http://www.w3.org/ns/odrl/2/Policy)                   | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Set](http://www.w3.org/ns/odrl/2/Set)                         | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Offer](http://www.w3.org/ns/odrl/2/Offer)                     | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Agreement](http://www.w3.org/ns/odrl/2/Agreement)             | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Profile](http://www.w3.org/ns/odrl/2/profile)                 | 🟡        | The evaluator natively supports any domain specific terminology, without requiring explicit profile specifications.                   | |
+| [Permission](http://www.w3.org/ns/odrl/2/Permission)           | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Prohibition](http://www.w3.org/ns/odrl/2/Prohibition)         | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Duty](http://www.w3.org/ns/odrl/2/Duty)                       | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Obligation](http://www.w3.org/ns/odrl/2/obligation)           | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Target](http://www.w3.org/ns/odrl/2/target)                   | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Assigner](http://www.w3.org/ns/odrl/2/assigner)               | 🟡        | Not relevant to the evaluation semantics.                                                                                             | |
+| [Assignee](http://www.w3.org/ns/odrl/2/assignee)               | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Asset](http://www.w3.org/ns/odrl/2/Asset)                     | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Asset Collection](http://www.w3.org/ns/odrl/2/AssetCollection) | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Party](http://www.w3.org/ns/odrl/2/Party)                     | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Party Collection](http://www.w3.org/ns/odrl/2/PartyCollection) | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Collection Parts](http://www.w3.org/ns/odrl/2/partOf)         | 🔴 No     |                                                                                                                                       | |
+| [Action](http://www.w3.org/ns/odrl/2/Action)                   | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Action Included In](http://www.w3.org/ns/odrl/2/includedIn)   | 🔴 No     |                                                                                                                                       | |
+| [Action Implies](http://www.w3.org/ns/odrl/2/implies)          | 🔴 No     |                                                                                                                                       | |
+| [Action Refinement](http://www.w3.org/ns/odrl/2/refinement)    | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Asset Collection Refinement](http://www.w3.org/ns/odrl/2/refinement) | 🟢 Yes    |                                                                                                                                       |✓ |
+| [Party Collection Refinement](http://www.w3.org/ns/odrl/2/refinement) | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Constraint](http://www.w3.org/ns/odrl/2/Constraint)           | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Logical Constraint](http://www.w3.org/ns/odrl/2/LogicalConstraint) | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Left Operand](http://www.w3.org/ns/odrl/2/leftOperand)        | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Right Operand](http://www.w3.org/ns/odrl/2/rightOperand)      | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Right Operand Reference](http://www.w3.org/ns/odrl/2/rightOperandReference) | 🔴 No     |                                                                                                                                       | |
+| [Data Type](http://www.w3.org/ns/odrl/2/dataType)              | 🔴 No     |                                                                                                                                       | |
+| [Unit](http://www.w3.org/ns/odrl/2/unit)                       | 🔴 No     |                                                                                                                                       | |
+| [Status](http://www.w3.org/ns/odrl/2/status)                   | 🔴 No     |                                                                                                                                       | |
+| [Operator](http://www.w3.org/ns/odrl/2/Operator)               | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Equal To](http://www.w3.org/ns/odrl/2/eq)                     | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Not Equal To](http://www.w3.org/ns/odrl/2/neq)                | 🟢 Yes    |                                                                                                                                       | |
+| [Less Than](http://www.w3.org/ns/odrl/2/lt)                    | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Less Than or Equal To](http://www.w3.org/ns/odrl/2/lteq)      | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Greater Than](http://www.w3.org/ns/odrl/2/gt)                 | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Greater Than or Equal To](http://www.w3.org/ns/odrl/2/gteq)   | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Is A](http://www.w3.org/ns/odrl/2/isA)                        | 🔴 No     |                                                                                                                                       | |
+| [Is All Of](http://www.w3.org/ns/odrl/2/isAllOf)               | 🔴 No     |                                                                                                                                       | |
+| [Is Any Of](http://www.w3.org/ns/odrl/2/isAnyOf)               | 🔴 No     |                                                                                                                                       | |
+| [Is None Of](http://www.w3.org/ns/odrl/2/isNoneOf)             | 🔴 No     |                                                                                                                                       | |
+| [OR](http://www.w3.org/ns/odrl/2/or)                           | 🟢 Yes    |                                                                                                                                       | ✓|
+| [XONE](http://www.w3.org/ns/odrl/2/xone)                       | 🟢 Yes    |                                                                                                                                       | ✓|
+| [AND](http://www.w3.org/ns/odrl/2/and)                         | 🟢 Yes    |                                                                                                                                       | ✓|
+| [AND Sequence](http://www.w3.org/ns/odrl/2/andSequence)        | 🟡        | Interpreted as a simple AND, as the sequence of evaluation does not affect the evaluation semantics used.                             | |
+| [Permission Duty](http://www.w3.org/ns/odrl/2/duty)            | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Duty Consequence](http://www.w3.org/ns/odrl/2/consequence)    | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Prohibition Remedy](http://www.w3.org/ns/odrl/2/remedy)       | 🟢 Yes    |                                                                                                                                       | ✓|
+| [Policy Inheritance](http://www.w3.org/ns/odrl/2/inheritFrom)  | 🔴 No     |                                                                                                                                       | |
+| [Conflict Strategy](http://www.w3.org/ns/odrl/2/conflict)      | 🟢 Yes / 🔴 No | Fully supported in Access Control mode, not supported in Monitoring mode (currently defaults to prohibitions overriding permissions). | | | |
 
 ### Left Operand Support
 

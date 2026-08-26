@@ -8,7 +8,7 @@ and the Access Control scenarios.
 containing a log of events and compute whether such events comply or not with a given ODRL policy. A list of supported 
 features can be found [here](documentation/evaluator_feature_support.md). 
   * With its __Access Control Mode__, it can ingest an access 
-request and a policy and provides a report on whether the access request can be granted, and if yes, under which conditions.
+request and a policy and provides a report, based on configurable semantics, on whether the access request can be granted, and if yes, under which conditions.
 * __The DIPS ODRL Validator__ A utility validator that inspects ODRL files to determine if they are correct RDF files 
 containing syntactically correct ODRL files, using SHACL shapes for validation. Generates policy macro-statistics (e.g. 
 number and types of rules) if the ODRL file is valid, or else generates a SHACL validation report showing the validation 
