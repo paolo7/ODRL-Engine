@@ -40,6 +40,8 @@ The evaluation guides provided are:
 
 _Last Updated 26/08/2026_
 
+After installation, open the Access Request Evaluator app (by default http://localhost:8031/evaluator-of-access-requests/ on a localhost docker deployment)
+ 
 1) Upload an ODRL Policy
 2) Optionally, upload a State of the World object if you want to factor in previously executed duties.
 3) Fill in the `Access Request Form`, to specify the action you want permission for.
@@ -71,7 +73,7 @@ A video walktrough of this example is available [here](../../../resources/Policy
 
 You try a live version on on [DIPS](https://dips.soton.ac.uk/odrl-engine/odrl-engine-dashboard/).
 
-* After installation, open the Evaluator app (by default http://localhost:8031/evaluator/ on a localhost docker deployment)
+* After installation, open the Monitoring Evaluator app (by default http://localhost:8031/evaluator-for-monitoring/ on a localhost docker deployment)
 ![Evaluator screen](screenshot_1.png)
 * Click the "Upload" button under "ODRL Policy" and upload an RDF file containing an ODRL policy 
 (in any RDF serialisation), for example [this policy](../../../test_cases/evaluation/invalid/constraints1.ttl)
