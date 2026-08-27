@@ -1249,6 +1249,8 @@ if "unspecified_action_semantics" not in st.session_state:
 if "duty_semantics" not in st.session_state:
     st.session_state.duty_semantics = 1
 
+if "access_request_uploaded" not in st.session_state:
+    st.session_state.access_request_uploaded = False
 
 # ============================================================
 # SEMANTICS SETTINGS
@@ -1441,12 +1443,13 @@ with col_right:
     # --------------------------------------------------------
 
     if (
-        generate_form
-        or (
+            generate_form
+            or (
             st.session_state.policy_upload_id is not None
             and not st.session_state.access_request_form_generated
+            and not st.session_state.access_request_uploaded
             and st.session_state.policy_text.strip()
-        )
+    )
     ):
 
         policy_path = None
@@ -1559,6 +1562,8 @@ with col_right:
                     new_values
                 )
 
+                st.session_state.access_request_uploaded = False
+
                 st.session_state.access_request_form_generated = True
 
                 # ------------------------------------------------
@@ -1629,7 +1634,8 @@ with col_right:
                             current_value
                         ),
                         format_func=display_action_name,
-                        key="access_request_action_select"
+                        key="access_request_action_select",
+                        disabled=st.session_state.access_request_uploaded
                     )
 
                     st.session_state \
@@ -1658,7 +1664,8 @@ with col_right:
                 value = st.text_input(
                     feature,
                     value=current_value,
-                    key=f"access_request_feature_{feature}"
+                    key=f"access_request_feature_{feature}",
+                    disabled=st.session_state.access_request_uploaded
                 )
 
                 st.session_state \
@@ -1671,12 +1678,12 @@ with col_right:
         # here. Rebuild D from the current form values.
         # ----------------------------------------------------
 
-        st.session_state.access_request_text = (
-            make_access_request_json(
-                st.session_state
-                .access_request_form_values
+        if not st.session_state.access_request_uploaded:
+            st.session_state.access_request_text = (
+                make_access_request_json(
+                    st.session_state.access_request_form_values
+                )
             )
-        )
 
 
 # ============================================================
@@ -1711,20 +1718,12 @@ with col_right:
                 .decode("utf-8")
             )
 
-            st.session_state.access_request_text = (
-                uploaded_text
-            )
+            st.session_state.access_request_text = uploaded_text
 
-            # ------------------------------------------------
-            # A manually uploaded JSON request should become
-            # the source of truth until the form is generated
-            # or changed.
-            # ------------------------------------------------
+            st.session_state.access_request_form_generated = False
+            st.session_state.access_request_uploaded = True
 
-            st.session_state.access_request_form_generated = (
-                False
-            )
-
+            # The uploaded JSON is now the source of truth.
             st.rerun()
 
     st.text_area(
