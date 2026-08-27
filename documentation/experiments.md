@@ -1,5 +1,7 @@
 # Experimental Evaluation
 
+__NOTE__ to reproduce previous results the experiments below need to be adjusted to disable reasoning. The current evaluator is configured to use reasoning by default unless disabled.
+
 The results of an experimental evaluation of the OVAL ODRL Evaluator can be found [in this article](https://arxiv.org/abs/2607.15987). Details on how to replicate these results, or perform additional experiments, is described below.
 
 ## How to perform scalability tests

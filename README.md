@@ -3,7 +3,7 @@
 The ODRL Engine provides an integrated suite of functionalities to inspect, process and use ODRL policies. 
 The core components of the ODRL Engine are:
 * __The OVAL Policy Evaluator__ A comprehensive and semantically-grounded ODRL Evaluator that supports both the Monitoring 
-and the Access Control scenarios.
+and the Access Control scenarios and includes reasoning.
   * In __Monitoring Mode__ it can parse CSV files 
 containing a log of events and compute whether such events comply or not with a given ODRL policy. A list of supported 
 features can be found [here](documentation/evaluator_feature_support.md). 

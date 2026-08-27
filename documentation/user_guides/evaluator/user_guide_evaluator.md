@@ -5,6 +5,16 @@ These guides explains how to use the OVAL evaluator. The main inputs for the Eva
 * A State of the World CSV file (described below)
 * Optionally, an Evaluation State file (described below)
 
+#### Reasoning
+
+Unless disabled (disabling the `reasoning` flag in the evaluator functions, the OVAL evaluator will include reasoning.
+Included modes of reasoning are `odrl:includedIn` and `odrl:partOf`, these allow you to specify sub-actions, or 
+members of parties or assets. The evaluation functions can be configured to include a list of ontology files. Even if 
+this list is empty, the ontologies considered will include the ODRL 2.2 ontology, and any ontological information in the 
+policy itself. The latter is a convenience feature to be able to process both a policy and an ontology with a single RDF file.
+For example, a policy could also contain information about new actions, and which super-actions they are included in, and
+which parties or assets are part of collections.
+
 #### Data Format of a State of the World
 
 States of the World objects must be CSV files containing a number of columns matching the components and left operands
