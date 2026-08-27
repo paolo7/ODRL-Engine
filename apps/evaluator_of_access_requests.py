@@ -1624,24 +1624,44 @@ with col_right:
 
                 if actions:
 
-                    if current_value not in actions:
-                        current_value = actions[0]
+                    # Add a custom option to the dropdown
+                    CUSTOM_ACTION = "__CUSTOM_ACTION__"
+                    action_options = actions + [CUSTOM_ACTION]
+
+                    if current_value in actions:
+                        selected_option = current_value
+                    else:
+                        selected_option = CUSTOM_ACTION
 
                     selected_action = st.selectbox(
                         "Action",
-                        options=actions,
-                        index=actions.index(
-                            current_value
+                        options=action_options,
+                        index=action_options.index(selected_option),
+                        format_func=lambda x: (
+                            "Custom..." if x == CUSTOM_ACTION
+                            else display_action_name(x)
                         ),
-                        format_func=display_action_name,
                         key="access_request_action_select",
                         disabled=st.session_state.access_request_uploaded
                     )
 
+                    # If Custom... is selected, show a text box
+                    if selected_action == CUSTOM_ACTION:
+                        selected_action = st.text_input(
+                            "Custom action",
+                            value=(
+                                current_value
+                                if current_value not in actions
+                                else ""
+                            ),
+                            key="access_request_custom_action",
+                            disabled=st.session_state.access_request_uploaded
+                        )
+
                     st.session_state \
                         .access_request_form_values[
-                            feature
-                        ] = selected_action
+                        feature
+                    ] = selected_action
 
                 else:
 

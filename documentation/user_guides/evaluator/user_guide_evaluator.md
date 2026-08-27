@@ -48,17 +48,18 @@ The evaluation guides provided are:
 
 ## Evaluating a Policy For Access Control Through the GUI
 
-_Last Updated 26/08/2026_
+_Last Updated 27/08/2026_
 
 After installation, open the Access Request Evaluator app (by default http://localhost:8031/evaluator-of-access-requests/ on a localhost docker deployment)
  
 1) Upload an ODRL Policy
-2) Optionally, upload a State of the World object if you want to factor in previously executed duties.
-3) Fill in the `Access Request Form`, to specify the action you want permission for.
-4) As an alternative to 3), you can upload an access request as a JSON file.
+2) Optionally, set the desired semantics for duties and unspecified actions.
+3) Optionally, upload a State of the World object if you want to factor in previously executed duties.
+4) Fill in the `Access Request Form`, to specify the action you want permission for.
+5) As an alternative to 3), you can upload an access request as a JSON file.
 ![Access Control Evaluator screen](screenshot_ac_1.png)
-5) Press the `Evaluate Access Request` button
-6) The result of the evaluation of the access request will be shown below. Green and Red reports signify permissions
+6) Press the `Evaluate Access Request` button
+7) The result of the evaluation of the access request will be shown below. Green and Red reports signify permissions
 or prohibitions that directly affect your request. Yellow reports signify permissions and prohibitions that might
 affect your access request, depending on certain conditions. For example, a prohibition might only apply if the value
 of a feature you left blank has a value sufficiently low, or a permission might apply only if you are going to fulfill
