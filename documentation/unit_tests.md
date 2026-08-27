@@ -11,7 +11,44 @@ and outputs the number of
 tests passed, along with the average time for evaluation. It also tests the streaming capabilities of the evaluator
 by using simulating streaming using the `evaluate_ODRL_from_files_streaming` function.
 
-### How to Add Evaluation Tests
+### How to Add Access Request Evaluation Tests
+
+To add an access request evaluation test, create the following files, where X is a filename of your choosing (make sure this name is unique in the folder):
+
+* `X.ttl` (a Turtle file containing the ODRL policy)
+* `X.json` (a JSON file containing the access request)
+* `X.csv` (optional State of the World file)
+* `X.txt` (a file containing the expected result and optional test information)
+
+Place all of these files under `test_cases\evaluation\access_control`. The `.csv` file is optional and should only be included if you want to test it with a particular State of the World (for example to show evidence of duties.
+
+The access request in `X.json` should contain the requested ODRL attributes, for example:
+
+```json
+{
+  "http://www.w3.org/ns/odrl/2/Action": "http://www.w3.org/ns/odrl/2/use"
+}
+```
+
+The `X.txt` file must contain an `expected_accept_decision` parameter, which specifies whether the access request is expected to be accepted, rejected, or result in an unknown decision. It can also optionally specify the semantics used during evaluation:
+
+```
+expected_accept_decision=False
+semantics_for_duties=1,
+semantics_by_default=-1
+test_description=The action should be rejected as it is too generic.
+test_tag=Default_Semantics
+```
+
+The following parameters can be used:
+
+* `expected_accept_decision` must be "True", "False", or "None", and specifies the expected result of the access request evaluation.
+* `semantics_for_duties` Values 1 (accept even if duties unfulfilled yet) or -1 (require evidence of duty fulfillment) optionally specifies the semantics used when evaluating duties. If omitted, the default value of 1 is used.
+* `semantics_by_default` Values 1 (permit-by-default), 0 (unspecified-by-default) or -1 (prohibit-by-default) optionally specifies the default semantics. If omitted, the default value of -1 is used.
+* `test_description` is an optional description of the test that will show in the logs if the test fails
+* `test_tag` is an optional keyword used to group similar tests together. The test output will show a breakdown for each tag. If no tag is specified, the test is placed in the "others" category.
+
+### How to Add Monitoring Evaluation Tests
 
 To add an evaluation test, create the following files, where X is a filename of your choosing 
 (make sure this name is unique in the folder you will copy them in):

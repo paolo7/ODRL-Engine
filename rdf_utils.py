@@ -11,6 +11,18 @@ import policy_normalisation_comparison.GraphParser
 
 ODRL = rdflib.Namespace("http://www.w3.org/ns/odrl/2/")
 
+logic_predicates = [
+            rdflib.URIRef("http://www.w3.org/ns/odrl/2/and"),
+            rdflib.URIRef("http://www.w3.org/ns/odrl/2/or"),
+            rdflib.URIRef("http://www.w3.org/ns/odrl/2/xone"),
+            rdflib.URIRef("http://www.w3.org/ns/odrl/2/andSequence"),
+        ]
+SUBRULE_PREDICATES = (
+    ODRL.duty,
+    ODRL.consequence,
+    ODRL.remedy,
+)
+
 def parse_string_to_graph(data: Union[str, bytes]) -> tuple[Graph, str] | None:
     """
     Detect the RDF serialization of a given string or bytes and return both
@@ -231,7 +243,7 @@ def extract_features_list_from_policy(odrl_graph: rdflib.Graph):
 #
 #                for member in members:
 #                    process_constraint(member, prefix)
-        for logic_pred in LOGIC_PREDICATES:
+        for logic_pred in logic_predicates:
 
             children = list(odrl_graph.objects(constraint, logic_pred))
 
@@ -252,13 +264,6 @@ def extract_features_list_from_policy(odrl_graph: rdflib.Graph):
     # Predicates used to decide top-level policy-like nodes
     policy_predicates = {ODRL.permission, ODRL.prohibition, ODRL.obligation}
 
-    LOGIC_PREDICATES = (
-        rdflib.URIRef("http://www.w3.org/ns/odrl/2/and"),
-        rdflib.URIRef("http://www.w3.org/ns/odrl/2/or"),
-        rdflib.URIRef("http://www.w3.org/ns/odrl/2/xone"),
-        rdflib.URIRef("http://www.w3.org/ns/odrl/2/andSequence"),
-    )
-
     # Mapping for refinement context detection:
     # key = label to use as Y, value = tuple(incoming predicate to detect that context)
 
@@ -266,24 +271,29 @@ def extract_features_list_from_policy(odrl_graph: rdflib.Graph):
     # Traverse every policy rule
     # -------------------------
 
+    def process_rule(rule):
+        # Direct constraints
+        for constraint in odrl_graph.objects(rule, ODRL.constraint):
+            process_constraint(constraint)
+
+        # Refinements on rule-level Party / Action / Asset
+        for prefix, incoming_pred in refinement_contexts_incoming.items():
+            for component in odrl_graph.objects(rule, incoming_pred):
+                for refinement in odrl_graph.objects(component, ODRL.refinement):
+                    process_constraint(refinement, prefix)
+
+        # Recursively process duties, consequences and remedies
+        for predicate in SUBRULE_PREDICATES:
+            for subrule in odrl_graph.objects(rule, predicate):
+                process_rule(subrule)
+
     for rule in set(
             r
             for pred in policy_predicates
             for policy in odrl_graph.subjects(pred)
             for r in odrl_graph.objects(policy, pred)
     ):
-
-        # Direct constraints
-        for constraint in odrl_graph.objects(rule, ODRL.constraint):
-            process_constraint(constraint)
-
-        # Refinements on Party/Action/Asset
-        for prefix, incoming_pred in refinement_contexts_incoming.items():
-
-            for component in odrl_graph.objects(rule, incoming_pred):
-
-                for refinement in odrl_graph.objects(component, ODRL.refinement):
-                    process_constraint(refinement, prefix)
+        process_rule(rule)
 
     features = sorted(features, key=lambda f: f["iri"])
     return features
@@ -353,12 +363,6 @@ def extract_rule_list(
             return [left, op, right]
 
         # --- 2. LOGIC CONSTRAINT ---
-        logic_predicates = [
-            rdflib.URIRef("http://www.w3.org/ns/odrl/2/and"),
-            rdflib.URIRef("http://www.w3.org/ns/odrl/2/or"),
-            rdflib.URIRef("http://www.w3.org/ns/odrl/2/xone"),
-            rdflib.URIRef("http://www.w3.org/ns/odrl/2/andSequence"),
-        ]
 
         for logic_op in logic_predicates:
             for collection_node in odrl_graph.objects(node, logic_op):
