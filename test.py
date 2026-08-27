@@ -41,6 +41,153 @@ def timed_evaluation(func, *args, **kwargs):
 
     return result
 
+def run_access_request_evaluation_tests():
+    global tests_passed
+    global tests_failed
+    global test_log
+
+    folder = "test_cases/evaluation/access_control"
+
+    if not os.path.exists(folder):
+        print(f"Skipping access request evaluation tests: folder does not exist: {folder}")
+        return
+
+    category_stats = {}
+
+    files = os.listdir(folder)
+
+    # Every .ttl file represents one test case.
+    base_names = sorted(
+        os.path.splitext(f)[0]
+        for f in files
+        if f.endswith(".ttl")
+    )
+
+    for base in base_names:
+
+        policy_file = os.path.join(folder, base + ".ttl")
+        request_file = os.path.join(folder, base + ".json")
+        sotw_file = os.path.join(folder, base + ".csv")
+        params_file = os.path.join(folder, base + ".txt")
+
+        # Required files
+        if not os.path.exists(request_file):
+            print(f"Skipping access request test {base}: missing JSON request file")
+            continue
+
+        if not os.path.exists(params_file):
+            print(f"Skipping access request test {base}: missing TXT parameters file")
+            continue
+
+        # Read test parameters
+        params = {}
+
+        try:
+            with open(params_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+
+                    if not line or "=" not in line:
+                        continue
+
+                    key, value = line.split("=", 1)
+                    params[key.strip()] = value.strip()
+
+            # Convert expected_accept_decision to bool / None
+            expected_raw = params.get("expected_accept_decision")
+
+            if expected_raw == "True":
+                expected_accept_decision = True
+            elif expected_raw == "False":
+                expected_accept_decision = False
+            elif expected_raw == "None":
+                expected_accept_decision = None
+            else:
+                print(
+                    f"Skipping access request test {base}: "
+                    f"invalid or missing expected_accept_decision"
+                )
+                continue
+
+            test_tag = params.get("test_tag", "others").strip()
+
+            if not test_tag:
+                test_tag = "others"
+
+            # Optional evaluation semantics
+            semantics_for_duties = int(
+                params.get("semantics_for_duties", 1).rstrip(",")
+            )
+
+            semantics_by_default = int(
+                params.get("semantics_by_default", -1).rstrip(",")
+            )
+
+        except Exception as e:
+            tests_failed += 1
+            test_log.append(
+                f"Exception reading access request test parameters {base}: {e}"
+            )
+            print(
+                f"Access request test {base} failed while reading parameters: {e}"
+            )
+            continue
+
+        if test_tag not in category_stats:
+            category_stats[test_tag] = {"passed": 0, "total": 0}
+
+        category_stats[test_tag]["total"] += 1
+
+        try:
+            result = timed_evaluation(
+                ODRL_Evaluator.evaluate_ODRL_access_request_from_files,
+                access_request_file=request_file,
+                policy_file=policy_file,
+                state_of_the_world_file=(
+                    sotw_file if os.path.exists(sotw_file) else None
+                ),
+                semantics_for_duties=semantics_for_duties,
+                semantics_by_default=semantics_by_default,
+            )
+
+            accept_decision = result["accept_decision"]
+
+        except Exception as e:
+            tests_failed += 1
+            test_log.append(
+                f"Exception evaluating access request test {base}: {e}"
+            )
+            print(
+                f"Access request test {base} failed due to exception: {e}"
+            )
+            continue
+
+        if accept_decision == expected_accept_decision:
+            tests_passed += 1
+            category_stats[test_tag]["passed"] += 1
+
+        else:
+            tests_failed += 1
+
+            print(
+                f"Failed to validate acccess request test {base}, "
+                f"expected accept decision {expected_accept_decision} "
+                f"but the evaluator returned {accept_decision}."
+            )
+
+            test_log.append(
+                f"Failed access request test {base} "
+                f"(expected accept decision {expected_accept_decision}, "
+                f"got {accept_decision})"
+            )
+
+    print("\nEvaluation Access Request tests category summary:")
+    for category in sorted(category_stats.keys()):
+        passed = category_stats[category]["passed"]
+        total = category_stats[category]["total"]
+
+        print(f" - Tests: {category} {passed}/{total}")
+
 def run_folder_validation_tests():
     global tests_passed
     global tests_failed
@@ -369,6 +516,12 @@ def run_folder_evaluation_tests():
 
 
 def runTests(test_repetitions = 0):
+    global total_eval_time
+    global total_eval_calls
+
+    total_eval_time = 0.0
+    total_eval_calls = 0
+
     global tests_passed
     global tests_failed
     global test_log
@@ -422,8 +575,11 @@ def runTests(test_repetitions = 0):
                    "Test of SotW Evaluation for Permissions Only"
                    )
 
-    # Folder-based evaluation tests
+    # Folder-based monitoring evaluation tests
     run_folder_evaluation_tests()
+
+    # Folder-based access control evaluation tests
+    run_access_request_evaluation_tests()
 
     # PRINT SUMMARY
 
