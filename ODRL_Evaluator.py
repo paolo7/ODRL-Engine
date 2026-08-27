@@ -30,6 +30,8 @@ OPS_MAP = {
     # odrl.isAllOf: lambda a, b: set(a) == set(b) if isinstance(a, list) and isinstance(b, list) else False,
 }
 
+DT_COL = "http://www.w3.org/ns/odrl/2/dateTime"
+
 def evaluate_ODRL_from_files_merge_policies(policy_files, SotW_file):
     graph_rules = []
     features = []
@@ -671,6 +673,15 @@ def evaluate_ODRL_access_request_on_dataframe(
     # ---------------------------------------------------------
     # 3) Convert access request into a pandas Series
     # ---------------------------------------------------------
+
+    accept_explanation = []
+
+    # add datetime set to now, if none is specified, as an access request is never about the past
+    if DT_COL not in access_request or access_request[DT_COL] in (None, ""):
+        time_now = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        access_request[DT_COL] = time_now
+        accept_explanation.append("Warning: your request did not specify a time, and thus it defaulted to the current time "+time_now+". Set the odrl:dateTime feature in your access request if you want to specify another time.")
+
     access_request_row = pd.Series(access_request)
 
     permissions_matched = []
@@ -791,7 +802,6 @@ def evaluate_ODRL_access_request_on_dataframe(
     # ---------------------------------------------------------
 
     accept_decision = None
-    accept_explanation = []
     inconsistent_policy = False
 
     # ---------------------------------------------------------
@@ -1256,7 +1266,7 @@ def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW
     # ----------------------------------------
     df = pd.read_csv(SotW_file)
 
-    DT_COL = "http://www.w3.org/ns/odrl/2/dateTime"
+
 
     if DT_COL in df.columns:
         df[DT_COL] = pd.to_datetime(df[DT_COL], errors="coerce", utc=True)
