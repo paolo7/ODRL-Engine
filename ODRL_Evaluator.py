@@ -1,4 +1,5 @@
 from io import StringIO
+from rdflib import Graph, URIRef
 
 import rdf_utils
 from rdf_utils import extract_rule_list_from_policy, extract_features_list_from_policy
@@ -31,6 +32,317 @@ OPS_MAP = {
 }
 
 DT_COL = "http://www.w3.org/ns/odrl/2/dateTime"
+
+ODRL_INCLUDED_IN = URIRef(
+    "http://www.w3.org/ns/odrl/2/includedIn"
+)
+
+ODRL_PART_OF = URIRef(
+    "http://www.w3.org/ns/odrl/2/partOf"
+)
+
+def _extract_uris(value):
+    """
+    Extract URI strings from the different representations that may
+    occur in the policy dictionary.
+    Supported examples:
+        "http://example.org/action"
+        ["http://example.org/action1", "http://example.org/action2"]
+        {"iri": "http://example.org/action"}
+        {"id": "http://example.org/action"}
+        {"@id": "http://example.org/action"}
+
+    """
+    if value is None:
+        return []
+
+    if isinstance(value, str):
+        return [value]
+
+    if isinstance(value, URIRef):
+        return [str(value)]
+
+    if isinstance(value, (list, tuple, set)):
+        uris = []
+        for item in value:
+            uris.extend(_extract_uris(item))
+        return uris
+
+    if isinstance(value, dict):
+        for key in ("iri", "id", "@id", "uri"):
+            if key in value:
+                return _extract_uris(value[key])
+
+    return []
+
+def _get_nested_rules(rule):
+    if not isinstance(rule, dict):
+        return
+
+    yield rule
+
+    for duty in rule.get("duties", []) or []:
+        yield from _get_nested_rules(duty)
+
+    for consequence in rule.get("consequences", []) or []:
+        yield from _get_nested_rules(consequence)
+
+    for remedy in rule.get("remedies", []) or []:
+        yield from _get_nested_rules(remedy)
+
+
+def _get_all_rules(policy):
+    """
+    Return every rule in a policy, including nested rules.
+    """
+    if isinstance(policy, list):
+        policy = policy[0] if policy else {}
+
+    if not isinstance(policy, dict):
+        return
+
+    for permission in policy.get("permissions", []) or []:
+        yield from _get_nested_rules(permission)
+
+    for prohibition in policy.get("prohibitions", []) or []:
+        yield from _get_nested_rules(prohibition)
+
+    for obligation in policy.get("obligations", []) or []:
+        yield from _get_nested_rules(obligation)
+
+
+ODRL_ACTION = "http://www.w3.org/ns/odrl/2/Action"
+ODRL_PARTY = "http://www.w3.org/ns/odrl/2/Party"
+ODRL_ASSET = "http://www.w3.org/ns/odrl/2/Asset"
+
+
+def get_actions(policy):
+    """
+    Get all action URIs occurring in the policy.
+
+    Supports both:
+        rule["action"]
+
+    and the condition representation:
+        [
+            ODRL Action,
+            operator,
+            action_uri
+        ]
+    """
+    actions = set()
+
+    for rule in _get_all_rules(policy):
+
+        # Explicit action field, if present
+        actions.update(
+            _extract_uris(rule.get("action"))
+        )
+
+        # Action represented as a condition
+        for condition in rule.get("conditions", []) or []:
+            if (
+                isinstance(condition, list)
+                and len(condition) == 3
+                and condition[0] == ODRL_ACTION
+            ):
+                actions.update(
+                    _extract_uris(condition[2])
+                )
+
+    return actions
+
+
+def get_parties(policy):
+    """
+    Get all party URIs occurring in the policy.
+
+    Supports both:
+        rule["assignee"]
+
+    and:
+        [
+            ODRL_PARTY,
+            operator,
+            party_uri
+        ]
+    """
+    parties = set()
+
+    for rule in _get_all_rules(policy):
+
+        # Explicit assignee field, if present
+        parties.update(
+            _extract_uris(rule.get("assignee"))
+        )
+
+        # Party represented as a condition
+        for condition in rule.get("conditions", []) or []:
+            if (
+                isinstance(condition, list)
+                and len(condition) == 3
+                and condition[0] == ODRL_PARTY
+            ):
+                parties.update(
+                    _extract_uris(condition[2])
+                )
+
+    return parties
+
+
+def get_assets(policy):
+    """
+    Get all asset URIs occurring in the policy.
+
+    Supports both:
+        rule["target"]
+
+    and:
+        [
+            ODRL_ASSET,
+            operator,
+            asset_uri
+        ]
+    """
+    assets = set()
+
+    for rule in _get_all_rules(policy):
+
+        # Explicit target field, if present
+        assets.update(
+            _extract_uris(rule.get("target"))
+        )
+
+        # Asset represented as a condition
+        for condition in rule.get("conditions", []) or []:
+            if (
+                isinstance(condition, list)
+                and len(condition) == 3
+                and condition[0] == ODRL_ASSET
+            ):
+                assets.update(
+                    _extract_uris(condition[2])
+                )
+
+    return assets
+
+
+def _get_transitive_subjects(graph, predicate, target):
+    target = URIRef(str(target))
+
+    discovered = set()
+    queue = [target]
+
+    while queue:
+        current = queue.pop(0)
+
+        for subject in graph.subjects(predicate, current):
+            subject = URIRef(str(subject))
+
+            if subject == target:
+                continue
+
+            if subject not in discovered:
+                discovered.add(subject)
+                queue.append(subject)
+
+    return sorted(str(uri) for uri in discovered)
+
+
+def _expand_uris(graph, uris, predicate):
+
+    expanded = {}
+
+    for uri in sorted(uris):
+        expanded[uri] = _get_transitive_subjects(
+            graph,
+            predicate,
+            uri
+        )
+
+    return expanded
+
+
+def parse_ontology(policy, ontology_files=None, ontology_graphs=None):
+
+    if isinstance(ontology_files, (str, os.PathLike)):
+        ontology_files = [ontology_files]
+
+    if ontology_files is None:
+        ontology_files = []
+
+    if ontology_graphs is None:
+        ontology_graphs = []
+    elif isinstance(ontology_graphs, Graph):
+        ontology_graphs = [ontology_graphs]
+
+    # ---------------------------------------------------------
+    # 1) Load and merge all ontology files + supplied graphs
+    # ---------------------------------------------------------
+
+    ontology_graph = Graph()
+
+    # Load ontology files
+    for ontology_file in ontology_files:
+
+        loaded = rdf_utils.load(ontology_file)
+
+        if not loaded:
+            continue
+
+        graph = loaded[0]
+
+        # Merge the loaded graph into the common ontology graph.
+        ontology_graph += graph
+
+    # Add supplied rdflib graphs
+    for graph in ontology_graphs:
+
+        if graph is None:
+            continue
+
+        ontology_graph += graph
+
+    # ---------------------------------------------------------
+    # 2) Extract policy entities
+    # ---------------------------------------------------------
+
+    actions = get_actions(policy)
+    parties = get_parties(policy)
+    assets = get_assets(policy)
+
+    # ---------------------------------------------------------
+    # 3) Expand according to ontology relationships
+    # ---------------------------------------------------------
+
+    expanded_actions = _expand_uris(
+        ontology_graph,
+        actions,
+        ODRL_INCLUDED_IN
+    )
+
+    expanded_party = _expand_uris(
+        ontology_graph,
+        parties,
+        ODRL_PART_OF
+    )
+
+    expanded_assets = _expand_uris(
+        ontology_graph,
+        assets,
+        ODRL_PART_OF
+    )
+
+    # ---------------------------------------------------------
+    # 4) Return all expansions
+    # ---------------------------------------------------------
+
+    return {
+        "expanded_actions": expanded_actions,
+        "expanded_party": expanded_party,
+        "expanded_assets": expanded_assets
+    }
+
 
 def evaluate_ODRL_from_files_merge_policies(policy_files, SotW_file):
     graph_rules = []
@@ -115,7 +427,38 @@ def is_parseable_date(value):
     except ValueError:
         return False
 
-def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, null_conditions=None):
+def _reasoning_match(left_operand, value, right_operand, reasoning_expansion):
+    """
+    Check whether value matches right_operand directly or through
+    the relevant reasoning expansion.
+
+    Returns True if:
+        value == right_operand
+
+    or, for Action/Party/Asset operands, value is one of the
+    entities expanded from right_operand.
+    """
+
+    if value == right_operand:
+        return True
+
+    if reasoning_expansion is None:
+        return False
+
+    expansion_key = {
+        ODRL_ACTION: "expanded_actions",
+        ODRL_PARTY: "expanded_party",
+        ODRL_ASSET: "expanded_assets",
+    }.get(left_operand)
+
+    if expansion_key is None:
+        return False
+
+    expanded = reasoning_expansion.get(expansion_key, {})
+
+    return value in expanded.get(str(right_operand), [])
+
+def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, null_conditions=None, reasoning_expansion=None):
     # ----------------------------------------
     # 0) LOGIC CONSTRAINT HANDLING
     # ----------------------------------------
@@ -132,7 +475,7 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_null
 
 
         for sub in subconstraints:
-            result = eval_constraint(row, rule, sub, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, null_conditions=None)
+            result = eval_constraint(row, rule, sub, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, null_conditions=None,reasoning_expansion=reasoning_expansion)
             results.append(result)
 
             # ---- SHORT-CIRCUIT ----
@@ -159,7 +502,7 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_null
 
                 sub_null_conditions = []
                 result = eval_constraint(row, rule, sub, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=match_nulls,
-                                         null_conditions=None)
+                                         null_conditions=None,reasoning_expansion=reasoning_expansion)
                 results.append(result)
 
                 # ---- SHORT-CIRCUIT ----
@@ -233,6 +576,22 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_null
     if op_symbol not in OPS_MAP:
         return False
 
+    if (
+            reasoning_expansion is not None
+            and left in {
+        ODRL_ACTION,
+        ODRL_PARTY,
+        ODRL_ASSET,
+    }
+            and op_symbol == "http://www.w3.org/ns/odrl/2/eq"
+    ):
+        return _reasoning_match(
+            left,
+            str(value),
+            str(right),
+            reasoning_expansion
+        )
+
     column_type = FEATURE_TYPE_MAP.get(left)
 
     # TODO: fix issues with timezones.
@@ -261,7 +620,7 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_null
     except Exception:
         return False
 
-def eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, null_conditions=None):
+def eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, null_conditions=None,reasoning_expansion=None):
 
     if not isinstance(rule, dict):
         return False
@@ -272,7 +631,7 @@ def eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, null_cond
         return False
 
     return all(
-        eval_constraint(row, rule, c, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=match_nulls,null_conditions=null_conditions)
+        eval_constraint(row, rule, c, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=match_nulls,null_conditions=null_conditions, reasoning_expansion=reasoning_expansion)
         for c in conditions
     )
 
@@ -326,9 +685,9 @@ def initialise_evaluation_state(policy):
 
     return state
 
-def check_match(row, rule_state, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, null_conditions=None):
+def check_match(row, rule_state, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, null_conditions=None,reasoning_expansion=None):
 
-    if eval_rule(row, rule_state, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=match_nulls, null_conditions=null_conditions):
+    if eval_rule(row, rule_state, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=match_nulls, null_conditions=null_conditions,reasoning_expansion=reasoning_expansion):
 
         rule_state["matches_count"] += 1
 
@@ -377,7 +736,13 @@ def evaluate_ODRL_on_df(ODRL_graph, df, evaluation_state=None):
     )
 
 
-def evaluate_ODRL_on_dataframe(policy, df, FEATURE_TYPE_MAP, evaluation_state=None):
+def evaluate_ODRL_on_dataframe(policy, df, FEATURE_TYPE_MAP, evaluation_state=None,reasoning=True, ontology_files=[], ontology_graphs=[]):
+
+    reasoning_expansion = None
+    if reasoning:
+        if len(ontology_files) == 0:
+            ontology_files.append(os.path.join("ODRL", "ODRL22.ttl"))
+        reasoning_expansion = parse_ontology(policy, ontology_files,ontology_graphs)
 
     if isinstance(policy, list):
         policy = policy[0]
@@ -405,27 +770,27 @@ def evaluate_ODRL_on_dataframe(policy, df, FEATURE_TYPE_MAP, evaluation_state=No
 
         # Permissions
         for p in evaluation_state["permissions"]:
-            if check_match(row, p, OPS_MAP, FEATURE_TYPE_MAP):
+            if check_match(row, p, OPS_MAP, FEATURE_TYPE_MAP,reasoning_expansion=reasoning_expansion):
                 matched_permissions.append(p)
 
             # Duties ALWAYS evaluated
             for d in p.get("duties", []):
-                check_match(row, d, OPS_MAP, FEATURE_TYPE_MAP)
+                check_match(row, d, OPS_MAP, FEATURE_TYPE_MAP,reasoning_expansion=reasoning_expansion)
 
                 for c in d.get("consequences", []):
-                    check_match(row, c, OPS_MAP, FEATURE_TYPE_MAP)
+                    check_match(row, c, OPS_MAP, FEATURE_TYPE_MAP,reasoning_expansion=reasoning_expansion)
 
         # Prohibitions + remedies
         for f in evaluation_state["prohibitions"]:
-            if check_match(row, f, OPS_MAP, FEATURE_TYPE_MAP):
+            if check_match(row, f, OPS_MAP, FEATURE_TYPE_MAP,reasoning_expansion=reasoning_expansion):
                 matched_prohibitions.append(f)
 
             for r in f.get("remedies", []):
-                check_match(row, r, OPS_MAP, FEATURE_TYPE_MAP)
+                check_match(row, r, OPS_MAP, FEATURE_TYPE_MAP,reasoning_expansion=reasoning_expansion)
 
         # Obligations
         for o in evaluation_state["obligations"]:
-            check_match(row, o, OPS_MAP, FEATURE_TYPE_MAP)
+            check_match(row, o, OPS_MAP, FEATURE_TYPE_MAP,reasoning_expansion=reasoning_expansion)
 
         # ----------------------------------------
         # 2) PERMISSION VIOLATION
@@ -518,7 +883,7 @@ def evaluate_ODRL_on_dataframe(policy, df, FEATURE_TYPE_MAP, evaluation_state=No
         unfulfilled_remedies
     )
 
-def evaluate_ODRL_from_files(policy_file, SotW_file, state_file=None, normalise=False):
+def evaluate_ODRL_from_files(policy_file, SotW_file, state_file=None, normalise=False,reasoning=True,ontology_files=[], ontology_graphs=[]):
     graph = rdf_utils.load(policy_file)[0]
     if normalise:
         graph = rdf_utils.load_normalise(policy_file)[0]
@@ -534,12 +899,17 @@ def evaluate_ODRL_from_files(policy_file, SotW_file, state_file=None, normalise=
     FEATURE_TYPE_MAP = {f["iri"]: f["type"] for f in features}
     df = pd.read_csv(SotW_file)
 
-    return evaluate_ODRL_on_dataframe(policies[0], df, FEATURE_TYPE_MAP, evaluation_state)
+    if reasoning:
+        ontology_graphs.append(graph)
+    return evaluate_ODRL_on_dataframe(policies[0], df, FEATURE_TYPE_MAP, evaluation_state,reasoning=reasoning,ontology_files=ontology_files,ontology_graphs=ontology_graphs)
 
 def evaluate_ODRL_from_strings(
     policy_text,
     sotw_csv,
-    evaluation_state=None
+    evaluation_state=None,
+    reasoning=True,
+    ontology_files=[],
+    ontology_graphs=[]
 ):
     graph, _ = rdf_utils.parse_string_to_graph(
         policy_text
@@ -569,11 +939,17 @@ def evaluate_ODRL_from_strings(
     if isinstance(evaluation_state, str):
         evaluation_state = json.loads(evaluation_state)
 
+    if reasoning:
+        ontology_graphs.append(graph)
+
     return evaluate_ODRL_on_dataframe(
         policies[0],
         df,
         feature_type_map,
-        evaluation_state
+        evaluation_state,
+        reasoning=reasoning,
+        ontology_files=ontology_files,
+        ontology_graphs=ontology_graphs
     )
 
 def evaluate_ODRL_access_request_on_dataframe(
@@ -583,7 +959,10 @@ def evaluate_ODRL_access_request_on_dataframe(
     df=None,
     evaluation_state=None,
     semantics_for_duties=1,
-    semantics_by_default=-1
+    semantics_by_default=-1,
+    reasoning=True,
+    ontology_files=[],
+    ontology_graphs=[]
 ):
     """
     Evaluate a prospective access request against an ODRL policy.
@@ -639,6 +1018,12 @@ def evaluate_ODRL_access_request_on_dataframe(
         }
     """
 
+    reasoning_expansion = None
+    if reasoning:
+        if len(ontology_files) == 0:
+            ontology_files.append(os.path.join("ODRL", "ODRL22.ttl"))
+        reasoning_expansion = parse_ontology(policy,ontology_files,ontology_graphs)
+
     policy_for_conflict = (
         policy[0]
         if isinstance(policy, list)
@@ -664,7 +1049,10 @@ def evaluate_ODRL_access_request_on_dataframe(
             result = evaluate_ODRL_on_dataframe(
                 policy,
                 df,
-                FEATURE_TYPE_MAP
+                FEATURE_TYPE_MAP,
+                reasoning=reasoning,
+                ontology_graphs=ontology_graphs,
+                ontology_files=ontology_files
             )
             evaluation_state = result[0]
         else:
@@ -701,7 +1089,8 @@ def evaluate_ODRL_access_request_on_dataframe(
             OPS_MAP,
             FEATURE_TYPE_MAP,
             match_nulls=False,
-            null_conditions=None
+            null_conditions=None,
+            reasoning_expansion=reasoning_expansion,
         )
 
         null_conditions = []
@@ -720,7 +1109,8 @@ def evaluate_ODRL_access_request_on_dataframe(
                 OPS_MAP,
                 FEATURE_TYPE_MAP,
                 match_nulls=True,
-                null_conditions=null_conditions
+                null_conditions=null_conditions,
+                reasoning_expansion=reasoning_expansion
             )
 
             if not null_match:
@@ -760,7 +1150,8 @@ def evaluate_ODRL_access_request_on_dataframe(
             OPS_MAP,
             FEATURE_TYPE_MAP,
             match_nulls=False,
-            null_conditions=None
+            null_conditions=None,
+            reasoning_expansion=reasoning_expansion
         )
 
         null_conditions = []
@@ -779,7 +1170,8 @@ def evaluate_ODRL_access_request_on_dataframe(
                 OPS_MAP,
                 FEATURE_TYPE_MAP,
                 match_nulls=True,
-                null_conditions=null_conditions
+                null_conditions=null_conditions,
+                reasoning_expansion=reasoning_expansion
             )
 
             if not null_match:
@@ -1095,7 +1487,10 @@ def evaluate_ODRL_access_request_from_string(
     state_of_the_world_string=None,
     evaluation_state_string=None,
     semantics_for_duties=1,
-    semantics_by_default=-1
+    semantics_by_default=-1,
+    reasoning=True,
+    ontology_files=[],
+    ontology_graphs=[]
 
 ):
 
@@ -1115,6 +1510,9 @@ def evaluate_ODRL_access_request_from_string(
     graph, _ = rdf_utils.parse_string_to_graph(
         policy_string
     )
+
+    if reasoning:
+        ontology_graphs.append(graph)
 
     policies = extract_rule_list_from_policy(graph)
     features = extract_features_list_from_policy(graph)
@@ -1160,7 +1558,10 @@ def evaluate_ODRL_access_request_from_string(
         df=df,
         evaluation_state=evaluation_state,
         semantics_for_duties=semantics_for_duties,
-        semantics_by_default=semantics_by_default
+        semantics_by_default=semantics_by_default,
+        reasoning=reasoning,
+        ontology_files=ontology_files,
+        ontology_graphs=ontology_graphs
     )
 
 
@@ -1170,7 +1571,10 @@ def evaluate_ODRL_access_request_from_files(
     state_of_the_world_file=None,
     evaluation_state_file=None,
     semantics_for_duties=1,
-    semantics_by_default=-1
+    semantics_by_default=-1,
+    reasoning=True,
+    ontology_files=[],
+    ontology_graphs=[]
 ):
 
     # ---------------------------------------------------------
@@ -1188,6 +1592,9 @@ def evaluate_ODRL_access_request_from_files(
     # 2) Load policy
     # ---------------------------------------------------------
     graph = rdf_utils.load(policy_file)[0]
+
+    if reasoning:
+        ontology_graphs.append(graph)
 
     policies = extract_rule_list_from_policy(graph)
     features = extract_features_list_from_policy(graph)
@@ -1234,11 +1641,15 @@ def evaluate_ODRL_access_request_from_files(
         df=df,
         evaluation_state=evaluation_state,
         semantics_for_duties=semantics_for_duties,
-        semantics_by_default=semantics_by_default
+        semantics_by_default=semantics_by_default,
+        reasoning=reasoning,
+        ontology_files=ontology_files,
+        ontology_graphs=ontology_graphs
     )
 
 
-def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW=1, normalise=False):
+def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW=1, normalise=False, reasoning=True,
+    ontology_files=[], ontology_graphs=[]):
 
     STREAM_DIR = "stream_simulation"
 
@@ -1301,18 +1712,14 @@ def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW
 
     for i, stream_file in enumerate(stream_files):
 
-        # Run evaluation
-        #result = evaluate_ODRL_on_dataframe(
-        #    policies[0],
-        #    pd.read_csv(stream_file),
-        #    FEATURE_TYPE_MAP,
-        #    evaluation_state
-        #)
         result = evaluate_ODRL_from_files(
             policy_file,
             stream_file,
             state_file=state_file,
-            normalise=normalise
+            normalise=normalise,
+            reasoning=reasoning,
+            ontology_files=ontology_files,
+            ontology_graphs=ontology_graphs
         )
 
         # Save updated state
@@ -1333,9 +1740,12 @@ def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW
 
 #access_request_result = evaluate_ODRL_access_request_from_string(
 #    """
-#
+#{
+#  "http://www.w3.org/ns/odrl/2/Action": "http://www.w3.org/ns/odrl/2/play"
+#}
 #""",
 #    """
+#
 #  """
 #)
 #print(access_request_result)
