@@ -1,4 +1,5 @@
 import os
+import json
 from fastapi import FastAPI, HTTPException
 
 
@@ -13,6 +14,8 @@ from api.models import (
     PolicyFeaturesResponse,
     ValidateODRLRequest,
     ValidateODRLResponse,
+    EvaluateAccessResponse,
+    EvaluateAccessRequest
 )
 
 EXTERNAL_PREFIX = os.environ.get("ODRL_EXTERNAL_PREFIX", "").strip("/")
@@ -84,5 +87,35 @@ def validate_odrl(request: ValidateODRLRequest):
     try:
         result = Validator.validate_ODRL_from_string(request.odrl)
         return ValidateODRLResponse(result=result)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post(
+    "/evaluate_access_request",
+    response_model=EvaluateAccessResponse
+)
+def evaluate_access_request(request: EvaluateAccessRequest):
+    try:
+        result = Evaluator.evaluate_ODRL_access_request_from_string(
+            access_request_string=json.dumps(request.access_request),
+            policy_string=request.policy,
+            state_of_the_world_string=request.state_of_the_world,
+            evaluation_state_string=(
+                json.dumps(request.evaluation_state)
+                if request.evaluation_state is not None
+                else None
+            ),
+            semantics_for_duties=request.semantics_for_duties,
+            semantics_by_default=request.semantics_by_default,
+            reasoning=request.reasoning,
+        )
+
+        return EvaluateAccessResponse(
+            permissions_matched=result["permissions_matched"],
+            prohibitions_matched=result["prohibitions_matched"],
+            accept_decision=result["accept_decision"],
+            accept_explanation=result["accept_explanation"],
+        )
+
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

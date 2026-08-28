@@ -39,50 +39,7 @@ class EvaluateRequest(BaseModel):
                 {
                     "policy": "@prefix odrl: <http://www.w3.org/ns/odrl/2/> .\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n\n<http://example.com/policy:6161>\n  a odrl:Offer ;\n  odrl:permission [\n    odrl:action [\n      rdf:value odrl:print ;\n      odrl:refinement [\n        odrl:leftOperand odrl:resolution ;\n        odrl:operator odrl:lteq ;\n        odrl:rightOperand 1200 ;\n        odrl:unit \"http://dbpedia.org/resource/Dots_per_inch\"^^xsd:string\n      ]\n    ] ;\n    odrl:assignee <http://example.com/org:John> ;\n    odrl:target <http://example.com/document:1234> ;\n    odrl:constraint [\n      a odrl:Constraint ;\n      odrl:leftOperand <http://www.w3.org/ns/odrl/2/dateTime> ;\n      odrl:operator odrl:lteq ;\n      odrl:rightOperand \"2026-02-09T12:20:59Z\"^^xsd:dateTime\n    ] ;\n    odrl:duty [\n      odrl:action [\n        rdf:value odrl:compensate ;\n        odrl:refinement [\n          odrl:leftOperand odrl:payAmount ;\n          odrl:operator odrl:eq ;\n          odrl:rightOperand 50 ;\n        ]\n      ] ;\n      odrl:consequence [\n        odrl:action [\n          rdf:value odrl:watermark ;\n          odrl:target <http://example.com/document:1234> ;\n        ] ;\n      ]\n    ]\n  ] ;\n  odrl:permission [\n    odrl:action odrl:create ;\n    odrl:assignee [\n      odrl:source <http://example.com/org:AccountManager> ;\n      odrl:refinement [\n        odrl:leftOperand odrl:adminLevel ;\n        odrl:operator odrl:gt ;\n        odrl:rightOperand 10 ;\n      ] ;\n    ] ;\n    odrl:target <http://example.com/document:1234> ;\n    odrl:constraint [\n      a odrl:Constraint ;\n      odrl:leftOperand <http://www.example.com/age> ;\n      odrl:operator odrl:lt ;\n      odrl:rightOperand 70 ;\n    ] ;\n    odrl:constraint [\n      a odrl:Constraint ;\n      odrl:leftOperand odrl:dateTime ;\n      odrl:operator odrl:lt ;\n      odrl:rightOperand \"2027-01-11T11:13:10.665638\" ;\n    ]\n  ] ;\n  odrl:permission [\n    odrl:action odrl:compensate ;\n  ] ;\n  odrl:permission [\n    odrl:action odrl:watermark ;\n  ] ;\n  odrl:profile <http://example.com/odrl:profile:10> .",
                     "sotw": "http://www.w3.org/ns/odrl/2/dateTime,http://www.w3.org/ns/odrl/2/Party,http://www.w3.org/ns/odrl/2/Action,http://www.w3.org/ns/odrl/2/Asset,http://www.example.com/age,http://www.w3.org/ns/odrl/2/Action http://www.w3.org/ns/odrl/2/resolution,http://www.w3.org/ns/odrl/2/Party http://www.w3.org/ns/odrl/2/adminLevel,http://www.w3.org/ns/odrl/2/payAmount\n2026-01-11T11:32:10.665638,http://example.com/org:John,http://www.w3.org/ns/odrl/2/compensate,http://example.com/document:1234,0,,,50\n2026-01-11T11:23:10.665638,http://example.com/org:AccountManager,http://www.w3.org/ns/odrl/2/create,http://example.com/document:1234,-24,,86,\n2026-01-11T11:13:10.665638,http://example.com/org:John,http://www.w3.org/ns/odrl/2/print,http://example.com/document:1234,,1142,,\n2026-01-11T11:03:10.665638,http://example.com/org:AccountManager,http://www.w3.org/ns/odrl/2/create,http://example.com/document:1234,15,49,68,\n2026-01-11T10:53:10.665638,http://example.com/org:AccountManager,http://www.w3.org/ns/odrl/2/create,http://example.com/document:1234,-24,,72,\n2026-01-11T10:43:10.665638,http://example.com/org:AccountManager,http://www.w3.org/ns/odrl/2/create,http://example.com/document:1234,66,,61,\n2026-01-11T10:33:10.665638,http://example.com/org:AccountManager,http://www.w3.org/ns/odrl/2/create,http://example.com/document:1234,4,57,24,\n2026-01-11T10:23:10.665638,http://example.com/org:AccountManager,http://www.w3.org/ns/odrl/2/create,http://example.com/document:1234,-22,63,26,\n2026-01-11T10:13:10.665638,http://example.com/org:AccountManager,http://www.w3.org/ns/odrl/2/create,http://example.com/document:1234,29,58,93,"
-                }#,
-                # {
-                #     "policy": "@prefix odrl: <http://www.w3.org/ns/odrl/2/> .\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n\n<http://example.com/policy:6161>\n  a odrl:Offer ;\n  odrl:permission [\n    odrl:action [\n      rdf:value odrl:print ;\n      odrl:refinement [\n        odrl:leftOperand odrl:resolution ;\n        odrl:operator odrl:lteq ;\n        odrl:rightOperand 1200 ;\n        odrl:unit \"http://dbpedia.org/resource/Dots_per_inch\"^^xsd:string\n      ]\n    ] ;\n    odrl:assignee <http://example.com/org:John> ;\n    odrl:target <http://example.com/document:1234> ;\n    odrl:constraint [\n      a odrl:Constraint ;\n      odrl:leftOperand <http://www.w3.org/ns/odrl/2/dateTime> ;\n      odrl:operator odrl:lteq ;\n      odrl:rightOperand \"2026-02-09T12:20:59Z\"^^xsd:dateTime\n    ] ;\n    odrl:duty [\n      odrl:action [\n        rdf:value odrl:compensate ;\n        odrl:refinement [\n          odrl:leftOperand odrl:payAmount ;\n          odrl:operator odrl:eq ;\n          odrl:rightOperand 50 ;\n        ]\n      ] ;\n      odrl:consequence [\n        odrl:action [\n          rdf:value odrl:watermark ;\n          odrl:target <http://example.com/document:1234> ;\n        ] ;\n      ]\n    ]\n  ] ;\n  odrl:permission [\n    odrl:action odrl:create ;\n    odrl:assignee [\n      odrl:source <http://example.com/org:AccountManager> ;\n      odrl:refinement [\n        odrl:leftOperand odrl:adminLevel ;\n        odrl:operator odrl:gt ;\n        odrl:rightOperand 10 ;\n      ] ;\n    ] ;\n    odrl:target <http://example.com/document:1234> ;\n  ] ;\n  odrl:permission [\n    odrl:action odrl:compensate ;\n  ] ;\n  odrl:permission [\n    odrl:action odrl:watermark ;\n  ] ;\n  odrl:profile <http://example.com/odrl:profile:10> .",
-                #     "sotw": "http://www.w3.org/ns/odrl/2/dateTime,http://www.w3.org/ns/odrl/2/Party,http://www.w3.org/ns/odrl/2/Action,http://www.w3.org/ns/odrl/2/Asset,http://www.example.com/age,http://www.w3.org/ns/odrl/2/Action http://www.w3.org/ns/odrl/2/resolution,http://www.w3.org/ns/odrl/2/Party http://www.w3.org/ns/odrl/2/adminLevel,http://www.w3.org/ns/odrl/2/payAmount\n2026-01-11T11:43:10.665638,http://example.com/org:AccountManager,http://www.w3.org/ns/odrl/2/create,http://example.com/document:1234,24,53,12,\n2026-01-11T11:33:10.665638,http://example.com/org:John,http://www.w3.org/ns/odrl/2/compensate,http://example.com/document:1234,0,1190,,",
-                #     "evaluation_state": {"policy_iri": "http://example.com/policy:6161", "permissions": [
-                #         {"rule_id": "fb59f7de-1a19-484a-ade6-11619ae429eb", "matches_count": 1,
-                #          "earliestMatch": "2026-01-11T11:13:10.665638Z", "latestMatch": "2026-01-11T11:13:10.665638Z",
-                #          "conditions": [["http://www.w3.org/ns/odrl/2/Party", "http://www.w3.org/ns/odrl/2/eq",
-                #                          "http://example.com/org:John"],
-                #                         ["http://www.w3.org/ns/odrl/2/Action", "http://www.w3.org/ns/odrl/2/eq",
-                #                          "http://www.w3.org/ns/odrl/2/print"],
-                #                         ["http://www.w3.org/ns/odrl/2/Action http://www.w3.org/ns/odrl/2/resolution",
-                #                          "http://www.w3.org/ns/odrl/2/lteq", "1200"],
-                #                         ["http://www.w3.org/ns/odrl/2/Asset", "http://www.w3.org/ns/odrl/2/eq",
-                #                          "http://example.com/document:1234"],
-                #                         ["http://www.w3.org/ns/odrl/2/dateTime", "http://www.w3.org/ns/odrl/2/lteq",
-                #                          "2026-02-09T12:20:59+00:00"]], "required": 0, "duties": [
-                #             {"rule_id": "5747df04-f804-4f95-ae20-ee9b28553d34", "matches_count": 1,
-                #              "earliestMatch": "2026-01-11T11:32:10.665638Z",
-                #              "latestMatch": "2026-01-11T11:32:10.665638Z", "conditions": [
-                #                 ["http://www.w3.org/ns/odrl/2/Action", "http://www.w3.org/ns/odrl/2/eq",
-                #                  "http://www.w3.org/ns/odrl/2/compensate"],
-                #                 ["http://www.w3.org/ns/odrl/2/Action http://www.w3.org/ns/odrl/2/payAmount",
-                #                  "http://www.w3.org/ns/odrl/2/eq", "50"]], "required": 0, "consequences": [
-                #                 {"rule_id": "ddb53370-4cb9-4354-988a-b10c2a518a72", "matches_count": 0,
-                #                  "earliestMatch": null, "latestMatch": null, "conditions": [
-                #                     ["http://www.w3.org/ns/odrl/2/Action", "http://www.w3.org/ns/odrl/2/eq",
-                #                      "http://www.w3.org/ns/odrl/2/watermark"]], "required": 1}]}]},
-                #         {"rule_id": "9ea52aa4-3d08-483d-8a6b-39d64bcea484", "matches_count": 7,
-                #          "earliestMatch": "2026-01-11T10:13:10.665638Z", "latestMatch": "2026-01-11T11:23:10.665638Z",
-                #          "conditions": [["http://www.w3.org/ns/odrl/2/Party", "http://www.w3.org/ns/odrl/2/eq",
-                #                          "http://example.com/org:AccountManager"],
-                #                         ["http://www.w3.org/ns/odrl/2/Party http://www.w3.org/ns/odrl/2/adminLevel",
-                #                          "http://www.w3.org/ns/odrl/2/gt", "10"],
-                #                         ["http://www.w3.org/ns/odrl/2/Action", "http://www.w3.org/ns/odrl/2/eq",
-                #                          "http://www.w3.org/ns/odrl/2/create"],
-                #                         ["http://www.w3.org/ns/odrl/2/Asset", "http://www.w3.org/ns/odrl/2/eq",
-                #                          "http://example.com/document:1234"],
-                #                         ["http://www.example.com/age", "http://www.w3.org/ns/odrl/2/lt", "70"],
-                #                         ["http://www.w3.org/ns/odrl/2/dateTime", "http://www.w3.org/ns/odrl/2/lt",
-                #                          "2027-01-11T11:13:10.665638"]], "required": 0, "duties": []}],
-                #                          "prohibitions": [], "obligations": [], "rows_violating_permissions": [],
-                #                          "rows_violating_prohibitions": []}
-                # }
+                }
             ]
         }
     )
@@ -194,5 +151,124 @@ class ValidateODRLResponse(BaseModel):
             "and, when applicable, SHACL validation details and ODRL statistics. "
             "The boolean value is_valid_RDF and is_valid_ODRL describe whether the string passed "
             "as an input contains valid RDF triples, and contains a valid ODRL policy, respectively. "
+        )
+    )
+
+class EvaluateAccessRequest(BaseModel):
+    access_request: dict[str, Any] = Field(
+        description=(
+            "A prospective access request represented as a JSON object. "
+            "The keys should be ODRL feature IRIs, such as Action, Party, "
+            "Asset, or other left operand features referenced by the policy."
+        )
+    )
+
+    policy: str = Field(
+        description=(
+            "An ODRL policy serialized as a string. "
+            "All major RDF serialisations like Turtle (TTL) and JSON-LD are supported."
+        )
+    )
+
+    state_of_the_world: str | None = Field(
+        default=None,
+        description=(
+            "Optional State of the World object (log of events) in CSV format "
+            "serialized as a string. If supplied, it is used to establish the "
+            "fulfillment of duties before evaluating the access request."
+        )
+    )
+
+    evaluation_state: dict | None = Field(
+        default=None,
+        description=(
+            "Optional Evaluation State returned by a previous evaluation. "
+            "If supplied, evaluation resumes from this state instead of "
+            "evaluating the State of the World, this is only needed if processing streams of events for the state of the world."
+        )
+    )
+
+    semantics_for_duties: int = Field(
+        default=1,
+        description=(
+            "How duties affect access requests. Use 1 to accept a request "
+            "subject to duties being fulfilled, or -1 to reject unless duties "
+            "are already satisfied. Default is 1."
+        )
+    )
+
+    semantics_by_default: int = Field(
+        default=-1,
+        description=(
+            "Default decision semantics when the request matches neither a "
+            "permission nor a prohibition. Use 1 for permitted-by-default, "
+            "-1 for prohibited-by-default, or 0 for unspecified-by-default. Default is -1."
+        )
+    )
+
+    reasoning: bool = Field(
+        default=True,
+        description=(
+            "Whether ontology-based reasoning should be used when matching "
+            "the access request against the policy. Default is true."
+        )
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "policy": (
+                        "@prefix odrl: <http://www.w3.org/ns/odrl/2/> .\n"
+                        "\n"
+                        "<http://example.com/policy:1010>\n"
+                        "  a odrl:Set ;\n"
+                        "  odrl:permission [\n"
+                        "    odrl:action odrl:use ;\n"
+                        "    odrl:target <http://example.com/asset:9898.movie>\n"
+                        "  ] ."
+                    ),
+                    "access_request": {
+                        "http://www.w3.org/ns/odrl/2/Action": (
+                            "http://www.w3.org/ns/odrl/2/play"
+                        ),
+                        "http://www.w3.org/ns/odrl/2/Asset": (
+                            "http://example.com/asset:9898.movie"
+                        ),
+                    },
+                    "semantics_for_duties": 1,
+                    "semantics_by_default": -1,
+                    "reasoning": True,
+                }
+            ]
+        }
+    )
+
+
+class EvaluateAccessResponse(BaseModel):
+    permissions_matched: list[Any] = Field(
+        description=(
+            "Permission rules from the policy that matched the access request."
+        )
+    )
+
+    prohibitions_matched: list[Any] = Field(
+        description=(
+            "Prohibition rules from the policy that matched the access request."
+        )
+    )
+
+    accept_decision: bool | None = Field(
+        description=(
+            "The resulting access decision. True means the request is accepted, "
+            "False means it is rejected, and null means the decision is "
+            "unspecified under unspecified-by-default semantics, or because a conflict invalidates the policy."
+        )
+    )
+
+    accept_explanation: list[str] = Field(
+        description=(
+            "Human-readable explanations describing why the access request "
+            "was accepted, rejected, or left unspecified."
         )
     )
