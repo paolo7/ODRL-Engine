@@ -27,6 +27,24 @@ Cells in the CSV file must contain either identifiers (strings or IRIs), numbers
 Please see the [Evaluator Feature Support](../../../documentation/evaluator_feature_support.md) for more details on the supported
 ODRL features and the support for those data types.
 
+#### Data Format of an Access Request Object
+
+An access request object is a json object with a number of keys, representing rule components (like asset, action and party)
+and left operands, the values of such keys is the actual value for the specific request. Intuitively, the keys are equivalent
+to the column names of the State of the World object described above, and the values are the values you would add to a row.
+
+For example, the following is an access request to perform action `play` on a specific movie. Every feature that is
+not specified in the access request is assumed to be null, with the exception of `dateTime`, which, if unspecified
+is assumed to be the current time. This model the fact that an access request is interpreted as asking for permission
+to do a certain action "now".
+
+```
+{
+  "http://www.w3.org/ns/odrl/2/Action": "http://www.w3.org/ns/odrl/2/play",
+  "http://www.w3.org/ns/odrl/2/Asset": "http://example.com/asset:9898.movie"
+}
+```
+
 #### Data Format of the Evaluation State File
 
 An Evaluation State file is created automatically after every evaluation. It is essentially a copy of the policy, in JSON
@@ -40,6 +58,7 @@ This assumes that events are evaluated in chronological order.
 The evaluation guides provided are:
 
 * Evaluating a Policy For Access Control Through the GUI
+* Evaluating a Policy For Access Control Through the API
 * Evaluating a Policy For Access Control Programmatically through Python
 * Evaluating a Policy for Monitoring Through the GUI
 * Evaluating a Policy for Monitoring Through the API
@@ -65,6 +84,23 @@ affect your access request, depending on certain conditions. For example, a proh
 of a feature you left blank has a value sufficiently low, or a permission might apply only if you are going to fulfill
 a certain duty.
 ![Access Control Evaluator screen](screenshot_ac_2.png)
+
+## Evaluating a Policy For Access Control Through the API
+
+_Last Updated 28/08/2026_
+
+* Obtain the Request Access JSON file, and the Policy file. You can set other optional values, like a State of the World file 
+to provide evidence of previous duty fulfillments, an Evaluation State if you are doing streaming of States of the World. 
+Optionally, you can change the default semantics for unspecified actions, for dealing with unfulfilled duties, and for reasoning. 
+See the "Reasoning" section above for more details.
+* You can try an API call using the Swagger API (http://localhost:8031/api/docs on a localhost docker installation), 
+or by directly calling the API (http://localhost:8031/api/evaluate_access_request).
+* Pass the string content of the inputs in the respective fields.
+* The API call will return a JSON object as a return value, with details about the evaluation. The decision can be found in the
+`accept_decision` field, that is either true or false, for accept or reject, or None if a decision cannot be reached/is unspecified in the policy.
+
+Please see the [Swagger documentation](https://dips.soton.ac.uk/odrl-engine/api/docs#/default/evaluate_access_request_evaluate_access_request_post) for more details on the inputs and outputs of functions, the schema of the datatypes
+and examples.
 
 ## Evaluating a Policy For Access Control Programmatically through Python
 
