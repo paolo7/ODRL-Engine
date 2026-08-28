@@ -6,14 +6,13 @@ Summary of what the OVAL evaluator supports:
 * Any domain-specific vocabulary
 * Reasoning over includedIn and partOf
 * Compact ODRL policy format (rule components defined at the policy level)
-* Constraints and refinements over IDs, strings and dates
+* Constraints and refinements over IDs, strings, dates and sets
 * Full support for the special semantics of the `count` Left Operand
 * Support for ODRL `conflict` strategy within the Access Control mode
 * Support for configurable semantics in the Access control mode, including different semantics for duties, and permission-by-default / prohibition-by-default / unspecified-by-default semantics 
 * Nested Logic Constraints of arbitrary complexity
 
 Summary of what the OVAL Evaluator does not support yet:
-* Refinements and constraints using set operators
 * Special semantics of certain Left Operands, like those about spatial data
 
 
@@ -60,9 +59,11 @@ Summary of what the OVAL Evaluator does not support yet:
 | [Greater Than](http://www.w3.org/ns/odrl/2/gt)                               | 🟢 Yes    |                                                                                                                                       | ✓|
 | [Greater Than or Equal To](http://www.w3.org/ns/odrl/2/gteq)                 | 🟢 Yes    |                                                                                                                                       | ✓|
 | [Is A](http://www.w3.org/ns/odrl/2/isA)                                      | 🔴 No     |                                                                                                                                       | |
-| [Is All Of](http://www.w3.org/ns/odrl/2/isAllOf)                             | 🔴 No     |                                                                                                                                       | |
-| [Is Any Of](http://www.w3.org/ns/odrl/2/isAnyOf)                             | 🔴 No     |                                                                                                                                       | |
-| [Is None Of](http://www.w3.org/ns/odrl/2/isNoneOf)                           | 🔴 No     |                                                                                                                                       | |
+| [Is All Of](http://www.w3.org/ns/odrl/2/isAllOf)                             | 🟢 Yes     |                                                                                                                                       |✓ |
+| [Is Any Of](http://www.w3.org/ns/odrl/2/isAnyOf)                             | 🟢 Yes     |                                                                                                                                       | ✓|
+| [Is None Of](http://www.w3.org/ns/odrl/2/isNoneOf)                           | 🟢 Yes     |                                                                                                                                       |✓ |
+| [Is Part Of](http://www.w3.org/ns/odrl/2/isPartOf)                           | 🟢 Yes     |                                                                                                                                       | ✓|
+| [Has Part](http://www.w3.org/ns/odrl/2/hasPart)                              | 🟢 Yes     |                                                                                                                                       | ✓|
 | [OR](http://www.w3.org/ns/odrl/2/or)                                         | 🟢 Yes    |                                                                                                                                       | ✓|
 | [XONE](http://www.w3.org/ns/odrl/2/xone)                                     | 🟢 Yes    |                                                                                                                                       | ✓|
 | [AND](http://www.w3.org/ns/odrl/2/and)                                       | 🟢 Yes    |                                                                                                                                       | ✓|

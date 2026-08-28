@@ -2,7 +2,7 @@ from io import StringIO
 from rdflib import Graph, URIRef
 
 import rdf_utils
-from rdf_utils import extract_rule_list_from_policy, extract_features_list_from_policy
+from rdf_utils import extract_rule_list_from_policy, extract_features_list_from_policy, decompose_in_set
 import pandas as pd
 import os
 import shutil
@@ -16,6 +16,7 @@ from datetime import datetime
 from dateutil import parser
 import uuid
 
+#Non set operators
 OPS_MAP = {
     "http://www.w3.org/ns/odrl/2/eq": operator.eq,
     "http://www.w3.org/ns/odrl/2/neq": operator.ne,
@@ -23,13 +24,14 @@ OPS_MAP = {
     "http://www.w3.org/ns/odrl/2/lteq": operator.le,
     "http://www.w3.org/ns/odrl/2/gt": operator.gt,
     "http://www.w3.org/ns/odrl/2/gteq": operator.ge,
-    # Missing operators:
-    # odrl.isAnyOf: lambda a, b: a in b,
-    # odrl.isNoneOf: lambda a, b: a not in b,
-    # odrl.hasPart: lambda a, b: all(item in a for item in b) if isinstance(b, list) else b in a,
-    # odrl.isPartOf: lambda a, b: all(item in b for item in a) if isinstance(a, list) else a in b,
-    # odrl.isAllOf: lambda a, b: set(a) == set(b) if isinstance(a, list) and isinstance(b, list) else False,
 }
+
+#Set operators
+ODRL_IS_PART_OF = "http://www.w3.org/ns/odrl/2/isPartOf"
+ODRL_HAS_PART = "http://www.w3.org/ns/odrl/2/hasPart"
+ODRL_IS_ALL_OF = "http://www.w3.org/ns/odrl/2/isAllOf"
+ODRL_IS_ANY_OF = "http://www.w3.org/ns/odrl/2/isAnyOf"
+ODRL_IS_NONE_OF = "http://www.w3.org/ns/odrl/2/isNoneOf"
 
 DT_COL = "http://www.w3.org/ns/odrl/2/dateTime"
 
@@ -40,6 +42,7 @@ ODRL_INCLUDED_IN = URIRef(
 ODRL_PART_OF = URIRef(
     "http://www.w3.org/ns/odrl/2/partOf"
 )
+
 
 def _extract_uris(value):
     """
@@ -572,6 +575,35 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_null
             return True
         else:
             return False
+
+    # ----------------------------------------
+    # ODRL SET OPERATORS
+    # ----------------------------------------
+    if op_symbol in {
+        ODRL_IS_PART_OF,
+        ODRL_HAS_PART,
+        ODRL_IS_ALL_OF,
+        ODRL_IS_ANY_OF,
+        ODRL_IS_NONE_OF,
+    }:
+        value_set = set(decompose_in_set(value))
+        right_set = set(decompose_in_set(right))
+
+        if op_symbol == ODRL_IS_PART_OF:
+            return value_set.issubset(right_set)
+
+        if op_symbol == ODRL_HAS_PART:
+            return right_set.issubset(value_set)
+
+        if op_symbol == ODRL_IS_ALL_OF:
+            return value_set == right_set
+
+        if op_symbol == ODRL_IS_ANY_OF:
+            return str(value) in right_set
+
+        if op_symbol == ODRL_IS_NONE_OF:
+            return str(value) not in right_set
+
 
     if op_symbol not in OPS_MAP:
         return False
@@ -1736,6 +1768,9 @@ def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW
 
 #result = evaluate_ODRL_from_files("example_policies/GATE_Test/GATE_Policy_Test_Edited.jsonld",
 #                                  "example_policies/GATE_Test/GATE_SotW_valid.csv")
+#print(result)
+#result = evaluate_ODRL_from_files("example_policies/isPartOf1.ttl",
+#                                 "example_policies/isPartOf1.csv")
 #print(result)
 
 #access_request_result = evaluate_ODRL_access_request_from_string(

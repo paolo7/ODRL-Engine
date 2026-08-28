@@ -23,6 +23,26 @@ SUBRULE_PREDICATES = (
     ODRL.remedy,
 )
 
+def decompose_in_set(value):
+    """
+    Decompose a string into a list of string elements.
+      - None or empty string -> []
+      - If the string contains '|', split on '|'
+      - Otherwise split on whitespace
+    """
+    if value is None:
+        return []
+
+    value = str(value).strip()
+
+    if not value:
+        return []
+
+    if "|" in value:
+        return [item.strip() for item in value.split("|") if item.strip()]
+
+    return value.split()
+
 def parse_string_to_graph(data: Union[str, bytes]) -> tuple[Graph, str] | None:
     """
     Detect the RDF serialization of a given string or bytes and return both
