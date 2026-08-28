@@ -115,6 +115,7 @@ def validate_ODRL(graph, format=None):
         ont_graph = Graph().parse(ont_file, format="turtle")
         conforms, report, report_graph = validate_SHACL(graph, shacl_file, ont_graph=ont_graph)
         odrl_stats = get_ODRL_macro_statistics(graph, ont_graph)
+        validation_report["contains_ODRL"] = any(odrl_stats[:4])
         odrl_stats_text = describe_ODRL_statistics(odrl_stats)
 
         validation_report["is_valid_ODRL"] = conforms
