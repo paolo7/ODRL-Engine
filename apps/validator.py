@@ -200,25 +200,49 @@ def display_validation_results(validation_result):
 
     st.subheader("Validation Result")
 
-    col1, col2 = st.columns(2)
+    contains_odrl = validation_result.get(
+        "contains_ODRL",
+        False
+    )
 
-    with col1:
-        if is_valid_rdf:
+    if not is_valid_rdf:
+
+        # 1. Invalid RDF
+        st.error("❌ Invalid RDF")
+
+    elif not contains_odrl:
+
+        # 2. Valid RDF, but no ODRL detected
+        col1, col2 = st.columns(2)
+
+        with col1:
             st.success("✅ Valid RDF")
-        else:
-            st.error("❌ Invalid RDF")
 
-    with col2:
-        if is_valid_odrl is True:
-            st.success("✅ Valid ODRL")
+        with col2:
+            st.error("⚠❌ Does not contain ODRL")
 
-        elif is_valid_odrl is False:
-            st.error("❌ Invalid ODRL")
+    else:
 
-        else:
-            st.warning(
-                "⚠️ ODRL validation not performed"
-            )
+        # 3. Valid RDF and contains ODRL
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.success("✅ Valid RDF")
+
+        with col2:
+            st.success("✅ Contains ODRL")
+
+        with col3:
+            if is_valid_odrl is True:
+                st.success("✅ Valid ODRL")
+
+            elif is_valid_odrl is False:
+                st.error("❌ Invalid ODRL")
+
+            else:
+                st.warning(
+                    "⚠️ ODRL validation not performed"
+                )
 
     # -----------------------------------------------------
     # SHACL validation explanation
@@ -408,6 +432,7 @@ def display_validation_results(validation_result):
     known_fields = {
         "is_valid_RDF",
         "is_valid_ODRL",
+        "contains_ODRL",
         "file_format",
         "ODRL_graph_size",
         "odrl_stats",

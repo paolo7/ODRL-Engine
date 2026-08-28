@@ -6,6 +6,9 @@ from typing import Union
 import json
 import pyshacl
 import os, sys
+import io
+import pandas as pd
+from datetime import datetime, timezone
 
 import policy_normalisation_comparison.GraphParser
 
@@ -22,6 +25,59 @@ SUBRULE_PREDICATES = (
     ODRL.consequence,
     ODRL.remedy,
 )
+
+def merge_json_row(df: pd.DataFrame, data: dict) -> pd.DataFrame:
+    """
+    Add a JSON object as a new top row to a DataFrame.
+    - Preserves all existing columns.
+    - Adds any columns present in `data` but missing from `df`.
+    - Values from `data` are kept as-is (no type conversion).
+    - Ensures the ODRL dateTime column exists and is populated with
+      the current time if it is missing from `data`.
+    """
+    datetime_column = "http://www.w3.org/ns/odrl/2/dateTime"
+
+    # Make a copy so the original DataFrame is not modified.
+    df = df.copy()
+
+    # Make a copy so we don't modify the caller's dictionary.
+    new_row = dict(data)
+
+    # Add current datetime if it wasn't supplied.
+    if datetime_column not in new_row:
+        new_row[datetime_column] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+
+    # Add any columns that don't already exist.
+    for column in new_row:
+        if column not in df.columns:
+            df[column] = pd.NA
+
+    # Create the new row using the DataFrame's column order.
+    row = {column: new_row.get(column, pd.NA) for column in df.columns}
+
+    # Put the new row at the top.
+    return pd.concat(
+        [pd.DataFrame([row], columns=df.columns), df],
+        ignore_index=True
+    )
+
+def merge_json_row_from_strings(
+    dataframe_string: str | None,
+    json_string: str
+) -> pd.DataFrame:
+
+    # Create DataFrame from CSV string, or an empty DataFrame if no CSV exists.
+    if dataframe_string is None or dataframe_string == "":
+        df = pd.DataFrame()
+    else:
+        df = pd.read_csv(io.StringIO(dataframe_string))
+
+    # Parse JSON string into a Python dictionary.
+    data = json.loads(json_string)
+
+    # Merge the JSON object as a new top row.
+    return merge_json_row(df, data)
+
 
 def decompose_in_set(value):
     """
