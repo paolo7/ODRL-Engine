@@ -121,7 +121,7 @@ def validate_ODRL(graph, format=None):
         validation_report["is_valid_ODRL"] = conforms
         if conforms:
             validation_report["info"].append(
-                f"The graph contains valid ODRL."
+                f"Every ODRL policy contained in the file (if any) is valid."
             )
             validation_report["odrl_stats"] = odrl_stats
             validation_report["odrl_stats_text"] = odrl_stats_text
