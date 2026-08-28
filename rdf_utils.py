@@ -418,6 +418,50 @@ def extract_rule_list(
         values = list(odrl_graph.objects(node, RDF.value)) + list(odrl_graph.objects(node, ODRL.source))
         return [str(v) for v in values] if values else [str(node)]
 
+    def extract_right_operand(node):
+        """
+        Extract the right operand of a constraint.
+
+        If the right operand is an RDF list:
+          - all literals -> pipe-separated: "apple|orange|tree"
+          - if at least one item is a URI -> space-separated:
+            "https://example.org/apple https://example.org/orange ..."
+
+        Otherwise, return the right operand as a string.
+        """
+        rights = list(odrl_graph.objects(node, ODRL.rightOperand))
+
+        if not rights:
+            return ""
+
+        right = rights[0]
+
+        # Check whether the right operand is an RDF collection.
+        if (right, RDF.first, None) in odrl_graph:
+            try:
+                items = list(Collection(odrl_graph, right))
+
+                # Determine whether the list contains any URI.
+                contains_uri = any(
+                    isinstance(item, rdflib.term.URIRef)
+                    for item in items
+                )
+
+                values = [str(item) for item in items]
+
+                if contains_uri:
+                    return " ".join(values)
+
+                return "|".join(values)
+
+            except Exception:
+                # If it looks like a list but cannot be parsed,
+                # fall back to the original behaviour.
+                pass
+
+        # Normal, non-list right operand.
+        return str(right)
+
     def append_triplet(node, prefix=None):
         """
         Handles both simple constraints and logical constraints recursively.
@@ -429,12 +473,11 @@ def extract_rule_list(
         # --- 1. SIMPLE CONSTRAINT ---
         lefts = list(odrl_graph.objects(node, ODRL.leftOperand))
         if lefts:
-            rights = list(odrl_graph.objects(node, ODRL.rightOperand))
             operators = list(odrl_graph.objects(node, ODRL.operator))
 
             left = f"{prefix} {str(lefts[0])}" if prefix else str(lefts[0])
             op = str(operators[0]) if operators else ""
-            right = str(rights[0]) if rights else ""
+            right = extract_right_operand(node)
 
             return [left, op, right]
 
