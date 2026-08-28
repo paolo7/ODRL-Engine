@@ -17,7 +17,7 @@ from common.streamlit_style import apply_style
 import ODRL_Evaluator as Evaluator
 import rdf_utils
 from rdf_utils import extract_features_list_from_policy
-
+from rdf_utils import extract_features_list_from_policy
 
 # ============================================================
 # CONFIG
@@ -1151,6 +1151,54 @@ def display_action_name(action_iri):
 
     return action_iri
 
+def add_access_request_to_sotw():
+    """
+    Add the current access request as a row in the State of the World.
+    Handles an initially empty State of the World.
+    """
+
+    sotw_text = st.session_state.sotw_text
+    access_request_text = st.session_state.access_request_text
+
+    if not access_request_text.strip():
+        st.session_state.sotw_add_error = (
+            "⚠️ Please provide an access request."
+        )
+        return
+
+    try:
+        # Validate that the access request is a JSON object.
+        parsed_request = json.loads(access_request_text)
+
+        if not isinstance(parsed_request, dict):
+            raise ValueError(
+                "Access request must contain a JSON object."
+            )
+
+        # Merge the access request into the State of the World.
+        # None means that the CSV is currently empty.
+        merged_df = rdf_utils.merge_json_row_from_strings(
+            sotw_text if sotw_text.strip() else None,
+            access_request_text
+        )
+
+        # Store the updated State of the World.
+        st.session_state.sotw_text = merged_df.to_csv(
+            index=False
+        )
+
+        # Show the table rather than the raw CSV editor.
+        st.session_state.show_raw_sotw = False
+
+        st.session_state.sotw_add_success = (
+            "Access request added to the State of the World."
+        )
+
+    except Exception as e:
+        st.session_state.sotw_add_error = (
+            f"⚠️ Unable to add access request to the "
+            f"State of the World: {e}"
+        )
 
 # ============================================================
 # PAGE SETUP
@@ -1415,11 +1463,38 @@ with col_left:
 
             st.rerun()
 
-    st.text_area(
-        "CSV Text",
-        height=400,
-        key="sotw_text"
+    show_raw_sotw = st.toggle(
+        "Show raw CSV text",
+        value=False,
+        key="show_raw_sotw"
     )
+
+    if show_raw_sotw:
+        st.text_area(
+            "CSV Text",
+            height=400,
+            value=st.session_state.sotw_text,
+            key="sotw_raw_editor"
+        )
+    else:
+        if st.session_state.sotw_text.strip():
+            try:
+                sotw_df = pd.read_csv(
+                    StringIO(st.session_state.sotw_text)
+                )
+
+                st.dataframe(
+                    sotw_df,
+                    use_container_width=True,
+                    height=400
+                )
+
+            except Exception as e:
+                st.error(
+                    f"Unable to display the State of the World CSV: {e}"
+                )
+        else:
+            st.info("The State of the World is empty.")
 
 
 # ============================================================
@@ -1753,16 +1828,32 @@ with col_right:
     )
 
 
+
 # ============================================================
 # EVALUATION AREA
 # ============================================================
 
+
 st.divider()
+
+add_to_sotw_button = st.button(
+    "Add to State of the World",
+    use_container_width=True,
+    on_click=add_access_request_to_sotw
+)
 
 evaluate_button = st.button(
     "Evaluate Access Request",
     use_container_width=True
 )
+
+if st.session_state.get("sotw_add_success"):
+    st.success(st.session_state.sotw_add_success)
+    del st.session_state.sotw_add_success
+
+if st.session_state.get("sotw_add_error"):
+    st.error(st.session_state.sotw_add_error)
+    del st.session_state.sotw_add_error
 
 
 # ============================================================

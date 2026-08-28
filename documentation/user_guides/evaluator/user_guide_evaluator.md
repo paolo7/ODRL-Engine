@@ -48,7 +48,7 @@ The evaluation guides provided are:
 
 ## Evaluating a Policy For Access Control Through the GUI
 
-_Last Updated 27/08/2026_
+_Last Updated 28/08/2026_
 
 After installation, open the Access Request Evaluator app (by default http://localhost:8031/evaluator-of-access-requests/ on a localhost docker deployment)
  
