@@ -550,10 +550,26 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_null
             return False
 
     resolved_left = None
+
+    # First try an exact match.
     if left in row:
         resolved_left = left
-    else:
-        if isinstance(left, str):
+
+    # If there is no exact match, try matching the substring
+    # after the last space in `left` against the row columns.
+    elif isinstance(left, str):
+        left_suffix = left.rsplit(" ", 1)[-1]
+
+        for column in row.index:
+            if isinstance(column, str):
+                column_suffix = column.rsplit(" ", 1)[-1]
+
+                if left_suffix == column_suffix:
+                    resolved_left = column
+                    break
+
+        # No matching column was found.
+        if resolved_left is None:
             if match_nulls:
                 # Missing access-request field is treated as null.
                 if null_conditions is not None:
@@ -561,6 +577,7 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_null
                 return True
             else:
                 return False
+
     left = resolved_left
 
     value = row[left]
