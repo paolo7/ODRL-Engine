@@ -27,17 +27,6 @@ Cells in the CSV file must contain either identifiers (strings or IRIs), numbers
 Please see the [Evaluator Feature Support](../../../documentation/evaluator_feature_support.md) for more details on the supported
 ODRL features and the support for those data types.
 
-Sets can be expressed as space separated strings, or strings separated with the `|` delimiter.
-For example, the following define sets over strings and IRIs, the first containing 
-string `apple`, and the second the IRI `https://example.org/apple`
-```
-"apple orange tree"
-```
-
-```
-"https://example.org/apple https://example.org/orange https://example.org/tree"
-```
-
 #### Data Format of an Access Request Object
 
 An access request object is a json object with a number of keys, representing rule components (like asset, action and party)
@@ -65,6 +54,25 @@ over a stream of events. In this case, there is no need to re-evaluate old event
 events by adding the latest Evaluation State object as an optional input to the next evaluation. Using this approach, you
 can evaluate one event at a time, and the result will be the same as if you had evaluated all events at once.
 This assumes that events are evaluated in chronological order.
+
+#### Data Format of Sets
+
+Sets in Right Operands should be defined using RDF Lists ([see this for an example](../../../test_cases/evaluation/valid/listRightOperand1.ttl)).
+The ODRL Evaluator also supports an alternative string encoding of a set as a convenience feature. This convenience format can be used both in  
+policies and in states of the world/access requests.
+
+Using this encoding sets can be expressed as space separated strings, or strings separated with the `|` delimiter.
+For example, the following define sets over strings and IRIs, the first and second containing 
+string `apple`, and the third the IRI `https://example.org/apple`
+```
+"apple orange tree"
+```
+```
+"apple|orange|tree"
+```
+```
+"https://example.org/apple https://example.org/orange https://example.org/tree"
+```
 
 #### Guides List
 
