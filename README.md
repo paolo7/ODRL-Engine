@@ -74,11 +74,12 @@ When deployed, the ODRL Engine provides selected functionalities through a FastA
 A demo  endpoint is available [here](https://dips.soton.ac.uk/odrl-engine/api/docs). 
 Currently, the functionalities exposed are the following.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/evaluate_policy_on_sotw` | Evaluate Policy on SOTW |
-| `POST` | `/get_policy_features` | Get Policy Features |
-| `POST` | `/validate_ODRL` | Validate ODRL |
+| Method | Endpoint                   | Description                                                                                                                                                                                                             |
+|--------|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `POST` | `/evaluate_policy_on_sotw` | Evaluate whether a log of events (State of the World) is compliant with a Policy                                                                                                                                        |
+| `POST` | `/evaluate_access_request` | Evaluate if an Access Request complies with a Policy                                                                                                                                                                    |
+| `POST` | `/validate_ODRL`           | Validate an ODRL document to find out if 1) it contains valid RDF, 2) if it contains any ODRL policy and 3) if the ODRL policies are valid with respect to the specification.                                           |
+| `POST` | `/get_policy_features`     | Utility function to extract a list of policy features (Left Operands) used in a policy file. These are the features that a State of the World or Access Request object might need to specify to be correctly evaluated. |
 
 
 ### Manual Installation
