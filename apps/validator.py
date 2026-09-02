@@ -136,6 +136,8 @@ st.markdown(
     The validator checks both whether the input is valid RDF and
     whether the RDF graph conforms to the ODRL specification.
     
+    It validates only the operands and rule types specified in the ODRL 2.2 specification.
+    
     """
 )
 
