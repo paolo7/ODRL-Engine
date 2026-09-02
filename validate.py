@@ -100,7 +100,7 @@ def describe_ODRL_statistics(stats):
 
     return "ODRL entities summary:\n" + "\n".join(lines)
 
-def validate_ODRL(graph, format=None):
+def validate_ODRL(graph, format=None, atomic_only=False):
     validation_report = {"ODRL_graph_size": 0, "errors": [], "warnings": [], "info": []}
     if graph:
         graph_length = len(graph)
@@ -111,6 +111,11 @@ def validate_ODRL(graph, format=None):
             f"The ODRL graph contains {graph_length} RDF triples."
         )
         shacl_file = os.path.join("SHACL", "odrl-shacl.ttl")
+        if atomic_only:
+            shacl_file = os.path.join("SHACL", "atomic-odrl-shacl.ttl")
+            validation_report["info"].append(
+                f"The validations settings required strict validation of atomic ODRL policies only. Thus ODRL policies in extended formats, like with multiple targets, or actions specified at the policy level, will be considered invalid."
+            )
         ont_file = os.path.join("ODRL", "ODRL22.ttl")
         ont_graph = Graph().parse(ont_file, format="turtle")
         conforms, report, report_graph = validate_SHACL(graph, shacl_file, ont_graph=ont_graph)
@@ -140,18 +145,18 @@ def validate_ODRL(graph, format=None):
         validation_report["errors"].append("FORMAT ERROR: The provided string is not recognised as any ODRL graph formats, such as JSON-LD, Turtle or RDF/XML.")
     return validation_report
 
-def validate_ODRL_from_string(odrl_string):
+def validate_ODRL_from_string(odrl_string, atomic_only=False):
     graph = None
     format = None
     parsed_result = rdf_utils.parse_string_to_graph(odrl_string)
     if parsed_result:
         graph = parsed_result[0]
         format = parsed_result[1]
-    return validate_ODRL(graph, format)
+    return validate_ODRL(graph, format, atomic_only=atomic_only)
 
-def validate_ODRL_from_file(filepath):
+def validate_ODRL_from_file(filepath, atomic_only=False):
     graph, format = rdf_utils.load(filepath)
-    return validate_ODRL(graph, format)
+    return validate_ODRL(graph, format, atomic_only=atomic_only)
 
 def diagnose_ODRL(filepath) -> str:
     graph, format = rdf_utils.load(filepath)

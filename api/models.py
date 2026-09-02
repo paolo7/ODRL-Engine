@@ -126,6 +126,13 @@ class ValidateODRLRequest(BaseModel):
         )
     )
 
+    atomic_only: bool = Field(
+        default=False,
+        description=(
+            "If true, validate only policies in the stricter, atomic format."
+        )
+    )
+
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
@@ -137,7 +144,8 @@ class ValidateODRLRequest(BaseModel):
                         '    "target": "http://example.com/asset:9898.movie",\n'
                         '    "action": "use"\n'
                         '  }]\n'
-                        '}'
+                        '}',
+                "atomic_only": False
             }
         }
     )

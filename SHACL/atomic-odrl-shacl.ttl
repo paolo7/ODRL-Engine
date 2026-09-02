@@ -13,37 +13,6 @@ pe:odrlPolicy a sh:NodeShape ;
 
 pe:odrlMaterialisedPolicy a sh:NodeShape ;
   sh:nodeKind sh:IRI ;
-
-  # either the top level policy object defines an Action, or all of its rules must
-  sh:or (
-    [ sh:property [
-        sh:path odrl:action ;
-        sh:minCount 1 ;
-        sh:class odrl:Action
-      ] ]
-    [ sh:property [
-        sh:path [
-          sh:alternativePath (
-            odrl:permission
-            odrl:prohibition
-            odrl:obligation
-            (odrl:permission odrl:duty)
-            (odrl:permission odrl:duty odrl:consequence)
-            (odrl:obligation odrl:consequence)
-            (odrl:prohibition odrl:remedy)
-          )
-        ] ;
-        sh:node [
-          a sh:NodeShape ;
-          sh:property [
-            sh:path odrl:action ;
-            sh:minCount 1 ;
-            sh:class odrl:Action
-          ]
-        ]
-      ] ]
-  ) ;
-
   sh:property [
     sh:path [
       sh:alternativePath (odrl:permission odrl:prohibition odrl:obligation)
@@ -98,6 +67,14 @@ pe:odrlInheritedPolicy a sh:NodeShape ;
 pe:odrlRule a sh:NodeShape ;
   sh:targetClass odrl:Permission, odrl:Prohibition, odrl:Duty ;
   sh:property [
+    sh:path odrl:action ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:class odrl:Action
+  ], [
+    sh:path odrl:target ;
+    sh:maxCount 1
+  ], [
     sh:path odrl:constraint ;
     sh:or ([
       sh:class odrl:Constraint

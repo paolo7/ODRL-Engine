@@ -136,13 +136,6 @@ st.markdown(
     The validator checks both whether the input is valid RDF and
     whether the RDF graph conforms to the ODRL specification.
     
-    This validator verifies whether ODRL policies are in a correct *atomic*
-    format. ODRL policies in the [compound or compact](https://www.w3.org/TR/odrl-model/#composition)
-    formats will be detected as invalid.
-    
-    Warning, this is an experimental feature. The validator will detect 
-    common ODRL data model violations, but it is not guaranteed to do so 
-    in all cases. 
     """
 )
 
@@ -513,6 +506,15 @@ def save_uploaded_file(uploaded_file):
 
     return temp.name
 
+# ---------------------------------------------------------
+# Validation Options
+# ---------------------------------------------------------
+
+atomic_only = st.checkbox(
+    "Atomic ODRL validation only.",
+    value=False,
+    help="If true, validate only policies in the stricter, atomic format."
+)
 
 # ---------------------------------------------------------
 # Upload Policy
@@ -610,7 +612,8 @@ if uploaded_policy is not None:
 
                 validation_result = (
                     validate.validate_ODRL_from_file(
-                        policy_path
+                        policy_path,
+                        atomic_only=atomic_only
                     )
                 )
 
@@ -710,7 +713,8 @@ if validate_button:
 
                 validation_result = (
                     validate.validate_ODRL_from_string(
-                        policy_text
+                        policy_text,
+                        atomic_only=atomic_only
                     )
                 )
 
