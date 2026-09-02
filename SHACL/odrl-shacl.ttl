@@ -141,7 +141,20 @@ pe:Constraint a sh:NodeShape ;
     sh:path odrl:operator ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
-    sh:class odrl:Operator
+    sh:in (
+      odrl:eq
+      odrl:gt
+      odrl:gteq
+      odrl:hasPart
+      odrl:isA
+      odrl:isAllOf
+      odrl:isAnyOf
+      odrl:isNoneOf
+      odrl:isPartOf
+      odrl:lt
+      odrl:lteq
+      odrl:neq
+    )
   ] .
 
 pe:LogicalConstraint a sh:NodeShape ;

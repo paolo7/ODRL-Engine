@@ -513,7 +513,7 @@ def save_uploaded_file(uploaded_file):
 atomic_only = st.checkbox(
     "Atomic ODRL validation only.",
     value=False,
-    help="If true, validate only policies in the stricter, atomic format."
+    help="If checked, validates only policies in the stricter, atomic format."
 )
 
 # ---------------------------------------------------------
