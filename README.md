@@ -19,7 +19,9 @@ on a large amount of configuration options.
 on a specific ODRL policy passed as input. The resulting State of the World objects, along with the policy used to 
 generate them, can be evaluated by the OVAL Evaluator.
 
-For info or queries please contact Paolo Pareti p.pareti@soton.ac.uk
+For info or queries please contact Paolo Pareti `p.pareti@soton.ac.uk`
+
+For the latest updates please see the [change log](documentation/whats_new.md).
 
 ### Try the ODRL Engine Online
 
@@ -103,6 +105,7 @@ want to use.
 
 ## Additional Documentation
 
+* [What's new?/Change Log](documentation/whats_new.md)
 * [Unit Tests](documentation/unit_tests.md)
 * [Experimental Evaluation of the OVAL ODRL Evaluator](documentation/experiments.md)
 * [Internal JSON Data Model](documentation/internal_data_model.md)
