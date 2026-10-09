@@ -65,6 +65,7 @@ You can set usage limit for the API in the .env file with variables:
 * ODRL_MAX_BODY_SIZE_MB
 * ODRL_EVAL_TIMEOUT_SECONDS
 * ODRL_RATE_LIMIT_RPS
+
 These limit the stramlit app:
 * ODRL_STREAMLIT_MAX_BODY_SIZE_MB
 * ODRL_STREAMLIT_WS_TIMEOUT_SECONDS
