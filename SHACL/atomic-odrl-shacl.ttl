@@ -173,3 +173,17 @@ pe:odrlActionShape a sh:NodeShape ;
       ]
     ]
   ) .
+
+pe:odrlPermissionTarget a sh:NodeShape ;
+  sh:targetClass odrl:Permission ;
+  sh:property [
+    sh:path odrl:target ;
+    sh:minCount 1 ;
+  ] .
+
+pe:odrlProhibitionTarget a sh:NodeShape ;
+  sh:targetClass odrl:Prohibition ;
+  sh:property [
+    sh:path odrl:target ;
+    sh:minCount 1 ;
+  ] .
