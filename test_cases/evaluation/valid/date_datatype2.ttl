@@ -4,7 +4,7 @@
 @prefix ex: <http://example.com/> .
 
 <http://example.com/policy:6161>
-  a odrl:Offer ;
+  a odrl:Set ;
   odrl:permission [
     odrl:action [
       rdf:value odrl:print ;
