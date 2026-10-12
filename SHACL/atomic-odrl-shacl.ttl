@@ -36,6 +36,69 @@ pe:odrlMaterialisedPolicy a sh:NodeShape ;
     sh:nodeKind sh:IRI
   ] .
 
+pe:offerPolicy a sh:NodeShape ;
+  sh:targetClass odrl:Offer ;
+  sh:nodeKind sh:IRI ;
+
+  # Either the Offer has an assigner, or at least one
+  # Permission or Prohibition has an assigner.
+  # We have also allowed obligations, as per Example 20 in the specification
+  sh:or (
+    [
+      sh:property [
+        sh:path odrl:assigner ;
+        sh:minCount 1
+      ]
+    ]
+    [
+      sh:property [
+        sh:path [
+          sh:alternativePath (
+            odrl:permission
+            odrl:prohibition
+            odrl:obligation
+          )
+        ] ;
+        sh:qualifiedMinCount 1 ;
+        sh:qualifiedValueShape [
+          sh:property [
+            sh:path odrl:assigner ;
+            sh:minCount 1
+          ]
+        ]
+      ]
+    ]
+  ) .
+
+pe:agreementPolicy a sh:NodeShape ;
+  sh:targetClass odrl:Agreement ;
+  sh:nodeKind sh:IRI ;
+
+  # At least one Permission, Prohibition, or Obligation
+  # has both an assignee and an assigner.
+
+  sh:property [
+    sh:path [
+      sh:alternativePath (
+        odrl:permission
+        odrl:prohibition
+        odrl:obligation
+      )
+    ] ;
+    sh:qualifiedMinCount 1 ;
+    sh:qualifiedValueShape [
+      sh:property [
+        sh:path odrl:assignee ;
+        sh:minCount 1
+      ] ;
+      sh:property [
+        sh:path odrl:assigner ;
+        sh:minCount 1
+      ]
+    ]
+  ]  .
+
+
 # This shape is meant to capture an inherited policy that whose IRI is known, but that is not actually described in the
 # policy graph. Since the policy is only referenced, but no detail (such as its rules) is in the graph, we need to
 # treat it as a separate case, or else it will trivially cause a violation. In this case, we consider the policy
