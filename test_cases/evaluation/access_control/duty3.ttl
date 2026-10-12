@@ -6,6 +6,7 @@
   a odrl:Set ;
   odrl:permission [
     odrl:action odrl:compensate ;
+    odrl:target <http://example.com/document:1234> ;
   ] ;
   odrl:permission [
     odrl:action odrl:play ;

@@ -18,6 +18,7 @@
     odrl:target <http://example.com/document:1234> ;
   ] ;
   odrl:permission [
+    odrl:target <http://example.com/document:1563> ;
     odrl:action [
       rdf:value odrl:uninstall ;
     ] ;

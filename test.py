@@ -22,7 +22,6 @@ def detect_odrl_file_format(filepath):
     extension = os.path.splitext(filepath)[1].lower()
     formats = {
         ".jsonld": "json-ld",
-        ".json": "json",
         ".ttl": "turtle",
         ".rdf": "rdf/xml",
     }
@@ -206,6 +205,18 @@ def run_folder_validation_tests():
         "invalid_ODRL": (
             "test_cases/validation/invalid_ODRL",
             False,
+        ),
+        "monitoring_compliant": (
+            "test_cases/evaluation/monitoring_compliant",
+            True,
+        ),
+        "monitoring_non_compliant": (
+            "test_cases/evaluation/monitoring_non_compliant",
+            True,
+        ),
+        "access_control": (
+            "test_cases/evaluation/access_control",
+            True,
         ),
     }
 

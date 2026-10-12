@@ -18,11 +18,13 @@
     odrl:target <http://example.com/document:1234> ;
   ] ;
   odrl:permission [
+    odrl:target <http://example.com/document:1234> ;
     odrl:action [
       rdf:value odrl:uninstall ;
     ] ;
   ] ;
   odrl:permission [
+    odrl:target <http://example.com/document:1234> ;
     odrl:action [
       rdf:value odrl:pay ;
 	  odrl:refinement [

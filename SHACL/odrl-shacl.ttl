@@ -44,6 +44,37 @@ pe:odrlMaterialisedPolicy a sh:NodeShape ;
       ] ]
   ) ;
 
+  # Either the policy defines a target, or every permission
+  # and prohibition defines a target.
+  sh:or (
+    # Alternative 1: the policy has its own target
+    [
+      sh:property [
+        sh:path odrl:target ;
+        sh:minCount 1
+      ]
+    ]
+
+    # Alternative 2: every permission and prohibition has a target
+    [
+      sh:property [
+        sh:path [
+          sh:alternativePath (
+            odrl:permission
+            odrl:prohibition
+          )
+        ] ;
+        sh:node [
+          a sh:NodeShape ;
+          sh:property [
+            sh:path odrl:target ;
+            sh:minCount 1
+          ]
+        ]
+      ]
+    ]
+  ) ;
+
   sh:property [
     sh:path [
       sh:alternativePath (odrl:permission odrl:prohibition odrl:obligation)

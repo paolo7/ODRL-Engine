@@ -12,6 +12,7 @@
         odrl:operator odrl:hasPart ;
         odrl:rightOperand "1 2 3" ;
       ]
-    ] 
+    ] ;
+    odrl:target <http://example.com/document:1234> ;
   ] ;
   odrl:profile <http://example.com/odrl:profile:10> .

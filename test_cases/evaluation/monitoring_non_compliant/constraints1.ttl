@@ -3,6 +3,7 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 :policy-001 odrl:permission [
+    odrl:target :Book ;
     odrl:action odrl:read ;
   ], [
     odrl:assignee :Alice ;

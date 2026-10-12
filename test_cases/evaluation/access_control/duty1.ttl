@@ -5,6 +5,7 @@
 <http://example.com/policy:88>
   a odrl:Set ;
   odrl:permission [
+    odrl:target <http://example.com/document:1234> ;
     odrl:action odrl:compensate ;
   ] ;
   odrl:permission [

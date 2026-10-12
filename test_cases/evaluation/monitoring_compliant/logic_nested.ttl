@@ -5,6 +5,7 @@
 <http://example.com/policy:6161>
   a odrl:Set ;
   odrl:permission [
+    odrl:target <http://example.com/document:1234> ;
     odrl:action odrl:print ;
   ] ;
   odrl:obligation [

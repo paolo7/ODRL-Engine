@@ -64,9 +64,11 @@
       ]
   ] ;
   odrl:permission [
+    odrl:target <http://example.com/document:1234> ;
     odrl:action odrl:compensate ;
   ] ;
-    odrl:permission [
+  odrl:permission [
+    odrl:target <http://example.com/document:1234> ;
     odrl:action odrl:watermark ;
   ] ;
   odrl:profile <http://example.com/odrl:profile:10> .

@@ -136,6 +136,9 @@ st.markdown(
     The validator checks both whether the input is valid RDF and
     whether the RDF graph conforms to the ODRL specification.
     
+    This validator can validate non-atomic ODRL policies directly, without requiring atomisation, thus avoiding an
+    exponential blow-up that atmisation can cause. 
+    
     It validates only the operands and rule types specified in the ODRL 2.2 specification.
     
     """
