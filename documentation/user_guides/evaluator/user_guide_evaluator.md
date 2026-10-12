@@ -57,7 +57,7 @@ This assumes that events are evaluated in chronological order.
 
 #### Data Format of Sets
 
-Sets in Right Operands should be defined using RDF Lists ([see this for an example](../../../test_cases/evaluation/valid/listRightOperand1.ttl)).
+Sets in Right Operands should be defined using RDF Lists ([see this for an example](../../../test_cases/evaluation/monitoring_compliant/listRightOperand1.ttl)).
 The ODRL Evaluator also supports an alternative string encoding of a set as a convenience feature. This convenience format can be used both in  
 policies and in states of the world/access requests.
 
@@ -147,14 +147,14 @@ You try a live version on on [DIPS](https://dips.soton.ac.uk/odrl-engine/odrl-en
 * After installation, open the Monitoring Evaluator app (by default http://localhost:8031/evaluator-for-monitoring/ on a localhost docker deployment)
 ![Evaluator screen](screenshot_1.png)
 * Click the "Upload" button under "ODRL Policy" and upload an RDF file containing an ODRL policy 
-(in any RDF serialisation), for example [this policy](../../../test_cases/evaluation/invalid/constraints1.ttl)
+(in any RDF serialisation), for example [this policy](../../../test_cases/evaluation/monitoring_non_compliant/constraints1.ttl)
 ![Evaluator screen with policy uploaded](screenshot_2.png)
 * Optionally, view the required features for this policy. These are the column names that the evaluator
 will look for in the State of the World to evaluate the log of events.
 ![Evaluator screen with expected column names](screenshot_3.png)
 * Click the "Upload" button under "State of the World" and upload a CSV file containing the State of the World with the
 required column names (the order of the columns does not matter, and there can be extra columns). The State of the World
-from the example can be found [here](../../../test_cases/evaluation/invalid/constraints1.csv).
+from the example can be found [here](../../../test_cases/evaluation/monitoring_non_compliant/constraints1.csv).
 ![Evaluator screen with state of the world uploaded](screenshot_4.png)
 * Click the "Evaluate Policy" button. The result of the evaluation will be displayed below. If there are violations, the
 list of events violating a given type of rule will be displayed as a list of indexes (the indexes of the violating rows).

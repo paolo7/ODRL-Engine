@@ -366,8 +366,8 @@ def run_folder_evaluation_tests():
     global test_log
 
     base_dirs = {
-        "valid": "test_cases/evaluation/valid",
-        "invalid": "test_cases/evaluation/invalid"
+        "valid": "test_cases/evaluation/monitoring_compliant",
+        "invalid": "test_cases/evaluation/monitoring_non_compliant"
     }
 
     # Category statistics
