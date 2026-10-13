@@ -1,5 +1,6 @@
 # ODRL Engine Change Log
 
+* __13 October 2026__: Improvement: The validation of ODRL policies has been strenghtened to capture additional types of ODRL errors, and all of the test cases have been made to pass ODRL validation.
 * __2 September 2026__: New Feature: Stricter ODRL validation, including validation of constraint operands against the ODRL-defined operand list, with support for atomic, compound, and compact policies.
 * __28 August 2026__: Extended access-control evaluation with set operators, RDF-list operands and an API endpoint for evaluating access requests.
 * __27 August 2026__: Added reasoning support for includedIn and partOf, with expanded unit-test coverage.
