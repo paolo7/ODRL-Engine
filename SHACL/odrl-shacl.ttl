@@ -5,7 +5,9 @@
 
 pe:odrlPolicy a sh:NodeShape ;
   sh:targetClass odrl:Policy, odrl:Set, odrl:Agreement, odrl:Offer ;
+  # sh:message "Policies must have an IRI identifier." ;
   sh:nodeKind sh:IRI ;
+
   sh:or (
     [ sh:node pe:odrlMaterialisedPolicy ]
     [ sh:node pe:odrlInheritedPolicy ]
@@ -14,6 +16,8 @@ pe:odrlPolicy a sh:NodeShape ;
 pe:offerPolicy a sh:NodeShape ;
   sh:targetClass odrl:Offer ;
   sh:nodeKind sh:IRI ;
+
+  sh:message "A policy of type Offer should have at least one permission, prohibition or obligation rule with an assigner." ;
 
   # Either the Offer has an assigner, or at least one
   # Permission or Prohibition has an assigner.
@@ -49,6 +53,8 @@ pe:offerPolicy a sh:NodeShape ;
 pe:agreementPolicy a sh:NodeShape ;
   sh:targetClass odrl:Agreement ;
   sh:nodeKind sh:IRI ;
+
+  sh:message "A policy of type Agreement should have at least one permission, prohibition or obligation rule with an assigner and assignee." ;
 
   # Either the Agreement has both an assignee and an assigner,
   # or at least one Permission, Prohibition, or Obligation
@@ -93,6 +99,7 @@ pe:odrlMaterialisedPolicy a sh:NodeShape ;
   sh:nodeKind sh:IRI ;
 
   # either the top level policy object defines an Action, or all of its rules must
+  # sh:message "All rules must have an action, unless a global action is defined at the policy level." ;
   sh:or (
     [ sh:property [
         sh:path odrl:action ;
@@ -124,6 +131,7 @@ pe:odrlMaterialisedPolicy a sh:NodeShape ;
 
   # Either the policy defines a target, or every permission
   # and prohibition defines a target.
+  # sh:message "All permissions and prohibition rules must have a target, unless a global target is defined at the policy level." ;
   sh:or (
     # Alternative 1: the policy has its own target
     [
@@ -166,15 +174,19 @@ pe:odrlMaterialisedPolicy a sh:NodeShape ;
       sh:class odrl:Duty
     ])
   ], [
+    sh:message "The profiles of a policy must be valid IRIs." ;
     sh:path odrl:profile ;
     sh:nodeKind sh:IRI
   ], [
+    sh:message "The inherited policies must be identified by their IRI." ;
     sh:path odrl:inheritFrom ;
     sh:nodeKind sh:IRI
   ], [
+    sh:message "The conflict property must have exactly one of the allowed values: odrl:perm, odrl:prohibit, or odrl:invalid." ;
     sh:path odrl:conflict ;
-    sh:nodeKind sh:IRI
-  ] .
+    sh:in ( odrl:perm odrl:prohibit odrl:invalid ) ;
+    sh:maxCount 1
+] .
 
 # This shape is meant to capture an inherited policy that whose IRI is known, but that is not actually described in the
 # policy graph. Since the policy is only referenced, but no detail (such as its rules) is in the graph, we need to
@@ -218,12 +230,14 @@ pe:odrlRule a sh:NodeShape ;
 pe:Constraint a sh:NodeShape ;
   sh:targetClass odrl:Constraint ;
   sh:property [
+    sh:message "A constraint must have exactly one Left Operand." ;
     sh:path odrl:leftOperand ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:class odrl:LeftOperand
   ], [
     sh:path odrl:rightOperand ;
+    sh:message "A constraint must have exactly one Right Operand which is either a literal, an IRI or an RDF List." ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:or ([
@@ -248,6 +262,7 @@ pe:Constraint a sh:NodeShape ;
       ])
   ], [
     sh:path odrl:operator ;
+    sh:message "A constraint must have exactly one operator, which must be one of the 12 operator defined by ODRL." ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:in (
@@ -269,6 +284,7 @@ pe:Constraint a sh:NodeShape ;
 pe:LogicalConstraint a sh:NodeShape ;
   sh:targetClass odrl:LogicalConstraint ;
   sh:property [
+    sh:message "Logic constraints must use either the OR, XONE, AND and AND Sequential relation, and be a list of constraints." ;
     sh:path [ sh:alternativePath (
         odrl:or
         odrl:xone
@@ -295,6 +311,7 @@ pe:LogicalConstraint a sh:NodeShape ;
 
 pe:odrlActionShape a sh:NodeShape ;
   sh:targetClass odrl:Action ;
+  sh:message "Actions should be identified either by an IRI directly, or as blank node with the IRI defined using the rdf:value property." ;
   sh:or (
     [ sh:nodeKind sh:IRI ]
     [ sh:property [
@@ -305,3 +322,122 @@ pe:odrlActionShape a sh:NodeShape ;
       ]
     ]
   ) .
+
+pe:permission a sh:NodeShape ;
+    sh:targetObjectsOf odrl:permission ;
+    sh:property [
+        sh:path odrl:permission ;
+        sh:maxCount 0 ;
+        sh:message "A permission must not have an outgoing odrl:permission relation."
+    ] ;
+    sh:property [
+        sh:path odrl:prohibition ;
+        sh:maxCount 0 ;
+        sh:message "A permission must not have an outgoing odrl:prohibition relation."
+    ] ;
+    sh:property [
+        sh:path odrl:obligation ;
+        sh:maxCount 0 ;
+        sh:message "A permission must not have an outgoing odrl:obligation relation."
+    ] ;
+    sh:property [
+        sh:path odrl:consequence ;
+        sh:maxCount 0 ;
+        sh:message "A permission must not have an outgoing odrl:consequence relation."
+    ] ;
+    sh:property [
+        sh:path odrl:remedy ;
+        sh:maxCount 0 ;
+        sh:message "A permission must not have an outgoing odrl:remedy relation."
+    ] .
+
+pe:prohibition a sh:NodeShape ;
+    sh:targetObjectsOf odrl:prohibition ;
+    sh:property [
+        sh:path odrl:permission ;
+        sh:maxCount 0 ;
+        sh:message "A prohibition must not have an outgoing odrl:permission relation."
+    ] ;
+    sh:property [
+        sh:path odrl:prohibition ;
+        sh:maxCount 0 ;
+        sh:message "A prohibition must not have an outgoing odrl:prohibition relation."
+    ] ;
+    sh:property [
+        sh:path odrl:obligation ;
+        sh:maxCount 0 ;
+        sh:message "A prohibition must not have an outgoing odrl:obligation relation."
+    ] ;
+    sh:property [
+        sh:path odrl:consequence ;
+        sh:maxCount 0 ;
+        sh:message "A prohibition must not have an outgoing odrl:consequence relation."
+    ] ;
+    sh:property [
+        sh:path odrl:duty ;
+        sh:maxCount 0 ;
+        sh:message "A prohibition must not have an outgoing odrl:duty relation."
+    ] .
+
+pe:duty a sh:NodeShape ;
+    sh:targetObjectsOf odrl:duty ;
+    sh:targetObjectsOf odrl:obligation ;
+    sh:property [
+        sh:path odrl:permission ;
+        sh:maxCount 0 ;
+        sh:message "A duty/obligation must not have an outgoing odrl:permission relation."
+    ] ;
+    sh:property [
+        sh:path odrl:prohibition ;
+        sh:maxCount 0 ;
+        sh:message "A duty/obligation must not have an outgoing odrl:prohibition relation."
+    ] ;
+    sh:property [
+        sh:path odrl:obligation ;
+        sh:maxCount 0 ;
+        sh:message "A duty/obligation must not have an outgoing odrl:obligation relation."
+    ] ;
+    sh:property [
+        sh:path odrl:remedy ;
+        sh:maxCount 0 ;
+        sh:message "A duty/obligation must not have an outgoing odrl:remedy relation."
+    ] ;
+    sh:property [
+        sh:path odrl:duty ;
+        sh:maxCount 0 ;
+        sh:message "A duty/obligation must not have an outgoing odrl:duty relation."
+    ] .
+
+pe:consequenceOrRemedy a sh:NodeShape ;
+    sh:targetObjectsOf odrl:consequence ;
+    sh:targetObjectsOf odrl:remedy ;
+    sh:property [
+        sh:path odrl:permission ;
+        sh:maxCount 0 ;
+        sh:message "A consequence or remedy must not have an outgoing odrl:permission relation."
+    ] ;
+    sh:property [
+        sh:path odrl:prohibition ;
+        sh:maxCount 0 ;
+        sh:message "A consequence or remedy must not have an outgoing odrl:prohibition relation."
+    ] ;
+    sh:property [
+        sh:path odrl:obligation ;
+        sh:maxCount 0 ;
+        sh:message "A consequence or remedy must not have an outgoing odrl:obligation relation."
+    ] ;
+    sh:property [
+        sh:path odrl:duty ;
+        sh:maxCount 0 ;
+        sh:message "A consequence or remedy must not have an outgoing odrl:duty relation."
+    ] ;
+    sh:property [
+        sh:path odrl:consequence ;
+        sh:maxCount 0 ;
+        sh:message "A consequence or remedy must not have an outgoing odrl:consequence relation."
+    ] ;
+    sh:property [
+        sh:path odrl:remedy ;
+        sh:maxCount 0 ;
+        sh:message "A consequence or remedy must not have an outgoing odrl:remedy relation."
+    ] .

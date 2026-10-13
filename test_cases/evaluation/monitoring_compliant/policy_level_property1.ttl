@@ -13,7 +13,7 @@
         odrl:leftOperand odrl:resolution ;
         odrl:operator odrl:lteq ;
         odrl:rightOperand 1200 ;
-        odrl:unit "http://dbpedia.org/resource/Dots_per_inch"^^xsd:string
+        odrl:unit <http://dbpedia.org/resource/Dots_per_inch>
       ]
     ] ;    
   ] ;
