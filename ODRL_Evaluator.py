@@ -60,7 +60,7 @@ def _extract_uris(value):
         return []
 
     if isinstance(value, str):
-        return [value]
+        return value.split()
 
     if isinstance(value, URIRef):
         return [str(value)]
@@ -118,116 +118,36 @@ ODRL_ACTION = "http://www.w3.org/ns/odrl/2/Action"
 ODRL_PARTY = "http://www.w3.org/ns/odrl/2/Party"
 ODRL_ASSET = "http://www.w3.org/ns/odrl/2/Asset"
 
-
-def get_actions(policy):
+def get_components(policy, component_type):
     """
-    Get all action URIs occurring in the policy.
-
-    Supports both:
-        rule["action"]
-
-    and the condition representation:
-        [
-            ODRL Action,
-            operator,
-            action_uri
-        ]
+    component_type: "action", "party", or "asset"
     """
-    actions = set()
+    component_config = {
+        "action": ("action", ODRL_ACTION),
+        "party": ("assignee", ODRL_PARTY),
+        "asset": ("target", ODRL_ASSET),
+    }
+
+    if component_type not in component_config:
+        raise ValueError(f"Unsupported component type: {component_type}")
+
+    field, component_id = component_config[component_type]
+    components = set()
 
     for rule in _get_all_rules(policy):
+        # Explicit component field
+        components.update(_extract_uris(rule.get(field)))
 
-        # Explicit action field, if present
-        actions.update(
-            _extract_uris(rule.get("action"))
-        )
-
-        # Action represented as a condition
+        # Component represented as a condition
         for condition in rule.get("conditions", []) or []:
             if (
                 isinstance(condition, list)
                 and len(condition) == 3
-                and condition[0] == ODRL_ACTION
+                and condition[0] == component_id
             ):
-                actions.update(
-                    _extract_uris(condition[2])
-                )
+                components.update(_extract_uris(condition[2]))
 
-    return actions
-
-
-def get_parties(policy):
-    """
-    Get all party URIs occurring in the policy.
-
-    Supports both:
-        rule["assignee"]
-
-    and:
-        [
-            ODRL_PARTY,
-            operator,
-            party_uri
-        ]
-    """
-    parties = set()
-
-    for rule in _get_all_rules(policy):
-
-        # Explicit assignee field, if present
-        parties.update(
-            _extract_uris(rule.get("assignee"))
-        )
-
-        # Party represented as a condition
-        for condition in rule.get("conditions", []) or []:
-            if (
-                isinstance(condition, list)
-                and len(condition) == 3
-                and condition[0] == ODRL_PARTY
-            ):
-                parties.update(
-                    _extract_uris(condition[2])
-                )
-
-    return parties
-
-
-def get_assets(policy):
-    """
-    Get all asset URIs occurring in the policy.
-
-    Supports both:
-        rule["target"]
-
-    and:
-        [
-            ODRL_ASSET,
-            operator,
-            asset_uri
-        ]
-    """
-    assets = set()
-
-    for rule in _get_all_rules(policy):
-
-        # Explicit target field, if present
-        assets.update(
-            _extract_uris(rule.get("target"))
-        )
-
-        # Asset represented as a condition
-        for condition in rule.get("conditions", []) or []:
-            if (
-                isinstance(condition, list)
-                and len(condition) == 3
-                and condition[0] == ODRL_ASSET
-            ):
-                assets.update(
-                    _extract_uris(condition[2])
-                )
-
-    return assets
+    return components
 
 
 def _get_transitive_subjects(graph, predicate, target):
@@ -310,9 +230,9 @@ def parse_ontology(policy, ontology_files=None, ontology_graphs=None):
     # 2) Extract policy entities
     # ---------------------------------------------------------
 
-    actions = get_actions(policy)
-    parties = get_parties(policy)
-    assets = get_assets(policy)
+    actions = get_components(policy,"action")
+    parties = get_components(policy,"party")
+    assets = get_components(policy,"asset")
 
     # ---------------------------------------------------------
     # 3) Expand according to ontology relationships
@@ -430,7 +350,7 @@ def is_parseable_date(value):
     except ValueError:
         return False
 
-def _reasoning_match(left_operand, value, right_operand, reasoning_expansion):
+def _reasoning_match(left_operand, value, right_operand_list, reasoning_expansion):
     """
     Check whether value matches right_operand directly or through
     the relevant reasoning expansion.
@@ -442,24 +362,28 @@ def _reasoning_match(left_operand, value, right_operand, reasoning_expansion):
     entities expanded from right_operand.
     """
 
-    if value == right_operand:
-        return True
+    for right_operand in right_operand_list.split():
 
-    if reasoning_expansion is None:
-        return False
+        if value == right_operand:
+            return True
 
-    expansion_key = {
-        ODRL_ACTION: "expanded_actions",
-        ODRL_PARTY: "expanded_party",
-        ODRL_ASSET: "expanded_assets",
-    }.get(left_operand)
+        if reasoning_expansion is None:
+            return False
 
-    if expansion_key is None:
-        return False
+        expansion_key = {
+            ODRL_ACTION: "expanded_actions",
+            ODRL_PARTY: "expanded_party",
+            ODRL_ASSET: "expanded_assets",
+        }.get(left_operand)
 
-    expanded = reasoning_expansion.get(expansion_key, {})
+        if expansion_key is None:
+            return False
 
-    return value in expanded.get(str(right_operand), [])
+        expanded = reasoning_expansion.get(expansion_key, {})
+
+        if value in expanded.get(str(right_operand), []):
+            return True
+    return False
 
 def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, null_conditions=None, reasoning_expansion=None):
     # ----------------------------------------
@@ -594,6 +518,30 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_null
             return False
 
     # ----------------------------------------
+    # ODRL CORE COMPONENT EVALUATION
+    # This part evaluates actions, assets and parties
+    # they can be a list if a non-atomic policy has been used
+    # if reasoning is enabled, the reasoning expansion of
+    # each term will be considered (aka, their sub types)
+    # ----------------------------------------
+
+    if (
+            reasoning_expansion is not None
+            and left in {
+        ODRL_ACTION,
+        ODRL_PARTY,
+        ODRL_ASSET,
+    }
+            and op_symbol == "http://www.w3.org/ns/odrl/2/isAnyOf"
+    ):
+        return _reasoning_match(
+            left,
+            str(value),
+            str(right),
+            reasoning_expansion
+        )
+
+    # ----------------------------------------
     # ODRL SET OPERATORS
     # ----------------------------------------
     if op_symbol in {
@@ -602,7 +550,7 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_null
         ODRL_IS_ALL_OF,
         ODRL_IS_ANY_OF,
         ODRL_IS_NONE_OF,
-    }:
+    } :
         value_set = set(decompose_in_set(value))
         right_set = set(decompose_in_set(right))
 
@@ -624,22 +572,6 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_null
 
     if op_symbol not in OPS_MAP:
         return False
-
-    if (
-            reasoning_expansion is not None
-            and left in {
-        ODRL_ACTION,
-        ODRL_PARTY,
-        ODRL_ASSET,
-    }
-            and op_symbol == "http://www.w3.org/ns/odrl/2/eq"
-    ):
-        return _reasoning_match(
-            left,
-            str(value),
-            str(right),
-            reasoning_expansion
-        )
 
     column_type = FEATURE_TYPE_MAP.get(left)
 
@@ -1792,12 +1724,6 @@ def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW
 
 #access_request_result = evaluate_ODRL_access_request_from_string(
 #    """
-#{
-#  "http://www.w3.org/ns/odrl/2/Action": "http://www.w3.org/ns/odrl/2/play"
-#}
-#""",
-#    """
-#
 #  """
 #)
 #print(access_request_result)

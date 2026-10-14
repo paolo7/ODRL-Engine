@@ -520,13 +520,10 @@ def extract_rule_list(
 
         if rule_components:
             # Rule-level component exists: use it.
+            listed_components = []
             for comp_node in rule_components:
                 for val in extract_values(comp_node):
-                    triplets.append([
-                        component_type,
-                        "http://www.w3.org/ns/odrl/2/eq",
-                        val
-                    ])
+                    listed_components.append(val)
 
                 # Nested refinements inside component
                 for refinement in odrl_graph.objects(comp_node, ODRL.refinement):
@@ -536,6 +533,13 @@ def extract_rule_list(
                     )
                     if result:
                         triplets.append(result)
+
+            triplets.append([
+                component_type,
+                "http://www.w3.org/ns/odrl/2/isAnyOf",
+                ' '.join(listed_components)
+            ])
+
 
         else:
             # No rule-level component: fall back to policy-level value.
