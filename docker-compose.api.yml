@@ -1,0 +1,14 @@
+services:
+  odrl-engine-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: odrl-engine-api
+    restart: unless-stopped
+
+    ports:
+      - "8032:8000"
+
+    env_file:
+      - path: .env
+        required: false

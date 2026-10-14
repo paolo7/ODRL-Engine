@@ -85,6 +85,17 @@ Currently, the functionalities exposed are the following.
 | `POST` | `/get_policy_features`     | Utility function to extract a list of policy features (Left Operands) used in a policy file. These are the features that a State of the World or Access Request object might need to specify to be correctly evaluated. |
 
 
+### API-Only Docker Installation Instructions
+
+If you do not need the streamlit applications, and only want access to the API functionalities, you should deploy
+the API only Docker image. This can improve performance as API calls do not need to be re-routed by nginx.
+
+1. Make sure you have Docker installed and running
+2. Go to the the root directory of this project and run command:
+
+`docker compose -f docker-compose.api.yml up -d --build`
+
+APIs will be available at http://localhost:8032/ and the swagger UI will be available at http://localhost:8032/docs 
 ### Manual Installation
 
 You can also use the ODRL Engine as a library of functions. 
