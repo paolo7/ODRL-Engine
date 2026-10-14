@@ -5,6 +5,17 @@ These guides explains how to use the OVAL evaluator. The main inputs for the Eva
 * A State of the World CSV file (described below)
 * Optionally, an Evaluation State file (described below)
 
+#### Support for non-atomic ODRL Policies
+
+The evaluator can ingest [non-atomic ODRL Policies](https://www.w3.org/TR/odrl-model/#composition), with the following semantics:
+* Composite policies. Composite ODRL policies contain multiple actions/assets/parties for the same rule. 
+The Evaluator interprets them in the natural way according to their atomic decomposition.
+* Compact policies. Compact ODRL policies define some among actions/assets/parties at the policy level. When evaluating
+a compact policy, the evaluator will behave as follows. Each component (action, assignee, target) defined at policy level
+is propagated to each rule that does not define such component. If a rule defines such component, it is not affected by  
+what is defined at policy level. This allows policy level component definitions to be used effectively as "default" values,
+but rules can override them if necessary.
+
 #### Reasoning
 
 Unless disabled (disabling the `reasoning` flag in the evaluator functions, the OVAL evaluator will include reasoning.

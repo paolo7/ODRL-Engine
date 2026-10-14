@@ -7,6 +7,15 @@ The evaluation guides provided are:
 * Validate an ODRL Policy through the API
 * Validate an ODRL Policy Programmatically in Python
 
+Notable features of the validator:
+* The validator supports both atomic and non-atomic ODRL policies.
+* This validator is designed to detect common mistakes in creating ODRL policies, such as using unsupported conflict strategies
+or wrong rule combinations, like using a Remedy rule nested inside a Permission rule.
+* This validator checks if ODRL Offers and Agreements have at least one permission/prohibition/obligation rule that
+specifies assigner (or assignee and assigner, for the case of Agreement). This interpretation reflects a compromise between
+the conflicting definitions in the [ODRL Model](https://www.w3.org/TR/odrl-model/#policy-agreement),
+the definition in the [ODRL Vocabulary](https://www.w3.org/TR/odrl-vocab/#term-Agreement) and [Examples 20 and 21](https://www.w3.org/TR/odrl-model/#duty-policy)
+
 ## Validate an ODRL Policy through the GUI
 
 _Last Updated 25/08/2026_

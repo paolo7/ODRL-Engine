@@ -114,6 +114,6 @@ want to use.
 * [Evaluator Feature Support](documentation/evaluator_feature_support.md)
 
 ## Contributors
-* Paolo Pareti p.pareti@soton.ac.uk
-* Adeel Aslam A.Aslam@soton.ac.uk
-* Jaime Salas J.O.Salas@soton.ac.uk
+* [Paolo Pareti](https://github.com/paolo7)
+* [Adeel Aslam](https://github.com/AdeelAslamSoton)
+* [Jaime Salas](https://github.com/JOSalasT)
