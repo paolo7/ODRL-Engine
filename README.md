@@ -45,7 +45,8 @@ Streamlit apps found in the `apps` subfolder will be automatically loaded when t
 ### Instructions
 
 1. Make sure you have Docker installed and running
-2. Go to the the root directory of this project and run command `docker compose up -d`
+2. Go to the the root directory of this project and run command `docker compose up -d` 
+   * Important Note: If you want to use the API endpoint in production, make sure to follow instead the _API-Only Docker Installation Instructions_ listed below. The full installation hides the API behind nginx, which is known to cause performance issues on large volumes of calls.  
 3. Wait for the image to be created
 4. Open the dashboard that gives you access to all the apps here: http://localhost:8031/odrl-engine-dashboard/ or access the Swagger API here http://localhost:8031/api/docs
 
@@ -88,7 +89,9 @@ Currently, the functionalities exposed are the following.
 ### API-Only Docker Installation Instructions
 
 If you do not need the streamlit applications, and only want access to the API functionalities, you should deploy
-the API only Docker image. This can improve performance as API calls do not need to be re-routed by nginx.
+the API only Docker image. This can improve performance as API calls do not need to be re-routed by nginx, which is 
+known to lead to performance issues when large numbers of API calls are made. More information on performance can
+be found [in this document](documentation/experiments.md).
 
 1. Make sure you have Docker installed and running
 2. Go to the the root directory of this project and run command:

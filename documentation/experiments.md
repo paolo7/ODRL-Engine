@@ -1,10 +1,18 @@
-# Experimental Evaluation
+# Evaluator Performance
+
+This document discusses the empirical evaluation of the OVAL evaluator.
+
+As a rule of thumb, on standard pc hardware, typical Access Request evaluations or Monitoring evaluations on a new event of the State of the world
+could take about 2 ms to compute (up to 50 if through the API). The evaluation of complex policies (90 rules) 
+over large event logs (1000 events) was observed to compute in just over 1 second.
+
+## Experimental Evaluation
 
 __NOTE__ to reproduce previous results the experiments below need to be adjusted to disable reasoning. The current evaluator is configured to use reasoning by default unless disabled.
 
 The results of an experimental evaluation of the OVAL ODRL Evaluator can be found [in this article](https://arxiv.org/abs/2607.15987). Details on how to replicate these results, or perform additional experiments, is described below.
 
-## How to perform scalability tests
+### How to perform scalability tests
 
 To reproduce scalability results, run the `scalability_tests_all.py` script. This script will run all the scalability tests, 
 output the results in CSV format, and lastly generate some plots from them for a quick inspection of the results.
