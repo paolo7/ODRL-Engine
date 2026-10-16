@@ -43,13 +43,13 @@ def pretty_print_rules(rule_list):
         indent = "    " * indent_level
         sub_indent = "    " * (indent_level + 1)
 
-        if rd.get("conditions"):
+        if rd.get("conditions") + rd.get("constraints"):
 
             out_lines.append(
                 f"{indent}Rule conditions:"
             )
 
-            for cond in rd["conditions"]:
+            for cond in rd["conditions"] + rd.get("constraints"):
 
                 if isinstance(cond, list) and len(cond) == 3:
                     subj, op, obj = cond

@@ -390,12 +390,17 @@ def extract_rule_list(
     rule_node,
     policy_target=None,
     policy_assignee=None,
-    policy_action=None
+    policy_action=None,
+    extract_components=True,
+    extract_constraints=True
 ):
     """
     Extract all components (action, target, assignee) and constraints/refinements
     of a rule, returning triplets <A, B, C>.
     Handles nested refinements inside components.
+
+    If extract_components is true, it extracts the action, assignee and target (along with their refinements)
+    If extract_constraints is true, it extracts the constraints directly attached to the rule
     """
     triplets = []
 
@@ -508,65 +513,68 @@ def extract_rule_list(
     # If a component is not defined at rule level, fall back to the
     # corresponding value defined directly on the policy.
 
-    component_policy_fallbacks = {
-        "http://www.w3.org/ns/odrl/2/Action": policy_action,
-        "http://www.w3.org/ns/odrl/2/Asset": policy_target,
-        "http://www.w3.org/ns/odrl/2/Party": policy_assignee,
-    }
+    if extract_components:
+        component_policy_fallbacks = {
+            "http://www.w3.org/ns/odrl/2/Action": policy_action,
+            "http://www.w3.org/ns/odrl/2/Asset": policy_target,
+            "http://www.w3.org/ns/odrl/2/Party": policy_assignee,
+        }
 
-    for component_type, predicate in refinement_contexts_incoming.items():
+        for component_type, predicate in refinement_contexts_incoming.items():
 
-        rule_components = list(odrl_graph.objects(rule_node, predicate))
+            rule_components = list(odrl_graph.objects(rule_node, predicate))
 
-        if rule_components:
-            # Rule-level component exists: use it.
-            listed_components = []
-            for comp_node in rule_components:
-                for val in extract_values(comp_node):
-                    listed_components.append(val)
+            if rule_components:
+                # Rule-level component exists: use it.
+                listed_components = []
+                for comp_node in rule_components:
+                    for val in extract_values(comp_node):
+                        listed_components.append(val)
 
-                # Nested refinements inside component
-                for refinement in odrl_graph.objects(comp_node, ODRL.refinement):
-                    result = append_triplet(
-                        refinement,
-                        prefix=component_type
-                    )
-                    if result:
-                        triplets.append(result)
+                    # Nested refinements inside component
+                    for refinement in odrl_graph.objects(comp_node, ODRL.refinement):
+                        result = append_triplet(
+                            refinement,
+                            prefix=component_type
+                        )
+                        if result:
+                            triplets.append(result)
 
-            triplets.append([
-                component_type,
-                "http://www.w3.org/ns/odrl/2/isAnyOf",
-                ' '.join(listed_components)
-            ])
-
-
-        else:
-            # No rule-level component: fall back to policy-level value.
-            policy_value = component_policy_fallbacks.get(component_type)
-
-            if policy_value is not None:
                 triplets.append([
                     component_type,
-                    "http://www.w3.org/ns/odrl/2/eq",
-                    policy_value
+                    "http://www.w3.org/ns/odrl/2/isAnyOf",
+                    ' '.join(listed_components)
                 ])
 
-    # --- 2. Extract constraints directly attached to the rule ---
-    for constraint in odrl_graph.objects(rule_node, ODRL.constraint):
-        #append_triplet(constraint)
-        result = append_triplet(constraint)
-        if result:
-            triplets.append(result)
 
-        # --- 3. Handle refinements attached to this constraint --- TODO: this part might not be needed
-        for refinement in odrl_graph.subjects(predicate=ODRL.refinement, object=constraint):
-            for iri_prefix, incoming_pred in refinement_contexts_incoming.items():
-                if any(odrl_graph.subjects(predicate=incoming_pred, object=refinement)):
-                    #append_triplet(constraint, prefix=iri_prefix)
-                    result = append_triplet(constraint, prefix=iri_prefix)
-                    if result:
-                        triplets.append(result)
+            else:
+                # No rule-level component: fall back to policy-level value.
+                policy_value = component_policy_fallbacks.get(component_type)
+
+                if policy_value is not None:
+                    triplets.append([
+                        component_type,
+                        "http://www.w3.org/ns/odrl/2/eq",
+                        policy_value
+                    ])
+
+    # --- 2. Extract constraints directly attached to the rule ---
+
+    if extract_constraints:
+        for constraint in odrl_graph.objects(rule_node, ODRL.constraint):
+            #append_triplet(constraint)
+            result = append_triplet(constraint)
+            if result:
+                triplets.append(result)
+
+            # --- 3. Handle refinements attached to this constraint --- TODO: this part might not be needed
+            for refinement in odrl_graph.subjects(predicate=ODRL.refinement, object=constraint):
+                for iri_prefix, incoming_pred in refinement_contexts_incoming.items():
+                    if any(odrl_graph.subjects(predicate=incoming_pred, object=refinement)):
+                        #append_triplet(constraint, prefix=iri_prefix)
+                        result = append_triplet(constraint, prefix=iri_prefix)
+                        if result:
+                            triplets.append(result)
 
     def make_hashable(x):
         if isinstance(x, list):
@@ -650,7 +658,18 @@ def extract_rule_list_from_policy(odrl_graph: rdflib.Graph):
                 rule_node,
                 policy_target=policy_target,
                 policy_assignee=policy_assignee,
-                policy_action=policy_action
+                policy_action=policy_action,
+                extract_components=True,
+                extract_constraints=False
+            ),
+            "constraints": extract_rule_list(
+                odrl_graph,
+                rule_node,
+                policy_target=policy_target,
+                policy_assignee=policy_assignee,
+                policy_action=policy_action,
+                extract_components=False,
+                extract_constraints=True
             )
         }
 
