@@ -1187,7 +1187,7 @@ def evaluate_ODRL_access_request_on_dataframe(
     # any null / unspecified access-request features.
     # ---------------------------------------------------------
     full_match_permission = any(
-        len(permission.get("conditions" + permission.get("constraints", []))) == 0
+        len(permission.get("conditions", []) + permission.get("constraints", []) ) == 0
         for permission in permissions_matched
     )
 
