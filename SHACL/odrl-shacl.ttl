@@ -241,7 +241,7 @@ pe:Constraint a sh:NodeShape ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:or ([
-      sh:class odrl:rightOperand
+      sh:class odrl:RightOperand
     ] [
       sh:nodeKind sh:Literal
     ] [
