@@ -485,10 +485,7 @@ def humanise_duty(duty):
     if description:
         return str(description)
 
-    conditions = duty.get(
-        "conditions",
-        []
-    )
+    conditions = duty.get("conditions", []) + duty.get("constraints", [])
 
     if conditions:
         return " and ".join(
@@ -538,7 +535,7 @@ def humanise_rule(rule, rule_type="rule"):
     if description:
         return str(description)
 
-    conditions = rule.get("conditions", [])
+    conditions = rule.get("conditions", []) + rule.get("constraints", [])
 
     PARTY_IRI = f"{ODRL_NS}Party"
     ACTION_IRI = f"{ODRL_NS}Action"
@@ -703,10 +700,7 @@ def render_evaluation_notifications(payload):
             {}
         )
 
-        conditions = permission_match.get(
-            "conditions",
-            []
-        )
+        conditions = permission_match.get( "conditions", [] ) + permission_match.get( "constraints", [] )
 
         duties = permission_match.get(
             "duties",
@@ -839,15 +833,9 @@ def render_evaluation_notifications(payload):
 
     for prohibition_match in prohibitions:
 
-        rule = prohibition_match.get(
-            "rule",
-            {}
-        )
+        rule = prohibition_match.get( "rule", {}  )
 
-        conditions = prohibition_match.get(
-            "conditions",
-            []
-        )
+        conditions = prohibition_match.get("conditions", []) + prohibition_match.get("constraints", [])
 
         # ----------------------------------------------------
         # Determine colour / message

@@ -147,7 +147,7 @@ def generate_pd_state_of_the_world_from_policies(
                 continue
 
             permission_rule = random.choice(policy["permissions"])
-            permission_triplets_lists = permission_rule["conditions"]
+            permission_triplets_lists = permission_rule["conditions"] + permission_rule["constraints"]
 
             # Features that appear in permission rules
             features_with_triplets = [
