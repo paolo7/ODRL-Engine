@@ -6,6 +6,7 @@ import validate
 import os
 import uuid
 import time
+import json
 from rdf_utils import extract_features_list_from_policy, extract_rule_list_from_policy
 
 total_eval_time = 0.0
@@ -39,6 +40,57 @@ def timed_evaluation(func, *args, **kwargs):
     total_eval_calls += 1
 
     return result
+
+def unordered_equal(a, b):
+    """
+    Compare two values, ignoring the order of elements in lists.
+    Nested lists are also compared without considering order.
+    Dictionaries are compared by keys and values.
+    """
+    if isinstance(a, dict) and isinstance(b, dict):
+        return (
+            a.keys() == b.keys()
+            and all(unordered_equal(a[k], b[k]) for k in a)
+        )
+
+    if isinstance(a, list) and isinstance(b, list):
+        if len(a) != len(b):
+            return False
+
+        # Match each element with one unmatched element in b.
+        unmatched = list(b)
+
+        for item_a in a:
+            for i, item_b in enumerate(unmatched):
+                if unordered_equal(item_a, item_b):
+                    unmatched.pop(i)
+                    break
+            else:
+                return False
+
+        return True
+
+    return a == b
+
+
+def check_expected_conditional_rules(expected_conditions, matched_rules):
+    actual_conditions = [
+        rule.get("conditions", [])
+        for rule in matched_rules
+        if rule.get("conditions", []) != []
+    ]
+
+    missing = [
+        expected for expected in expected_conditions
+        if not any(unordered_equal(expected, actual) for actual in actual_conditions)
+    ]
+
+    extra = [
+        actual for actual in actual_conditions
+        if not any(unordered_equal(actual, expected) for expected in expected_conditions)
+    ]
+
+    return missing, extra
 
 def run_access_request_evaluation_tests():
     global tests_passed
@@ -108,6 +160,9 @@ def run_access_request_evaluation_tests():
                 )
                 continue
 
+            expected_conditional_prohibitions = json.loads(params.get("expected_conditional_prohibitions", "[]"))
+            expected_conditional_permissions = json.loads(params.get("expected_conditional_permissions", "[]"))
+
             test_tag = params.get("test_tag", "others").strip()
 
             if not test_tag:
@@ -161,7 +216,21 @@ def run_access_request_evaluation_tests():
             )
             continue
 
-        if accept_decision == expected_accept_decision:
+        if not expected_conditional_prohibitions and not expected_conditional_permissions:
+            conditions_ok = True
+        else:
+            missing_permissions, extra_permissions = check_expected_conditional_rules(
+                expected_conditional_permissions, result.get("permissions_matched", [])
+            )
+            missing_prohibitions, extra_prohibitions = check_expected_conditional_rules(
+                expected_conditional_prohibitions, result.get("prohibitions_matched", [])
+            )
+            conditions_ok = not (
+                    missing_permissions or extra_permissions
+                    or missing_prohibitions or extra_prohibitions
+            )
+
+        if accept_decision == expected_accept_decision and conditions_ok:
             tests_passed += 1
             category_stats[test_tag]["passed"] += 1
 
@@ -179,6 +248,15 @@ def run_access_request_evaluation_tests():
                 f"(expected accept decision {expected_accept_decision}, "
                 f"got {accept_decision})"
             )
+
+            if missing_permissions:
+                test_log.append(f"{base}: missing conditional permissions: {missing_permissions}")
+            if extra_permissions:
+                test_log.append(f"{base}: extra conditional permissions: {extra_permissions}")
+            if missing_prohibitions:
+                test_log.append(f"{base}: missing conditional prohibitions: {missing_prohibitions}")
+            if extra_prohibitions:
+                test_log.append(f"{base}: extra conditional prohibitions: {extra_prohibitions}")
 
     print("\nEvaluation Access Request tests category summary:")
     for category in sorted(category_stats.keys()):

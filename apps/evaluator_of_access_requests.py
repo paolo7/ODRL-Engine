@@ -838,7 +838,7 @@ def render_evaluation_notifications(payload):
         conditions = prohibition_match.get("conditions", []) + prohibition_match.get("constraints", [])
 
         # ----------------------------------------------------
-        # Determine colour / message
+        # Determine colour / messageF
         # ----------------------------------------------------
 
         if conditions:

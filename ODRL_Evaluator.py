@@ -386,81 +386,77 @@ def _reasoning_match(left_operand, value, right_operand_list, reasoning_expansio
     return False
 
 def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, null_conditions=None, reasoning_expansion=None):
+
     # ----------------------------------------
     # 0) LOGIC CONSTRAINT HANDLING
     # ----------------------------------------
     if (
-            isinstance(constraint, list)
-            and len(constraint) == 2
-            and isinstance(constraint[0], str)
-            and isinstance(constraint[1], list)
+        isinstance(constraint, list)
+        and len(constraint) == 2
+        and isinstance(constraint[0], str)
+        and isinstance(constraint[1], list)
     ):
         logic_op = constraint[0]
         subconstraints = constraint[1]
 
         results = []
-
+        projected_conditions = []
 
         for sub in subconstraints:
-            result = eval_constraint(row, rule, sub, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, null_conditions=None,reasoning_expansion=reasoning_expansion)
-            results.append(result)
+            if match_nulls:
+                sub_null_conditions = []
+                result = eval_constraint(row, rule, sub, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=match_nulls, null_conditions=sub_null_conditions, reasoning_expansion=reasoning_expansion)
+                results.append(result)
+                projected_conditions.extend(sub_null_conditions)
+            else:
+                result = eval_constraint(row, rule, sub, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, null_conditions=None, reasoning_expansion=reasoning_expansion)
+                results.append(result)
+                # ---- SHORT-CIRCUIT ----
+                if logic_op.endswith("or") and result is True:
+                    return True
+                if logic_op.endswith("and") and result is False:
+                    return False
+                if logic_op.endswith("andSequence") and result is False:
+                    return False
 
-            # ---- SHORT-CIRCUIT ----
-            if logic_op.endswith("or") and result:
-                return True
-            if logic_op.endswith("and") and not result:
-                return False
-            if logic_op.endswith("andSequence") and not result:
-                return False
+        # Build the partial expression in the same representation as
+        # the policy's internal logic constraints: [operator, children].
+        if match_nulls and projected_conditions:
+            if len(projected_conditions) == 1:
+                # Simplify logic expressions with only one condition inside
+                # as AND, OR and XOR mean the same on a list of constraints of length one.
+                partial_expression = projected_conditions[0]
+            else:
+                partial_expression = [
+                    logic_op,
+                    projected_conditions,
+                ]
+            if null_conditions is not None:
+                null_conditions.append(partial_expression)
 
-        # ---- FINAL EVALUATION ----
-        if logic_op.endswith("and") or logic_op.endswith("andSequence"):
-            return all(results)
+        # ----------------------------------------
+        # Evaluate the actual Boolean expression
+        # ----------------------------------------
+
+        if logic_op.endswith(("and", "andSequence")):
+            return False if False in results else (
+                None if None in results else True
+            )
 
         if logic_op.endswith("or"):
-            return any(results)
+            return True if True in results else (
+                None if None in results else False
+            )
 
         if logic_op.endswith("xone"):
-            return sum(results) == 1
+            true_count = results.count(True)
+            none_count = results.count(None)
 
-        # ---- RE-EVALUATE IF WE CAN MATCH NULLS ----
-        if match_nulls:
-            for sub in subconstraints:
-
-                sub_null_conditions = []
-                result = eval_constraint(row, rule, sub, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=match_nulls,
-                                         null_conditions=None,reasoning_expansion=reasoning_expansion)
-                results.append(result)
-
-                # ---- SHORT-CIRCUIT ----
-                if not sub_null_conditions:
-                    if logic_op.endswith("or") and result:
-                        if null_conditions is not None:
-                            null_conditions.append(constraint)
-                        return True
-                    if logic_op.endswith("and") and not result:
-                        return False
-                    if logic_op.endswith("andSequence") and not result:
-                        return False
-
-            # ---- FINAL EVALUATION WITH NULL MATCHES ----
-            if logic_op.endswith("and") or logic_op.endswith("andSequence"):
-                if all(results):
-                    if null_conditions is not None:
-                        null_conditions.append(constraint)
-                    return True
-
-            if logic_op.endswith("or"):
-                if any(results):
-                    if null_conditions is not None:
-                        null_conditions.append(constraint)
-                    return True
-
-            if logic_op.endswith("xone"):
-                if sum(results) == 1:
-                    if null_conditions is not None:
-                        null_conditions.append(constraint)
-                    return True
+            if true_count > 1:
+                return False
+            if none_count == 0:
+                return true_count == 1
+            return None
 
         return False
 
@@ -501,7 +497,7 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_null
                 # Missing access-request field is treated as null.
                 if null_conditions is not None:
                     null_conditions.append(constraint)
-                return True
+                return None
             else:
                 return False
 
@@ -513,7 +509,7 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_null
         if match_nulls:
             if null_conditions is not None:
                 null_conditions.append(constraint)
-            return True
+            return None
         else:
             return False
 
@@ -614,8 +610,16 @@ def eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, null_cond
         return False
 
     return all(
-        eval_constraint(row, rule, c, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=match_nulls,null_conditions=null_conditions, reasoning_expansion=reasoning_expansion)
-        for c in conditions
+        result for result in (
+            eval_constraint(
+                row, rule, c, OPS_MAP, FEATURE_TYPE_MAP,
+                match_nulls=match_nulls,
+                null_conditions=null_conditions,
+                reasoning_expansion=reasoning_expansion
+            )
+            for c in conditions
+        )
+        if result is not None
     )
 
 def initialise_evaluation_state(policy):
@@ -1272,7 +1276,7 @@ def evaluate_ODRL_access_request_on_dataframe(
             "of the unspecified details (null features) of your request were "
             "given certain values. Please see the evaluation details for more "
             "information on rules that matched subject to conditions. You might "
-            "want to specify those features better to gain a more precise decision."
+            "want to specify those features better to get a more precise decision."
         )
 
     # ---------------------------------------------------------
