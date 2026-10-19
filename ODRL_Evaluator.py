@@ -606,7 +606,9 @@ def eval_rule(row, rule, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, null_cond
     if not isinstance(rule, dict):
         return False
 
-    conditions = rule.get("conditions", [])
+    # this behaviour currently considers conditions just the same as constraints, but later the behaviour
+    # will be differentiated
+    conditions = rule.get("conditions", []) + rule.get("constraints", [])
  
     if not isinstance(conditions, list):
         return False
@@ -628,6 +630,7 @@ def initialise_evaluation_state(policy):
             "earliestMatch": None,
             "latestMatch": None,
             "conditions": rule.get("conditions", []),
+            "constraints": rule.get("constraints", []),
             "required": 0
         }
 
@@ -1184,12 +1187,12 @@ def evaluate_ODRL_access_request_on_dataframe(
     # any null / unspecified access-request features.
     # ---------------------------------------------------------
     full_match_permission = any(
-        len(permission.get("conditions", [])) == 0
+        len(permission.get("conditions", []) + permission.get("constraints", []) ) == 0
         for permission in permissions_matched
     )
 
     full_match_prohibition = any(
-        len(prohibition.get("conditions", [])) == 0
+        len(prohibition.get("conditions", []) + prohibition.get("constraints", [])) == 0
         for prohibition in prohibitions_matched
     )
 
@@ -1243,12 +1246,12 @@ def evaluate_ODRL_access_request_on_dataframe(
         )
 
     conditional_match_permission = any(
-        len(permission.get("conditions", [])) > 0
+        len(permission.get("conditions", []) + permission.get("constraints", [])) > 0
         for permission in permissions_matched
     )
 
     conditional_match_prohibition = any(
-        len(prohibition.get("conditions", [])) > 0
+        len(prohibition.get("conditions", []) + prohibition.get("constraints", [])) > 0
         for prohibition in prohibitions_matched
     )
 
@@ -1378,7 +1381,7 @@ def evaluate_ODRL_access_request_on_dataframe(
         # without requiring duties to be satisfied.
         for permission in permissions_matched:
 
-            conditions = permission.get("conditions", [])
+            conditions = permission.get("conditions", []) + permission.get("constraints", [])
             duties = permission.get("duties", [])
 
             if (
