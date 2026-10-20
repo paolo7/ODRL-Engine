@@ -20,7 +20,8 @@ but rules can override them if necessary.
 
 Unless disabled (disabling the `reasoning` flag in the evaluator functions, the OVAL evaluator will include reasoning.
 Included modes of reasoning are `odrl:includedIn` and `odrl:partOf`, these allow you to specify sub-actions, or 
-members of parties or assets. The evaluation functions can be configured to include a list of ontology files. Even if 
+members of parties or assets. Currently, this is limited to the action, assignee and target components of a rule, and
+do not affect Left Operands. The evaluation functions can be configured to include a list of ontology files. Even if 
 this list is empty, the ontologies considered will include the ODRL 2.2 ontology, and any ontological information in the 
 policy itself. The latter is a convenience feature to be able to process both a policy and an ontology with a single RDF file.
 For example, a policy could also contain information about new actions, and which super-actions they are included in, and
@@ -84,6 +85,23 @@ string `apple`, and the third the IRI `https://example.org/apple`
 ```
 "https://example.org/apple https://example.org/orange https://example.org/tree"
 ```
+
+#### Treatment of Null Values
+
+The formal semantics that OVAL uses treats null values as values that make every constraint evaluation fail. A null
+value is not interpreted as a missing value / an unkonwn value, but as a separate value different from the normal domain
+of the Left Operand or constraint component.
+
+In Access Control mode, if a match with a rule is not found, the evaluator will attempt to match it treating the null
+value as an unknown. This time, an unknown value can match any constraint. The report will thus contain information on
+which rules were not matched, but could potentially match if some null values were to be specified. 
+
+Note 1: A non-intuitive special case happens when using this feature in conjunction with a XONE logic constraint, as a null value being specified 
+could actually make a rule that matched, not match anymore (which does not happen for the other constraint types). 
+
+Note 2: When reporting on conditions on null values that would cause a rule to match, OVAL does not check whether such
+expression of conditions is satisfiable. For example, it could report that a permission would match if the "price" LeftOperand
+is > than 10 and also < 5, even though it is impossible to satisfy both conditions in the same request.
 
 #### Guides List
 

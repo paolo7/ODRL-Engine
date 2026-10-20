@@ -403,6 +403,7 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_null
         projected_conditions = []
 
         for sub in subconstraints:
+            result = None
             if match_nulls:
                 sub_null_conditions = []
                 result = eval_constraint(row, rule, sub, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=match_nulls, null_conditions=sub_null_conditions, reasoning_expansion=reasoning_expansion)
@@ -411,13 +412,13 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_null
             else:
                 result = eval_constraint(row, rule, sub, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, null_conditions=None, reasoning_expansion=reasoning_expansion)
                 results.append(result)
-                # ---- SHORT-CIRCUIT ----
-                if logic_op.endswith("or") and result is True:
-                    return True
-                if logic_op.endswith("and") and result is False:
-                    return False
-                if logic_op.endswith("andSequence") and result is False:
-                    return False
+            # ---- SHORT-CIRCUIT ----
+            if logic_op.endswith("or") and result is True:
+                return True
+            if logic_op.endswith("and") and result is False:
+                return False
+            if logic_op.endswith("andSequence") and result is False:
+                return False
 
         # Build the partial expression in the same representation as
         # the policy's internal logic constraints: [operator, children].
