@@ -441,3 +441,19 @@ pe:consequenceOrRemedy a sh:NodeShape ;
         sh:maxCount 0 ;
         sh:message "A consequence or remedy must not have an outgoing odrl:remedy relation."
     ] .
+
+pe:noConstraintsInComponents a sh:NodeShape ;
+    sh:targetClass odrl:Action, odrl:Party, odrl:Asset ;
+    sh:property [
+        sh:path odrl:constraint ;
+        sh:maxCount 0 ;
+        sh:message "An action, party or asset cannot have a constraint, it should use a refinement."
+    ] .
+
+pe:noRefinementsInRulesOrPolicies a sh:NodeShape ;
+    sh:targetClass odrl:Policy, odrl:Rule ;
+    sh:property [
+        sh:path odrl:refinement ;
+        sh:maxCount 0 ;
+        sh:message "A policy cannot have a refinement, it should use constraints."
+    ] .
