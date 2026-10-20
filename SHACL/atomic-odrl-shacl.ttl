@@ -379,8 +379,8 @@ pe:noConstraintsInComponents a sh:NodeShape ;
         sh:message "An action, party or asset cannot have a constraint, it should use a refinement."
     ] .
 
-pe:noRefinementsInRules a sh:NodeShape ;
-    sh:targetClass odrl:Policy ;
+pe:noRefinementsInRulesOrPolicies a sh:NodeShape ;
+    sh:targetClass odrl:Policy, odrl:Rule ;
     sh:property [
         sh:path odrl:refinement ;
         sh:maxCount 0 ;
