@@ -1,4 +1,4 @@
-# Test case created by https://github.com/matthiasautrata
+# Test case suggested by https://github.com/matthiasautrata
 
 @prefix odrl: <http://www.w3.org/ns/odrl/2/> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
