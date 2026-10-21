@@ -1,0 +1,26 @@
+@prefix dips: <https://dips.soton.ac.uk/test-ns/> .
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+dips:download a odrl:Action, skos:Concept ;
+    rdfs:label "Download" ;
+    rdfs:comment "To download a dataset." ;
+    odrl:includedIn odrl:use .
+
+dips:3d_print a odrl:Action, skos:Concept ;
+    rdfs:label "3D Print" ;
+    rdfs:comment "Print on a 3D medium." ;
+    odrl:includedIn odrl:print .
+
+dips:2d_print a odrl:Action, skos:Concept ;
+    rdfs:label "2D Print" ;
+    rdfs:comment "Print on a 2D medium." ;
+    odrl:includedIn odrl:print .
+
+dips:print_on_paper a odrl:Action, skos:Concept ;
+    rdfs:label "Print on Paper" ;
+    rdfs:comment "Print on a sheet of paper." ;
+    odrl:includedIn dips:2d_print .
+
+

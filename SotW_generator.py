@@ -245,7 +245,7 @@ def generate_pd_state_of_the_world_from_policies(
             rows.append(row)
         dataframe = pd.DataFrame(rows, columns=feature_iris)
 
-        chosen_validity_achieved = ODRL_Evaluator.evaluate_ODRL_on_df(odrl_graph,dataframe)[1] == valid
+        chosen_validity_achieved = ODRL_Evaluator.evaluate_ODRL_graph_on_dataframe(odrl_graph,dataframe)[1] == valid
 
     return dataframe, chosen_validity_achieved
 

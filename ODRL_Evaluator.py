@@ -2,7 +2,7 @@ from io import StringIO
 from rdflib import Graph, URIRef
 
 import rdf_utils
-from rdf_utils import extract_rule_list_from_policy, extract_features_list_from_policy, decompose_in_set
+from rdf_utils import extract_rule_list_from_policy, extract_features_list_from_policy, decompose_in_set, extract_profiles, resolve_graphs_from_profiles
 import pandas as pd
 import os
 import shutil
@@ -185,8 +185,12 @@ def _expand_uris(graph, uris, predicate):
 
     return expanded
 
-
+# core function to extract inferences from a number of local ontology files and other ontology graphs
+# if no local ontology files are specified, the default ODRL22.ttl file is loaded
 def parse_ontology(policy, ontology_files=None, ontology_graphs=None):
+
+    if len(ontology_files) == 0:
+        ontology_files.append(os.path.join("ODRL", "ODRL22.ttl"))
 
     if isinstance(ontology_files, (str, os.PathLike)):
         ontology_files = [ontology_files]
@@ -266,7 +270,7 @@ def parse_ontology(policy, ontology_files=None, ontology_graphs=None):
         "expanded_assets": expanded_assets
     }
 
-
+# Warning: this function has not been tested in the latest version of OVAL
 def evaluate_ODRL_from_files_merge_policies(policy_files, SotW_file):
     graph_rules = []
     features = []
@@ -700,7 +704,16 @@ def check_match(row, rule_state, OPS_MAP, FEATURE_TYPE_MAP, match_nulls=False, n
 
     return False
 
-def evaluate_ODRL_on_df(ODRL_graph, df, evaluation_state=None):
+# Helper monitoring evaluation function when the inputs are an ODRL rdflib graph and a dataframe
+def evaluate_ODRL_graph_on_dataframe(
+        ODRL_graph,
+        df,
+        evaluation_state=None,
+        reasoning=True,
+        ontology_files=[],
+        ontology_graphs=[],
+        resolve_remote_ontologies=True
+):
     features = (
         extract_features_list_from_policy(
             ODRL_graph
@@ -713,6 +726,11 @@ def evaluate_ODRL_on_df(ODRL_graph, df, evaluation_state=None):
         )
     )
 
+    if reasoning:
+        ontology_graphs.append(ODRL_graph)
+        if resolve_remote_ontologies:
+            ontology_graphs.extend(resolve_graphs_from_profiles(extract_profiles(ODRL_graph)))
+
     feature_type_map = {
         f["iri"]: f["type"]
         for f in features
@@ -721,16 +739,28 @@ def evaluate_ODRL_on_df(ODRL_graph, df, evaluation_state=None):
     return evaluate_ODRL_on_dataframe(
         policies[0],
         df,
-        feature_type_map
+        feature_type_map,
+        evaluation_state=evaluation_state,
+        reasoning=reasoning,
+        ontology_files=ontology_files,
+        ontology_graphs=ontology_graphs
     )
 
+# This is the core monitoring evaluation function
+# it evaluates an ODRL policy in the internal OVAL data model on a dataframe
+def evaluate_ODRL_on_dataframe(
+        policy,
+        df,
+        FEATURE_TYPE_MAP,
+        evaluation_state=None,
+        reasoning=True,
+        ontology_files=[],
+        ontology_graphs=[],
+        precomputed_reasoning_expansion=None # a precomputed reasoning expansion
+):
 
-def evaluate_ODRL_on_dataframe(policy, df, FEATURE_TYPE_MAP, evaluation_state=None,reasoning=True, ontology_files=[], ontology_graphs=[]):
-
-    reasoning_expansion = None
-    if reasoning:
-        if len(ontology_files) == 0:
-            ontology_files.append(os.path.join("ODRL", "ODRL22.ttl"))
+    reasoning_expansion = precomputed_reasoning_expansion
+    if reasoning_expansion is None and reasoning:
         reasoning_expansion = parse_ontology(policy, ontology_files,ontology_graphs)
 
     if isinstance(policy, list):
@@ -872,7 +902,16 @@ def evaluate_ODRL_on_dataframe(policy, df, FEATURE_TYPE_MAP, evaluation_state=No
         unfulfilled_remedies
     )
 
-def evaluate_ODRL_from_files(policy_file, SotW_file, state_file=None, normalise=False,reasoning=True,ontology_files=[], ontology_graphs=[]):
+def evaluate_ODRL_from_files(
+        policy_file,
+        SotW_file,
+        state_file=None,
+        normalise=False,
+        reasoning=True,
+        ontology_files=[],
+        ontology_graphs=[],
+        resolve_remote_ontologies=True
+):
     graph = rdf_utils.load(policy_file)[0]
     if normalise:
         graph = rdf_utils.load_normalise(policy_file)[0]
@@ -890,6 +929,8 @@ def evaluate_ODRL_from_files(policy_file, SotW_file, state_file=None, normalise=
 
     if reasoning:
         ontology_graphs.append(graph)
+        if resolve_remote_ontologies:
+            ontology_graphs.extend(resolve_graphs_from_profiles(extract_profiles(graph)))
     return evaluate_ODRL_on_dataframe(policies[0], df, FEATURE_TYPE_MAP, evaluation_state,reasoning=reasoning,ontology_files=ontology_files,ontology_graphs=ontology_graphs)
 
 def evaluate_ODRL_from_strings(
@@ -898,7 +939,8 @@ def evaluate_ODRL_from_strings(
     evaluation_state=None,
     reasoning=True,
     ontology_files=[],
-    ontology_graphs=[]
+    ontology_graphs=[],
+    resolve_remote_ontologies=True
 ):
     graph, _ = rdf_utils.parse_string_to_graph(
         policy_text
@@ -930,6 +972,8 @@ def evaluate_ODRL_from_strings(
 
     if reasoning:
         ontology_graphs.append(graph)
+        if resolve_remote_ontologies:
+            ontology_graphs.extend(resolve_graphs_from_profiles(extract_profiles(graph)))
 
     return evaluate_ODRL_on_dataframe(
         policies[0],
@@ -941,6 +985,8 @@ def evaluate_ODRL_from_strings(
         ontology_graphs=ontology_graphs
     )
 
+# Core access request evaluation function. It takes a policy in the internal OVAL data model and a dictionary
+# as the access request
 def evaluate_ODRL_access_request_on_dataframe(
     access_request,
     policy,
@@ -963,7 +1009,7 @@ def evaluate_ODRL_access_request_on_dataframe(
         the State-of-the-World dataframe column names.
 
     policy : dict or list
-        ODRL policy, in the same format expected by
+        ODRL policy, in the internal data format in the same format expected by
         evaluate_ODRL_on_dataframe() / initialise_evaluation_state().
 
     df : pandas.DataFrame or None
@@ -1009,8 +1055,6 @@ def evaluate_ODRL_access_request_on_dataframe(
 
     reasoning_expansion = None
     if reasoning:
-        if len(ontology_files) == 0:
-            ontology_files.append(os.path.join("ODRL", "ODRL22.ttl"))
         reasoning_expansion = parse_ontology(policy,ontology_files,ontology_graphs)
 
     policy_for_conflict = (
@@ -1041,7 +1085,8 @@ def evaluate_ODRL_access_request_on_dataframe(
                 FEATURE_TYPE_MAP,
                 reasoning=reasoning,
                 ontology_graphs=ontology_graphs,
-                ontology_files=ontology_files
+                ontology_files=ontology_files,
+                precomputed_reasoning_expansion=reasoning_expansion
             )
             evaluation_state = result[0]
         else:
@@ -1469,7 +1514,7 @@ def evaluate_ODRL_access_request_on_dataframe(
         "accept_explanation": accept_explanation
     }
 
-
+# Helper access request evaluation function when the Policy and the Request objects are passed directly as strings
 def evaluate_ODRL_access_request_from_string(
     access_request_string,
     policy_string,
@@ -1479,7 +1524,8 @@ def evaluate_ODRL_access_request_from_string(
     semantics_by_default=-1,
     reasoning=True,
     ontology_files=[],
-    ontology_graphs=[]
+    ontology_graphs=[],
+    resolve_remote_ontologies=True
 
 ):
 
@@ -1502,6 +1548,8 @@ def evaluate_ODRL_access_request_from_string(
 
     if reasoning:
         ontology_graphs.append(graph)
+        if resolve_remote_ontologies:
+            ontology_graphs.extend(resolve_graphs_from_profiles(extract_profiles(graph)))
 
     policies = extract_rule_list_from_policy(graph)
     features = extract_features_list_from_policy(graph)
@@ -1553,7 +1601,7 @@ def evaluate_ODRL_access_request_from_string(
         ontology_graphs=ontology_graphs
     )
 
-
+# Helper access request evaluation function when the Policy and the Request objects are files
 def evaluate_ODRL_access_request_from_files(
     access_request_file,
     policy_file,
@@ -1563,7 +1611,8 @@ def evaluate_ODRL_access_request_from_files(
     semantics_by_default=-1,
     reasoning=True,
     ontology_files=[],
-    ontology_graphs=[]
+    ontology_graphs=[],
+    resolve_remote_ontologies=True
 ):
 
     # ---------------------------------------------------------
@@ -1584,6 +1633,8 @@ def evaluate_ODRL_access_request_from_files(
 
     if reasoning:
         ontology_graphs.append(graph)
+        if resolve_remote_ontologies:
+            ontology_graphs.extend(resolve_graphs_from_profiles(extract_profiles(graph)))
 
     policies = extract_rule_list_from_policy(graph)
     features = extract_features_list_from_policy(graph)
@@ -1636,9 +1687,9 @@ def evaluate_ODRL_access_request_from_files(
         ontology_graphs=ontology_graphs
     )
 
-
+# Helper monitoring evaluation function for streaming when the Policy and State of the World object are files
 def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW=1, normalise=False, reasoning=True,
-    ontology_files=[], ontology_graphs=[]):
+    ontology_files=[], ontology_graphs=[], resolve_remote_ontologies=True):
 
     STREAM_DIR = "stream_simulation"
 
@@ -1655,6 +1706,8 @@ def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW
     graph = rdf_utils.load(policy_file)[0]
     if normalise:
         graph = rdf_utils.load_normalise(policy_file)[0]
+    if reasoning and resolve_remote_ontologies:
+        ontology_graphs.extend(resolve_graphs_from_profiles(extract_profiles(graph)))
 
     policies = extract_rule_list_from_policy(graph)
     features = extract_features_list_from_policy(graph)
@@ -1708,7 +1761,8 @@ def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW
             normalise=normalise,
             reasoning=reasoning,
             ontology_files=ontology_files,
-            ontology_graphs=ontology_graphs
+            ontology_graphs=ontology_graphs,
+            resolve_remote_ontologies=False
         )
 
         # Save updated state

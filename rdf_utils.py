@@ -1,3 +1,4 @@
+import requests
 import rdflib
 from rdflib import Graph
 from rdflib.namespace import RDF
@@ -9,6 +10,7 @@ import os, sys
 import io
 import pandas as pd
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 import policy_normalisation_comparison.GraphParser
 
@@ -780,3 +782,122 @@ def extract_rule_list_from_policy(odrl_graph: rdflib.Graph):
 def extract_rule_list_from_policy_from_file(file_path):
     g = load(file_path)[0]
     return extract_rule_list_from_policy(g)
+
+# Extracts all profiles in all of the policies in the graph.
+def extract_profiles(odrl_graph: rdflib.Graph) -> list[str]:
+    return sorted({
+        str(profile)
+        for profile in odrl_graph.objects(predicate=ODRL.profile)
+    })
+
+def extract_profiles_from_file(file_path):
+    g = load(file_path)[0]
+    return extract_profiles(g)
+
+def load_remote(url, timeout=30):
+    """
+    Load an RDF graph from a remote URL using HTTP content negotiation.
+    """
+    rdf_formats = {
+        "application/rdf+xml": "xml",
+        "text/turtle": "turtle",
+        "application/ld+json": "json-ld",
+        "application/n-triples": "nt",
+        "application/n-quads": "nquads",
+        "application/trig": "trig",
+        "application/trix": "trix",
+        "text/n3": "n3",
+    }
+    accept_header = ", ".join([
+        "text/turtle",
+        "application/ld+json",
+        "application/rdf+xml",
+        "application/n-triples",
+        "application/n-quads",
+        "application/trig",
+        "application/trix",
+        "text/n3",
+        "application/octet-stream;q=0.5",
+        "*/*;q=0.1",
+    ])
+
+    response = requests.get(
+        url,
+        headers={
+            "Accept": accept_header,
+            "User-Agent": "ODRL-RDF-Loader/1.0",
+        },
+        timeout=timeout,
+    )
+    response.raise_for_status()
+
+    content = response.content
+    content_type = (
+        response.headers.get("Content-Type", "")
+        .split(";", 1)[0]
+        .strip()
+        .lower()
+    )
+
+    # Try the serialization indicated by the server first.
+    preferred_format = rdf_formats.get(content_type)
+
+    formats_to_try = []
+    if preferred_format:
+        formats_to_try.append(preferred_format)
+
+    # Fall back to other common RDF serializations.
+    formats_to_try.extend([
+        fmt for fmt in [
+            "xml",
+            "json-ld",
+            "turtle",
+            "nt",
+            "nquads",
+            "trig",
+            "trix",
+            "n3",
+        ]
+        if fmt not in formats_to_try
+    ])
+
+    for rdf_format in formats_to_try:
+        graph = Graph()
+        try:
+            graph.parse(
+                data=content,
+                format=rdf_format,
+                publicID=response.url,
+            )
+
+            if len(graph) > 0:
+                return graph
+
+        except Exception:
+            continue
+
+    return None
+
+# Given a list of profiles URIs, try to resolve them to obtain the ontology
+def resolve_graphs_from_profiles(profiles):
+
+    def is_example_domain(profile: str) -> bool:
+        hostname = (urlparse(profile).hostname or "").lower()
+        labels = hostname.split(".")
+        # Exclude example.<tld> and any of its subdomains.
+        return len(labels) >= 2 and labels[-2] == "example"
+
+    graphs = []
+
+    for profile in sorted(set(profiles)):
+        if is_example_domain(profile):
+            continue
+        try:
+            graph = load_remote(profile)
+            if graph is not None:
+                graphs.append(graph)
+        except requests.RequestException as e:
+            continue
+            #print(f"Could not load profile {profile}: {e}", file=sys.stderr)
+
+    return graphs
