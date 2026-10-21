@@ -1,0 +1,54 @@
+[
+  {
+    "@id": "http://www.w3.org/2004/02/skos/core#Concept"
+  },
+  {
+    "@id": "http://www.w3.org/ns/odrl/2/Party"
+  },
+  {
+    "@id": "https://dips.soton.ac.uk/test-ns/Anne",
+    "@type": [
+      "http://www.w3.org/ns/odrl/2/Party",
+      "http://www.w3.org/2004/02/skos/core#Concept"
+    ],
+    "http://www.w3.org/2000/01/rdf-schema#label": [
+      {
+        "@value": "Anne A"
+      }
+    ],
+    "http://www.w3.org/ns/odrl/2/partOf": [
+      {
+        "@id": "https://dips.soton.ac.uk/test-ns/DIPS_Development_Team"
+      }
+    ]
+  },
+  {
+    "@id": "https://dips.soton.ac.uk/test-ns/Bob",
+    "@type": [
+      "http://www.w3.org/ns/odrl/2/Party",
+      "http://www.w3.org/2004/02/skos/core#Concept"
+    ],
+    "http://www.w3.org/2000/01/rdf-schema#label": [
+      {
+        "@value": "Bob B"
+      }
+    ],
+    "http://www.w3.org/ns/odrl/2/partOf": [
+      {
+        "@id": "https://dips.soton.ac.uk/test-ns/DIPS_Development_Team"
+      }
+    ]
+  },
+  {
+    "@id": "https://dips.soton.ac.uk/test-ns/DIPS_Development_Team",
+    "@type": [
+      "http://www.w3.org/ns/odrl/2/Party",
+      "http://www.w3.org/2004/02/skos/core#Concept"
+    ],
+    "http://www.w3.org/2000/01/rdf-schema#label": [
+      {
+        "@value": "DIPS Development Team"
+      }
+    ]
+  }
+]

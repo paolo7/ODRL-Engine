@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:odrl="http://www.w3.org/ns/odrl/2/"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+
+  <odrl:Asset rdf:about="https://dips.soton.ac.uk/test-ns/salary_data">
+    <rdf:type rdf:resource="http://www.w3.org/2004/02/skos/core#Concept"/>
+    <rdfs:label>Salary Data</rdfs:label>
+    <odrl:partOf rdf:resource="https://dips.soton.ac.uk/test-ns/HR_data"/>
+  </odrl:Asset>
+
+  <odrl:Asset rdf:about="https://dips.soton.ac.uk/test-ns/sick_leave_data">
+    <rdf:type rdf:resource="http://www.w3.org/2004/02/skos/core#Concept"/>
+    <rdfs:label>Sick Leave Data</rdfs:label>
+    <odrl:partOf rdf:resource="https://dips.soton.ac.uk/test-ns/HR_data"/>
+  </odrl:Asset>
+
+  <odrl:Asset rdf:about="https://dips.soton.ac.uk/test-ns/HR_data">
+    <rdf:type rdf:resource="http://www.w3.org/2004/02/skos/core#Concept"/>
+    <rdfs:label>HR Data</rdfs:label>
+  </odrl:Asset>
+
+</rdf:RDF>

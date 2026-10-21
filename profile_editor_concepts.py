@@ -15,7 +15,8 @@ concepts = [
             {
                 "type": "classes",
                 "class_list": [
-                    "odrl:Action"
+                    "odrl:Action",
+                    "skos:Concept"
                 ],
             },
             {
@@ -84,7 +85,8 @@ concepts = [
             {
                 "type": "classes",
                 "class_list": [
-                    "odrl:Party"
+                    "odrl:Party",
+                    "skos:Concept"
                 ],
             },
             {
@@ -153,7 +155,8 @@ concepts = [
             {
                 "type": "classes",
                 "class_list": [
-                    "odrl:Asset"
+                    "odrl:Asset",
+                    "skos:Concept"
                 ],
             },
             {
@@ -222,7 +225,8 @@ concepts = [
             {
                 "type": "classes",
                 "class_list": [
-                    "odrl:LeftOperand"
+                    "odrl:LeftOperand",
+                    "skos:Concept"
                 ],
             },
             {

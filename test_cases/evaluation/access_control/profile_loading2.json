@@ -1,0 +1,4 @@
+{
+  "http://www.w3.org/ns/odrl/2/Action": "https://dips.soton.ac.uk/test-ns/print_on_paper",
+  "http://www.w3.org/ns/odrl/2/Asset": "http://example.com/asset:9898.movie"
+}

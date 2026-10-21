@@ -710,10 +710,13 @@ def evaluate_ODRL_graph_on_dataframe(
         df,
         evaluation_state=None,
         reasoning=True,
-        ontology_files=[],
-        ontology_graphs=[],
+        ontology_files=None,
+        ontology_graphs=None,
         resolve_remote_ontologies=True
-):
+    ):
+    ontology_files = list(ontology_files or [])
+    ontology_graphs = list(ontology_graphs or [])
+
     features = (
         extract_features_list_from_policy(
             ODRL_graph
@@ -754,10 +757,12 @@ def evaluate_ODRL_on_dataframe(
         FEATURE_TYPE_MAP,
         evaluation_state=None,
         reasoning=True,
-        ontology_files=[],
-        ontology_graphs=[],
+        ontology_files=None,
+        ontology_graphs=None,
         precomputed_reasoning_expansion=None # a precomputed reasoning expansion
-):
+    ):
+    ontology_files = list(ontology_files or [])
+    ontology_graphs = list(ontology_graphs or [])
 
     reasoning_expansion = precomputed_reasoning_expansion
     if reasoning_expansion is None and reasoning:
@@ -908,10 +913,13 @@ def evaluate_ODRL_from_files(
         state_file=None,
         normalise=False,
         reasoning=True,
-        ontology_files=[],
-        ontology_graphs=[],
+        ontology_files=None,
+        ontology_graphs=None,
         resolve_remote_ontologies=True
-):
+    ):
+    ontology_files = list(ontology_files or [])
+    ontology_graphs = list(ontology_graphs or [])
+
     graph = rdf_utils.load(policy_file)[0]
     if normalise:
         graph = rdf_utils.load_normalise(policy_file)[0]
@@ -938,10 +946,13 @@ def evaluate_ODRL_from_strings(
     sotw_csv,
     evaluation_state=None,
     reasoning=True,
-    ontology_files=[],
-    ontology_graphs=[],
+    ontology_files=None,
+    ontology_graphs=None,
     resolve_remote_ontologies=True
-):
+    ):
+    ontology_files = list(ontology_files or [])
+    ontology_graphs = list(ontology_graphs or [])
+
     graph, _ = rdf_utils.parse_string_to_graph(
         policy_text
     )
@@ -996,9 +1007,9 @@ def evaluate_ODRL_access_request_on_dataframe(
     semantics_for_duties=1,
     semantics_by_default=-1,
     reasoning=True,
-    ontology_files=[],
-    ontology_graphs=[]
-):
+    ontology_files=None,
+    ontology_graphs=None
+    ):
     """
     Evaluate a prospective access request against an ODRL policy.
 
@@ -1052,6 +1063,8 @@ def evaluate_ODRL_access_request_on_dataframe(
             ]
         }
     """
+    ontology_files = list(ontology_files or [])
+    ontology_graphs = list(ontology_graphs or [])
 
     reasoning_expansion = None
     if reasoning:
@@ -1523,11 +1536,12 @@ def evaluate_ODRL_access_request_from_string(
     semantics_for_duties=1,
     semantics_by_default=-1,
     reasoning=True,
-    ontology_files=[],
-    ontology_graphs=[],
+    ontology_files=None,
+    ontology_graphs=None,
     resolve_remote_ontologies=True
-
-):
+    ):
+    ontology_files = list(ontology_files or [])
+    ontology_graphs = list(ontology_graphs or [])
 
     # ---------------------------------------------------------
     # 1) Parse access request
@@ -1610,10 +1624,12 @@ def evaluate_ODRL_access_request_from_files(
     semantics_for_duties=1,
     semantics_by_default=-1,
     reasoning=True,
-    ontology_files=[],
-    ontology_graphs=[],
+    ontology_files=None,
+    ontology_graphs=None,
     resolve_remote_ontologies=True
-):
+    ):
+    ontology_files = list(ontology_files or [])
+    ontology_graphs = list(ontology_graphs or [])
 
     # ---------------------------------------------------------
     # 1) Load access request
@@ -1688,8 +1704,18 @@ def evaluate_ODRL_access_request_from_files(
     )
 
 # Helper monitoring evaluation function for streaming when the Policy and State of the World object are files
-def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW=1, normalise=False, reasoning=True,
-    ontology_files=[], ontology_graphs=[], resolve_remote_ontologies=True):
+def evaluate_ODRL_from_files_streaming(
+        policy_file,
+        SotW_file,
+        max_rows_per_SotW=1,
+        normalise=False,
+        reasoning=True,
+        ontology_files=None,
+        ontology_graphs=None,
+        resolve_remote_ontologies=True
+    ):
+    ontology_files = list(ontology_files or [])
+    ontology_graphs = list(ontology_graphs or [])
 
     STREAM_DIR = "stream_simulation"
 
@@ -1706,8 +1732,10 @@ def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW
     graph = rdf_utils.load(policy_file)[0]
     if normalise:
         graph = rdf_utils.load_normalise(policy_file)[0]
-    if reasoning and resolve_remote_ontologies:
-        ontology_graphs.extend(resolve_graphs_from_profiles(extract_profiles(graph)))
+    if reasoning:
+        ontology_graphs.append(graph)
+        if resolve_remote_ontologies:
+            ontology_graphs.extend(resolve_graphs_from_profiles(extract_profiles(graph)))
 
     policies = extract_rule_list_from_policy(graph)
     features = extract_features_list_from_policy(graph)
@@ -1785,7 +1813,5 @@ def evaluate_ODRL_from_files_streaming(policy_file, SotW_file, max_rows_per_SotW
 #print(result)
 
 #access_request_result = evaluate_ODRL_access_request_from_string(
-#    """
-#  """
 #)
 #print(access_request_result)

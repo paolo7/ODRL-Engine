@@ -1,0 +1,9 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+
+<http://example.com/policy:1010>
+  a odrl:Set ;
+  odrl:permission [
+    odrl:action odrl:print ;
+    odrl:target <http://example.com/asset:9898.movie>
+  ] ;
+  odrl:profile <https://raw.githubusercontent.comWRONG/DIPS-ToolsWRONG/ODRL-Engine/refs/heads/main/test_cases/test_ontologies/ont_action_subtypes.ttl> .

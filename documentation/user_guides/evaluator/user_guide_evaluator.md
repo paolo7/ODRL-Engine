@@ -21,9 +21,15 @@ but rules can override them if necessary.
 Unless disabled (disabling the `reasoning` flag in the evaluator functions, the OVAL evaluator will include reasoning.
 Included modes of reasoning are `odrl:includedIn` and `odrl:partOf`, these allow you to specify sub-actions, or 
 members of parties or assets. Currently, this is limited to the action, assignee and target components of a rule, and
-do not affect Left Operands. The evaluation functions can be configured to include a list of ontology files. Even if 
-this list is empty, the ontologies considered will include the ODRL 2.2 ontology, and any ontological information in the 
-policy itself. The latter is a convenience feature to be able to process both a policy and an ontology with a single RDF file.
+do not affect Left Operands. 
+
+The main mechanism to include ontologies in the evaluation is to define them as profiles of the policy. For each profile
+URL X that a policy has, the default behaviour of OVAL is to try to look for resource X on the web and, if it resolves as
+an ontology, include it in the evaluation (see test cases starting with name `profile_loading` for examples). Ontologies
+can also be specified as a list of local files to load, or rdflib graph objects. If no local file is specified
+OVAL will load the ODRL 2.2 profile by default. 
+
+Any ontological information in the policy itself will also be considered. This is a convenience feature to be able to process both a policy and an ontology with a single RDF file.
 For example, a policy could also contain information about new actions, and which super-actions they are included in, and
 which parties or assets are part of collections.
 

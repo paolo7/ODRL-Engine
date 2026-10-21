@@ -794,7 +794,7 @@ def extract_profiles_from_file(file_path):
     g = load(file_path)[0]
     return extract_profiles(g)
 
-def load_remote(url, timeout=30):
+def load_remote(url, timeout=5):
     """
     Load an RDF graph from a remote URL using HTTP content negotiation.
     """
