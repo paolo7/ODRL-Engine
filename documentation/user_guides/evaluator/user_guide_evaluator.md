@@ -5,6 +5,8 @@ These guides explains how to use the OVAL evaluator. The main inputs for the Eva
 * A State of the World CSV file (described below)
 * Optionally, an Evaluation State file (described below)
 
+Several features, like reasoning and dynamic profile/ontology loading can be disabled, if not required, to increase performance.
+
 #### Support for non-atomic ODRL Policies
 
 The evaluator can ingest [non-atomic ODRL Policies](https://www.w3.org/TR/odrl-model/#composition), with the following semantics:

@@ -1,0 +1,4 @@
+expected_accept_decision=False
+semantics_for_duties=1
+semantics_by_default=-1
+test_description=should not be allowed as one profile is missing to infer the parties are part of the permitted one

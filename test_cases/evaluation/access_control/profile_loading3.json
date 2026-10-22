@@ -1,0 +1,5 @@
+{
+  "http://www.w3.org/ns/odrl/2/Action": "https://dips.soton.ac.uk/test-ns/3d_print",
+  "http://www.w3.org/ns/odrl/2/Asset": "https://dips.soton.ac.uk/test-ns/sick_leave_data",
+    "http://www.w3.org/ns/odrl/2/Party": "https://dips.soton.ac.uk/test-ns/Bob"
+}

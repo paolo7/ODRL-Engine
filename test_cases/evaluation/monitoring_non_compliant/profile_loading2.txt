@@ -1,0 +1,2 @@
+should not be compliant as one profile is missing to infer the assets to be subtypes of the permitted one
+profile_loading

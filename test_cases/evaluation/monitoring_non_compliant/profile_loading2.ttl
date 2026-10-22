@@ -1,0 +1,11 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+
+<http://example.com/policy:1010>
+  a odrl:Agreement ;
+  odrl:permission [
+    odrl:action odrl:print ;
+    odrl:target <https://dips.soton.ac.uk/test-ns/HR_data> ;
+	odrl:assignee <https://dips.soton.ac.uk/test-ns/DIPS_Development_Team> ;
+	odrl:assigner <https://dips.soton.ac.uk/test-ns/HR_Department> ;
+  ] ;
+  odrl:profile <https://raw.githubusercontent.com/DIPS-Tools/ODRL-Engine/refs/heads/main/test_cases/test_ontologies/ont_action_subtypes.ttl>, <https://raw.githubusercontent.com/DIPS-Tools/ODRL-Engine/refs/heads/main/test_cases/test_ontologies/ont_party_subtypes.jsonld>  .

@@ -1,0 +1,5 @@
+expected_accept_decision=True
+semantics_for_duties=1
+semantics_by_default=-1
+test_description=should be allowed as when the three profiles are loaded, the action, asset and party in the request can be inferred to be subtypes of the permitted components
+test_tag=profile_loading

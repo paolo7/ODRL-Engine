@@ -1,0 +1,2 @@
+should be compliant as when the three profiles are loaded, the action, asset and party in the events can be inferred to be subtypes of the permitted components
+profile_loading
