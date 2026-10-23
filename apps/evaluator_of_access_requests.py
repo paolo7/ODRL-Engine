@@ -2393,8 +2393,8 @@ if st.session_state.evaluation_result_text:
             outcome_css_class = (
                 "odrl-outcome odrl-outcome-unknown"
             )
-            outcome_icon = "❓"
-            outcome_text = "Access Granted (conditionally)"
+            outcome_icon = "⚠️"
+            outcome_text = "Access Granted Conditionally"
         else:
             outcome_css_class = (
                 "odrl-outcome odrl-outcome-granted"
