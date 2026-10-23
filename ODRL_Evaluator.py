@@ -1484,7 +1484,7 @@ def evaluate_ODRL_access_request_on_dataframe(
                 "Your request only matched a permission subject to duties. "
                 "Since there is no evidence that such duties have been "
                 "satisfied in the event log in the State of the World, "
-                "the access request is granted on the promise that the "
+                "the access request is granted conditionally on the promise that the "
                 "required duties will be fulfilled before the requested "
                 "action is performed"
             )

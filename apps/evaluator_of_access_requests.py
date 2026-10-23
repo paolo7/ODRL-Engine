@@ -1799,7 +1799,7 @@ with col_right:
     st.subheader("Access Request Form")
 
     generate_form = st.button(
-        "Generate Access Request Form",
+        "Create Access Request Form",
         use_container_width=True
     )
 
@@ -2350,12 +2350,58 @@ if st.session_state.evaluation_result_text:
 
     if accept_decision is True:
 
-        outcome_css_class = (
-            "odrl-outcome odrl-outcome-granted"
+        result_payload = json.loads(
+            st.session_state.evaluation_result_text
         )
 
-        outcome_icon = "✅"
-        outcome_text = "Request Granted"
+        permissions = result_payload.get(
+            "permissions_matched", []
+        )
+
+        prohibitions = result_payload.get(
+            "prohibitions_matched", []
+        )
+
+        has_permission_duties = any(
+            bool(permission.get("duties", []))
+            for permission in permissions
+        )
+
+        has_permission_conditions = any(
+            bool(
+                permission.get("conditions", [])
+                or permission.get("constraints", [])
+            )
+            for permission in permissions
+        )
+
+        has_conditional_prohibition = any(
+            bool(
+                prohibition.get("conditions", [])
+                or prohibition.get("constraints", [])
+            )
+            for prohibition in prohibitions
+        )
+
+        is_conditional = (
+                has_permission_duties
+                or has_permission_conditions
+                or has_conditional_prohibition
+        )
+
+        if is_conditional:
+            outcome_css_class = (
+                "odrl-outcome odrl-outcome-unknown"
+            )
+            outcome_icon = "❓"
+            outcome_text = "Access Granted (conditionally)"
+        else:
+            outcome_css_class = (
+                "odrl-outcome odrl-outcome-granted"
+            )
+            outcome_icon = "✅"
+            outcome_text = "Access Granted"
+
 
     elif accept_decision is False:
 
