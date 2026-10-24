@@ -10,13 +10,14 @@ from io import StringIO
 from pathlib import Path
 import sys
 
+from rdflib import URIRef
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from common.streamlit_style import apply_style
 import ODRL_Evaluator as Evaluator
 import rdf_utils
-from rdf_utils import extract_features_list_from_policy
 from rdf_utils import extract_features_list_from_policy
 
 # ============================================================
@@ -320,6 +321,16 @@ def humanise_value(value):
 
     return str(value)
 
+def clear_access_request_dropdown_state():
+    for key in (
+        "access_request_action_select",
+        "access_request_custom_action",
+        "access_request_party_select",
+        "access_request_custom_party",
+        "access_request_asset_select",
+        "access_request_custom_asset",
+    ):
+        st.session_state.pop(key, None)
 
 def humanise_condition(condition):
     """
@@ -516,6 +527,11 @@ def humanise_duties(duties):
         for duty in duties
     ]
 
+PARTY_IRI = f"{ODRL_NS}Party"
+ACTION_IRI = f"{ODRL_NS}Action"
+ASSET_IRI = f"{ODRL_NS}Asset"
+EQ_IRI = f"{ODRL_NS}eq"
+
 def humanise_rule(rule, rule_type="rule"):
     """
     Generate a human-readable description of an evaluator rule.
@@ -536,11 +552,6 @@ def humanise_rule(rule, rule_type="rule"):
         return str(description)
 
     conditions = rule.get("conditions", []) + rule.get("constraints", [])
-
-    PARTY_IRI = f"{ODRL_NS}Party"
-    ACTION_IRI = f"{ODRL_NS}Action"
-    ASSET_IRI = f"{ODRL_NS}Asset"
-    EQ_IRI = f"{ODRL_NS}eq"
 
     assignee = None
     action = None
@@ -956,12 +967,33 @@ def _run_extract_columns(policy_path, result_queue):
         result_queue.put(("error", str(e)))
 
 
+def _extract_predicate_values(graph, predicate_iri, resolve_rdf_value=False):
+    """Extract values for a predicate from an RDF graph."""
+    values = set()
+
+    for _, predicate, obj in graph:
+        if str(predicate) != predicate_iri:
+            continue
+
+        # Preserve direct IRI objects.
+        if isinstance(obj, URIRef):
+            values.add(str(obj))
+
+        # Resolve blank nodes or other nodes containing rdf:value.
+        if resolve_rdf_value:
+            for _, value_predicate, value in graph:
+                if (
+                    _ == obj
+                    and str(value_predicate)
+                    == "http://www.w3.org/1999/02/22-rdf-syntax-ns#value"
+                ):
+                    values.add(str(value))
+
+    return sorted(values)
+
 def _run_extract_policy_info(policy_path, result_queue):
     """
-    Extract both features and actions from an ODRL policy.
-
-    The feature extraction is the same mechanism used by the existing
-    evaluator. Actions are extracted directly from the policy graph.
+    Extract features, actions, parties, and assets from an ODRL policy.
     """
     try:
         graph = rdf_utils.load(policy_path)[0]
@@ -973,65 +1005,28 @@ def _run_extract_policy_info(policy_path, result_queue):
             for feature in features
         ]
 
-        # ----------------------------------------------------
-        # Extract actions from the policy.
-        #
-        # We use the RDF graph directly rather than depending
-        # on the internal representation returned by
-        # extract_rule_list_from_policy().
-        # ----------------------------------------------------
+        ODRL_NS = "http://www.w3.org/ns/odrl/2/"
 
-        ODrl_ACTION = rdf_utils.ODRL_NS["action"] \
-            if hasattr(rdf_utils, "ODRL_NS") else None
+        actions = _extract_predicate_values(graph,ODRL_NS + "action",resolve_rdf_value=True)
 
-        # More robustly use the explicit IRI.
-        ACTION_PREDICATE = (
-            "http://www.w3.org/ns/odrl/2/action"
+        parties = sorted(
+            set(
+                _extract_predicate_values(graph, ODRL_NS + "assignee")
+                + _extract_predicate_values(graph, ODRL_NS + "assigner")
+            )
         )
 
-        RDF_VALUE = (
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#value"
-        )
-
-        actions = set()
-
-        for subject, predicate, obj in graph:
-
-            if str(predicate) != ACTION_PREDICATE:
-                continue
-
-            # ODRL actions are normally represented as a blank node
-            # containing rdf:value.
-            action_node = obj
-
-            for _, value_predicate, value in graph:
-                if (
-                    _ == action_node
-                    and str(value_predicate) == RDF_VALUE
-                ):
-                    actions.add(str(value))
-
-        # ----------------------------------------------------
-        # Fallback:
-        #
-        # If actions were represented directly as IRIs rather
-        # than rdf:value blank nodes, retain them as well.
-        # ----------------------------------------------------
-
-        for subject, predicate, obj in graph:
-            if str(predicate) == ACTION_PREDICATE:
-                if str(obj).startswith(
-                    "http://www.w3.org/ns/odrl/2/"
-                ):
-                    actions.add(str(obj))
+        assets = _extract_predicate_values(graph, ODRL_NS + "target")
 
         result_queue.put(
             (
                 "ok",
                 {
                     "columns": column_names,
-                    "actions": sorted(actions)
-                }
+                    "actions": actions,
+                    "parties": parties,
+                    "assets": assets,
+                },
             )
         )
 
@@ -1107,9 +1102,6 @@ def _run_with_timeout(target, args, timeout_seconds):
 # ============================================================
 # HELPER FUNCTIONS
 # ============================================================
-
-ACTION_IRI = "http://www.w3.org/ns/odrl/2/Action"
-
 
 def make_access_request_json(form_values):
     """
@@ -1343,8 +1335,11 @@ def select_test_case(test_name):
     st.session_state.access_request_form_generated = False
 
     # Clear any previous generated form data.
+    clear_access_request_dropdown_state()
     st.session_state.access_request_features = []
     st.session_state.access_request_actions = []
+    st.session_state.access_request_parties = []
+    st.session_state.access_request_assets = []
     st.session_state.access_request_form_values = {}
 
     # Clear the previous evaluation result.
@@ -1354,6 +1349,61 @@ def select_test_case(test_name):
 
     # Mark that the test should be evaluated on the next run.
     st.session_state.evaluate_test_case = True
+
+def render_iri_dropdown(
+    label,
+    options,
+    current_value,
+    widget_key,
+    custom_key,
+    disabled=False,
+):
+    """Render an IRI dropdown with a Custom... option."""
+
+    custom_option = f"__CUSTOM_{widget_key}__"
+
+    if not options:
+        return st.text_input(
+            f"Custom {label.lower()}",
+            value=current_value,
+            key=custom_key,
+            disabled=disabled,
+        )
+
+    dropdown_options = list(options) + [custom_option]
+
+    selected_option = (
+        current_value
+        if current_value in options
+        else custom_option
+    )
+
+    selected = st.selectbox(
+        label,
+        options=dropdown_options,
+        index=dropdown_options.index(selected_option),
+        format_func=lambda value: (
+            "Custom..."
+            if value == custom_option
+            else humanise_iri(value)
+        ),
+        key=widget_key,
+        disabled=disabled,
+    )
+
+    if selected == custom_option:
+        return st.text_input(
+            f"Custom {label.lower()}",
+            value=(
+                current_value
+                if current_value not in options
+                else ""
+            ),
+            key=custom_key,
+            disabled=disabled,
+        )
+
+    return selected
 
 def display_action_name(action_iri):
     """
@@ -1558,6 +1608,12 @@ if "access_request_features" not in st.session_state:
 if "access_request_actions" not in st.session_state:
     st.session_state.access_request_actions = []
 
+if "access_request_parties" not in st.session_state:
+    st.session_state.access_request_parties = []
+
+if "access_request_assets" not in st.session_state:
+    st.session_state.access_request_assets = []
+
 if "access_request_form_values" not in st.session_state:
     st.session_state.access_request_form_values = {}
 
@@ -1702,9 +1758,12 @@ with col_left:
 
             # A new policy means the old generated form is no
             # longer necessarily valid.
+            clear_access_request_dropdown_state()
             st.session_state.access_request_form_generated = False
             st.session_state.access_request_features = []
             st.session_state.access_request_actions = []
+            st.session_state.access_request_parties = []
+            st.session_state.access_request_assets = []
             st.session_state.access_request_form_values = {}
 
             st.rerun()
@@ -1870,78 +1929,57 @@ with col_right:
 
                 features = payload["columns"]
                 actions = payload["actions"]
+                parties = payload["parties"]
+                assets = payload["assets"]
 
-                # ------------------------------------------------
-                # Put Action first.
-                #
-                # Remove it from the normal feature list so that
-                # it isn't displayed twice.
-                # ------------------------------------------------
+                # Put Action, Party, and Asset first.
+                # Remove them from the normal feature list to avoid duplicates.
+
+                special_features = [
+                    ACTION_IRI,
+                    PARTY_IRI,
+                    ASSET_IRI,
+                ]
 
                 other_features = [
                     feature
                     for feature in features
-                    if feature != ACTION_IRI
+                    if feature not in special_features
                 ]
 
-                ordered_features = [
-                    ACTION_IRI
-                ] + other_features
+                ordered_features = special_features + other_features
 
-                st.session_state.access_request_features = (
-                    ordered_features
-                )
+                st.session_state.access_request_features = ordered_features
+                st.session_state.access_request_actions = actions
+                st.session_state.access_request_parties = parties
+                st.session_state.access_request_assets = assets
 
-                st.session_state.access_request_actions = (
-                    actions
-                )
-
-                # ------------------------------------------------
-                # Initialise form values.
-                #
-                # Preserve values already entered if possible.
-                # ------------------------------------------------
-
-                old_values = (
-                    st.session_state
-                    .access_request_form_values
-                )
-
+                # Preserve values already entered where possible.
+                old_values = st.session_state.access_request_form_values
                 new_values = {}
 
+                default_options = {
+                    ACTION_IRI: actions,
+                    PARTY_IRI: parties,
+                    ASSET_IRI: assets,
+                }
+
                 for feature in ordered_features:
-
                     if feature in old_values:
-                        new_values[feature] = (
-                            old_values[feature]
-                        )
-
-                    elif feature == ACTION_IRI:
-
-                        if actions:
-                            new_values[feature] = actions[0]
-                        else:
-                            new_values[feature] = ""
-
+                        new_values[feature] = old_values[feature]
+                    elif feature in default_options:
+                        options = default_options[feature]
+                        new_values[feature] = options[0] if options else ""
                     else:
                         new_values[feature] = ""
 
-                st.session_state.access_request_form_values = (
-                    new_values
-                )
+                st.session_state.access_request_form_values = new_values
 
                 st.session_state.access_request_uploaded = False
-
                 st.session_state.access_request_form_generated = True
 
-                # ------------------------------------------------
-                # Immediately generate JSON from the form.
-                # ------------------------------------------------
-
-                st.session_state.access_request_text = (
-                    make_access_request_json(
-                        new_values
-                    )
+                st.session_state.access_request_text = make_access_request_json(
+                    new_values
                 )
 
         except Exception as e:
@@ -1978,94 +2016,59 @@ with col_right:
 
         for feature in features:
 
-            # --------------------------------------------
-            # Action gets a dropdown.
-            # --------------------------------------------
+            current_value = (
+                st.session_state.access_request_form_values.get(
+                    feature, ""
+                )
+            )
 
-            if feature == ACTION_IRI:
+            # Map each special feature to its options and widget keys.
+            dropdown_config = {
+                ACTION_IRI: (
+                    "Action",
+                    st.session_state.access_request_actions,
+                    "access_request_action_select",
+                    "access_request_custom_action",
+                ),
+                PARTY_IRI: (
+                    "Party",
+                    st.session_state.access_request_parties,
+                    "access_request_party_select",
+                    "access_request_custom_party",
+                ),
+                ASSET_IRI: (
+                    "Asset",
+                    st.session_state.access_request_assets,
+                    "access_request_asset_select",
+                    "access_request_custom_asset",
+                ),
+            }
 
-                current_value = (
-                    st.session_state
-                    .access_request_form_values
-                    .get(feature, "")
+            if feature in dropdown_config:
+                label, options, widget_key, custom_key = (
+                    dropdown_config[feature]
                 )
 
-                if actions:
-
-                    # Add a custom option to the dropdown
-                    CUSTOM_ACTION = "__CUSTOM_ACTION__"
-                    action_options = actions + [CUSTOM_ACTION]
-
-                    if current_value in actions:
-                        selected_option = current_value
-                    else:
-                        selected_option = CUSTOM_ACTION
-
-                    selected_action = st.selectbox(
-                        "Action",
-                        options=action_options,
-                        index=action_options.index(selected_option),
-                        format_func=lambda x: (
-                            "Custom..." if x == CUSTOM_ACTION
-                            else display_action_name(x)
-                        ),
-                        key="access_request_action_select",
-                        disabled=st.session_state.access_request_uploaded
-                    )
-
-                    # If Custom... is selected, show a text box
-                    if selected_action == CUSTOM_ACTION:
-                        selected_action = st.text_input(
-                            "Custom action",
-                            value=(
-                                current_value
-                                if current_value not in actions
-                                else ""
-                            ),
-                            key="access_request_custom_action",
-                            disabled=st.session_state.access_request_uploaded
-                        )
-
-                    st.session_state \
-                        .access_request_form_values[
-                        feature
-                    ] = selected_action
-
-                else:
-
-                    st.warning(
-                        "No actions were found in the policy."
-                    )
-
-            # --------------------------------------------
-            # All other features are normal text inputs.
-            # --------------------------------------------
+                value = render_iri_dropdown(
+                    label=label,
+                    options=options,
+                    current_value=current_value,
+                    widget_key=widget_key,
+                    custom_key=custom_key,
+                    disabled=st.session_state.access_request_uploaded,
+                )
 
             else:
-
-                current_value = (
-                    st.session_state
-                    .access_request_form_values
-                    .get(feature, "")
-                )
-
                 value = st.text_input(
                     feature,
                     value=current_value,
                     key=f"access_request_feature_{feature}",
-                    disabled=st.session_state.access_request_uploaded
+                    disabled=st.session_state.access_request_uploaded,
                 )
 
-                st.session_state \
-                    .access_request_form_values[
-                        feature
-                    ] = value
+            st.session_state.access_request_form_values[feature] = value
 
-        # ----------------------------------------------------
-        # Every rerun caused by a form-field change reaches
-        # here. Rebuild D from the current form values.
-        # ----------------------------------------------------
-
+        # Rebuild the JSON from the current form values.
         if not st.session_state.access_request_uploaded:
             st.session_state.access_request_text = (
                 make_access_request_json(
