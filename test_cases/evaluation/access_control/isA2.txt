@@ -1,0 +1,5 @@
+expected_accept_decision=True
+semantics_for_duties=1
+semantics_by_default=-1
+test_description=The action should be accepted as the publisher can be inferred to be of type UK Publisher
+test_tag=isA

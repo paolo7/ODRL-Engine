@@ -1,0 +1,34 @@
+@prefix odrl: <http://www.w3.org/ns/odrl/2/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.com/policy:6161>
+  a odrl:Set ;
+  odrl:permission [
+    odrl:action [
+      rdf:value odrl:print ;
+      odrl:refinement [
+        odrl:leftOperand odrl:resolution ;
+        odrl:operator odrl:lteq ;
+        odrl:rightOperand 1200 ;
+        odrl:unit <http://dbpedia.org/resource/Dots_per_inch>
+      ]
+    ] ;
+    odrl:assignee <http://example.com/org:John> ;
+    odrl:target [
+      odrl:source <http://example.com/document:1234> ;
+      odrl:refinement [
+        odrl:leftOperand <http://example.com/publisher> ;
+        odrl:operator odrl:isA ;
+        odrl:rightOperand <http://example.com/UK_Publisher>
+      ]
+    ] ;
+  ] ;
+  odrl:profile <http://example.com/odrl:profile:10> .
+  
+ <http://example.com/English_Publisher> rdfs:subClassOf <http://example.com/UK_Publisher> . 
+ 
+ <http://example.com/Southampton_Publishing_Services> rdf:type <http://example.com/English_Publisher> . 
+ 
+ <http://example.com/Puffin_Publishers_LTD> rdf:type <http://example.com/UK_Publisher> . 

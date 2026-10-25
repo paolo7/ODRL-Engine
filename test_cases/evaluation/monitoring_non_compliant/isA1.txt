@@ -1,0 +1,2 @@
+should not be allowed as English Publisher is a class, and not an instance of UK publisher
+isA

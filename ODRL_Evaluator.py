@@ -33,6 +33,8 @@ ODRL_IS_ALL_OF = "http://www.w3.org/ns/odrl/2/isAllOf"
 ODRL_IS_ANY_OF = "http://www.w3.org/ns/odrl/2/isAnyOf"
 ODRL_IS_NONE_OF = "http://www.w3.org/ns/odrl/2/isNoneOf"
 
+ODRL_IS_A = "http://www.w3.org/ns/odrl/2/isA"
+
 DT_COL = "http://www.w3.org/ns/odrl/2/dateTime"
 
 ODRL_INCLUDED_IN = URIRef(
@@ -189,14 +191,14 @@ def _expand_uris(graph, uris, predicate):
 # if no local ontology files are specified, the default ODRL22.ttl file is loaded
 def parse_ontology(policy, ontology_files=None, ontology_graphs=None):
 
+    if ontology_files is None:
+        ontology_files = []
+
     if len(ontology_files) == 0:
         ontology_files.append(os.path.join("ODRL", "ODRL22.ttl"))
 
     if isinstance(ontology_files, (str, os.PathLike)):
         ontology_files = [ontology_files]
-
-    if ontology_files is None:
-        ontology_files = []
 
     if ontology_graphs is None:
         ontology_graphs = []
@@ -261,13 +263,37 @@ def parse_ontology(policy, ontology_files=None, ontology_graphs=None):
     )
 
     # ---------------------------------------------------------
-    # 4) Return all expansions
+    # 4) Find instances of classes that are objects of odrl:isA
+    # ---------------------------------------------------------
+
+    classes = {}
+
+    query = """
+            PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            PREFIX odrl: <http://www.w3.org/ns/odrl/2/>
+            SELECT DISTINCT ?class ?instance
+            WHERE {
+                ?constraint odrl:operator odrl:isA .
+                ?constraint odrl:rightOperand ?class .
+                ?instance rdf:type ?type .
+                ?type rdfs:subClassOf* ?class .
+            }
+        """
+    for row in ontology_graph.query(query):
+        class_uri = str(row["class"])
+        instance_uri = str(row["instance"])
+        classes.setdefault(class_uri, set()).add(instance_uri)
+
+    # ---------------------------------------------------------
+    # 5) Return all expansions
     # ---------------------------------------------------------
 
     return {
         "expanded_actions": expanded_actions,
         "expanded_party": expanded_party,
-        "expanded_assets": expanded_assets
+        "expanded_assets": expanded_assets,
+        "classes": classes,
     }
 
 # Warning: this function has not been tested in the latest version of OVAL
@@ -519,6 +545,22 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_null
             return False
 
     # ----------------------------------------
+    # ODRL isA OPERATOR
+    # Check whether the left operand is an instance
+    # of the class specified by the right operand.
+    # ----------------------------------------
+
+    if (
+        reasoning_expansion is not None
+        and op_symbol == ODRL_IS_A
+    ):
+        classes = reasoning_expansion.get("classes", {})
+        # Normalize the right operand to a class URI string.
+        class_uri = str(right)
+        instances = classes.get(class_uri, set())
+        return str(value) in instances
+
+    # ----------------------------------------
     # ODRL CORE COMPONENT EVALUATION
     # This part evaluates actions, assets and parties
     # they can be a list if a non-atomic policy has been used
@@ -533,7 +575,7 @@ def eval_constraint(row, rule, constraint, OPS_MAP, FEATURE_TYPE_MAP, match_null
         ODRL_PARTY,
         ODRL_ASSET,
     }
-            and op_symbol == "http://www.w3.org/ns/odrl/2/isAnyOf"
+            and op_symbol == ODRL_IS_ANY_OF
     ):
         return _reasoning_match(
             left,

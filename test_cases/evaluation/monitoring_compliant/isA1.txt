@@ -1,0 +1,2 @@
+should be allowed as both publishers can be inferred to be of type UK publisher (from the information direclty present in the policy)
+isA
