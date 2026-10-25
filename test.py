@@ -636,7 +636,7 @@ def runTests(test_repetitions = 0):
         test_log.append("Failed to validate example_policies/example_invalid.json as invalid")
 
     # Folder-based ODRL validation tests
-    #run_folder_validation_tests()
+    run_folder_validation_tests()
 
     # EVALUATION TESTS
 
