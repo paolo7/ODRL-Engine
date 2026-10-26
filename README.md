@@ -126,6 +126,7 @@ want to use.
 * [Internal JSON Data Model](documentation/internal_data_model.md)
 * [Python Functions](documentation/python_interface.md)
 * [Evaluator Feature Support](documentation/evaluator_feature_support.md)
+* [Ontology Guidelines](documentation/ontology_guidelines.md)
 
 ## Contributors
 * [Paolo Pareti](https://github.com/paolo7)
