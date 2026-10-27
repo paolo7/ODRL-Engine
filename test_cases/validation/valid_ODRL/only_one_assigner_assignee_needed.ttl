@@ -2,6 +2,7 @@
 
 <http://example.com/policy:1012>
   a odrl:Agreement ;
+  odrl:conflict odrl:prohibit ;
   odrl:prohibition [
     odrl:action odrl:play ;
     odrl:assignee <http://example.com/party:person:billie> ;

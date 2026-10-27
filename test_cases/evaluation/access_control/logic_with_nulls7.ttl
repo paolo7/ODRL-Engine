@@ -4,6 +4,7 @@
 
 <http://example.com/policy:6161>
   a odrl:Set ;
+  odrl:conflict odrl:prohibit ;
   odrl:permission [
     odrl:action odrl:use ;
     odrl:target <http://example.com/document:1234> ;

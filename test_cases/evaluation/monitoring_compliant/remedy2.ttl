@@ -4,6 +4,7 @@
 
 <http://example.com/policy:6161>
   a odrl:Set ;
+  odrl:conflict odrl:prohibit ;
   odrl:permission [
     odrl:action [
       rdf:value odrl:print ;
