@@ -84,7 +84,7 @@ st.markdown(
 )
 
 st.markdown(
-    "Paste or upload an **ODRL Policy** and a **State of the World**, then evaluate. You can see sample files [here](https://github.com/DIPS-Tools/ODRL-Engine/tree/main/test_cases/evaluation/valid)"
+    "Paste or upload an **ODRL Policy** and a **State of the World**, then evaluate. You can see sample files [here](https://github.com/DIPS-Tools/ODRL-Engine/tree/main/test_cases/evaluation/monitoring_compliant)"
 )
 
 st.markdown(
