@@ -1642,7 +1642,7 @@ if "access_request_uploaded" not in st.session_state:
 settings_left, settings_right = st.columns(2)
 
 # ------------------------------------------------------------
-# Unspecified Actions Semantics
+# Unregulated Events Semantics
 # ------------------------------------------------------------
 
 with settings_left:
@@ -1654,7 +1654,7 @@ with settings_left:
     }
 
     selected_unspecified_action_semantics = st.selectbox(
-        "**Semantics for Unspecified Actions** — "
+        "**Semantics for Unregulated Events** — "
         "How to treat requests for actions that are not "
         "regulated by the policy",
         options=list(unspecified_action_options.keys()),

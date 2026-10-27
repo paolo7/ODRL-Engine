@@ -130,7 +130,7 @@ _Last Updated 28/08/2026_
 After installation, open the Access Request Evaluator app (by default http://localhost:8031/evaluator-of-access-requests/ on a localhost docker deployment)
  
 1) Upload an ODRL Policy
-2) Optionally, set the desired semantics for duties and unspecified actions.
+2) Optionally, set the desired semantics for duties and unregulated events.
 3) Optionally, upload a State of the World object if you want to factor in previously executed duties.
 4) Fill in the `Access Request Form`, to specify the action you want permission for.
 5) As an alternative to 3), you can upload an access request as a JSON file.
@@ -152,7 +152,7 @@ _Last Updated 28/08/2026_
 
 * Obtain the Request Access JSON file, and the Policy file. You can set other optional values, like a State of the World file 
 to provide evidence of previous duty fulfillments, an Evaluation State if you are doing streaming of States of the World. 
-Optionally, you can change the default semantics for unspecified actions, for dealing with unfulfilled duties, and for reasoning. 
+Optionally, you can change the default semantics for unregulated events, for dealing with unfulfilled duties, and for reasoning. 
 See the "Reasoning" section above for more details.
 * You can try an API call using the Swagger API (http://localhost:8031/api/docs on a localhost docker installation), 
 or by directly calling the API (http://localhost:8031/api/evaluate_access_request).
